@@ -26,7 +26,16 @@ export function Hero() {
       <div className="relative overflow-hidden rounded-xl bg-dusk shadow-lg">
         {/* Generated with Higgsfield (nano_banana_2) at the user's request —
             not a stock photo. Eager and high-priority: this is the page's
-            largest paint, so it must not compete with anything below the fold. */}
+            largest paint, so it must not compete with anything below the fold.
+            The prerender logs a harmless "React does not recognize the
+            fetchPriority prop" warning — HTML attribute names are
+            case-insensitive at parse time, so the shipped
+            `fetchPriority="high"` is read by every real browser as
+            `fetchpriority`, identically. Verified in the built output
+            (landing/dist/index.html) rather than assumed. A lowercase-typed
+            fix was tried and reverted: TypeScript's ImgHTMLAttributes has no
+            slot for an untyped lowercase attribute, so it broke the build for
+            a warning that was never a functional problem. */}
         <img
           src="/hero-beach.jpg"
           alt=""
