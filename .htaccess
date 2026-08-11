@@ -21,6 +21,15 @@
   # DirectoryIndex ambiguity never comes into play.
   RewriteRule ^$ landing/dist/index.html [L]
 
+  # THE GUARD THAT MATTERS: without this condition, the rule below rewrites
+  # its OWN output. Apache reprocesses the ruleset against the internally
+  # rewritten URI, "landing/dist/x" matches "^(.*)$" again, and it becomes
+  # "landing/dist/landing/dist/x", forever — until Apache's internal redirect
+  # limit (10) trips and it returns 500 "Internal Redirection limit
+  # exceeded", not a clean 404. This is what actually produced the 500 the
+  # first version of this file caused.
+  RewriteCond %{REQUEST_URI} !^/landing/dist/
+
   # Everything else (en.html, /assets/*, the hero photo, …) is served from the
   # same relative path inside landing/dist/. No fallback-to-index: the landing
   # page has no client-side routing beyond in-page anchors, so a path that
