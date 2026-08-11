@@ -29,25 +29,16 @@
   # %{REQUEST_URI} keeps the ORIGINAL request URI — on the second pass it was
   # still "/", the condition still passed, and the loop was untouched. The
   # rule pattern below has no such problem: it sees the rewritten path.
-  RewriteRule ^(landing|web)/dist/ - [L]
+  RewriteRule ^landing/dist/ - [L]
 
-  # ---- app.svtrip.com → the desktop web application ----
-  #
-  # Both surfaces share ONE document root and ONE deployment; the hostname is
-  # what separates them. The root build script already compiles web/ alongside
-  # landing/, so a second Hostinger deployment would rebuild the same commit
-  # into a second copy of the same files for no benefit — and would give the
-  # two surfaces separate deploy histories that can silently drift apart.
-  #
-  # Deliberately NO -f test here, unlike the landing branch below: web/ is a
-  # single-page application, so "/place/el-tunco" is a client route with no
-  # file behind it. Sending everything into web/dist/ lets that directory's
-  # OWN .htaccess (web/public/.htaccess, copied into the build) do the SPA
-  # fallback it was written for, instead of duplicating that logic here.
-  RewriteCond %{HTTP_HOST} ^app\. [NC]
-  RewriteRule ^(.*)$ web/dist/$1 [L]
-
-  # ---- svtrip.com (and www) → the public landing page ----
+  # NOTE ON app.svtrip.com: it is NOT routed from here. Its subdomain is
+  # configured in Hostinger with web/dist as its own document root, and Apache
+  # reads .htaccess from the document root DOWNWARD only — never from parent
+  # directories — so this file is not even consulted for that hostname. The
+  # SPA routing it needs lives in web/public/.htaccess, which the build copies
+  # into web/dist/. A hostname branch was briefly added here and removed once
+  # the subdomain was pointed correctly: a rule that never executes is worse
+  # than no rule, because the next person to read this file will believe it.
   #
   # Root request → the prerendered Spanish document explicitly, so
   # DirectoryIndex ambiguity never comes into play.
