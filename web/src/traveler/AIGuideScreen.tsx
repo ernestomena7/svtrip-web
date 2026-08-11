@@ -35,6 +35,65 @@ import { DesktopLayout } from '../shell/DesktopLayout';
 interface Turn {
   role: 'user' | 'assistant';
   text: string;
+  /**
+   * The plan this turn produced, kept ON the turn rather than only in the
+   * screen's single `plan` state.
+   *
+   * The parked panel on the right shows the LATEST plan; the conversation has
+   * to show each answer's own. Reading the shared state from inside the thread
+   * would relabel every past answer with the newest plan the moment a second
+   * question was asked.
+   */
+  plan?: GeneratedPlan;
+}
+
+/**
+ * The stops of a plan, as tappable rows.
+ *
+ * One component, rendered in both places the plan appears: inline under the
+ * answer that produced it, and in the panel parked on the right. They were
+ * asked for together — "que salgan en ambos" — which is exactly the situation
+ * where two copies of the same markup drift until the same plan looks like two
+ * different things depending on where you read it.
+ */
+function PlanStops({
+  plan,
+  nameFor,
+  onOpen,
+}: {
+  plan: GeneratedPlan;
+  nameFor: (catalogId: string) => string;
+  onOpen: (catalogId: string) => void;
+}) {
+  return (
+    <ol className="space-y-2">
+      {plan.stops.map((stop) => (
+        <li key={`${stop.catalogId}-${stop.order}`}>
+          <button
+            type="button"
+            onClick={() => onOpen(stop.catalogId)}
+            className="flex w-full items-start gap-3 rounded-md bg-surface-2 p-3 text-left transition hover:brightness-95"
+          >
+            {/* The number carries the order, so the sequence survives being
+                read out of context — the same treatment the mobile PlanView
+                gives it. */}
+            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-sunset font-display text-xs font-extrabold text-white">
+              {stop.order}
+            </span>
+            <span className="min-w-0 flex-1">
+              <span className="block font-display text-sm font-extrabold text-text">
+                {nameFor(stop.catalogId)}
+              </span>
+              {stop.reason && (
+                <span className="mt-0.5 block text-xs leading-snug text-muted">{stop.reason}</span>
+              )}
+            </span>
+            <Icon name="chevron-right" size={16} className="mt-1 shrink-0 text-muted" />
+          </button>
+        </li>
+      ))}
+    </ol>
+  );
 }
 
 export function AIGuideScreen() {
@@ -81,7 +140,10 @@ export function AIGuideScreen() {
     return subscribeToMessages(user.uid, conversationId, (messages: Message[]) => {
       const replayed = messages
         .filter((m) => m.role === 'user' || m.role === 'assistant')
-        .map((m) => ({ role: m.role as 'user' | 'assistant', text: m.text }));
+        // `plan` carried through, so reopening a past conversation shows the
+        // stops it produced and not just the prose. persistTurn has been
+        // storing it on the assistant message all along; nothing read it back.
+        .map((m) => ({ role: m.role as 'user' | 'assistant', text: m.text, plan: m.plan }));
       // Only adopt the stored history when there is some; an empty result is a
       // brand-new conversation and must not wipe a turn already on screen.
       if (replayed.length > 0) setTurns(replayed);
@@ -125,7 +187,13 @@ export function AIGuideScreen() {
         },
         onDone: (id, status) => {
           if (id) setConversationId(id);
-          setTurns((prev) => [...prev, { role: 'assistant', text: buffer }]);
+          // From the ref, not from `plan` state: onPlan and onDone land in the
+          // same tick, so reading state here would attach the PREVIOUS turn's
+          // plan — the same reason planRef exists for persistence below.
+          setTurns((prev) => [
+            ...prev,
+            { role: 'assistant', text: buffer, plan: planRef.current ?? undefined },
+          ]);
           setLive(null);
           setBusy(false);
           if (status === 'error') {
@@ -202,15 +270,33 @@ export function AIGuideScreen() {
                 key={i}
                 className={cx('flex', turn.role === 'user' ? 'justify-end' : 'justify-start')}
               >
-                <div
-                  className={cx(
-                    'max-w-[80%] whitespace-pre-wrap rounded-lg px-4 py-3 text-[15px] leading-relaxed',
-                    turn.role === 'user'
-                      ? 'bg-sunset text-white shadow-red'
-                      : 'bg-surface text-text shadow-md',
+                <div className="max-w-[80%] space-y-3">
+                  <div
+                    className={cx(
+                      'whitespace-pre-wrap rounded-lg px-4 py-3 text-[15px] leading-relaxed',
+                      turn.role === 'user'
+                        ? 'bg-sunset text-white shadow-red'
+                        : 'bg-surface text-text shadow-md',
+                    )}
+                  >
+                    {turn.text}
+                  </div>
+
+                  {/* The stops, in the thread with the answer that produced
+                      them. The parked panel on the right keeps the CURRENT
+                      plan in view while you type the next question; this keeps
+                      each answer complete where it was given, so scrolling back
+                      through a conversation shows what was actually recommended
+                      rather than prose with the options missing. */}
+                  {turn.plan && turn.plan.stops.length > 0 && (
+                    <div className="rounded-lg bg-surface p-3 shadow-md">
+                      <PlanStops
+                        plan={turn.plan}
+                        nameFor={nameFor}
+                        onOpen={(id) => navigate(`/place/${id}`)}
+                      />
+                    </div>
                   )}
-                >
-                  {turn.text}
                 </div>
               </div>
             ))}
@@ -282,20 +368,7 @@ export function AIGuideScreen() {
                 {t('guide.plan.stopCount', { count: plan.stops.length })}
               </h2>
               {plan.intro && <p className="text-sm leading-relaxed text-muted">{plan.intro}</p>}
-              <ol className="space-y-3">
-                {plan.stops.map((stop) => (
-                  <li key={`${stop.catalogId}-${stop.order}`}>
-                    <button
-                      type="button"
-                      onClick={() => navigate(`/place/${stop.catalogId}`)}
-                      className="w-full rounded-md bg-surface-2 p-3 text-left transition hover:brightness-95"
-                    >
-                      <p className="font-display text-sm font-extrabold text-text">{nameFor(stop.catalogId)}</p>
-                      {stop.reason && <p className="mt-1 text-xs text-muted">{stop.reason}</p>}
-                    </button>
-                  </li>
-                ))}
-              </ol>
+              <PlanStops plan={plan} nameFor={nameFor} onOpen={(id) => navigate(`/place/${id}`)} />
               {plan.clarifyingQuestion && (
                 <p className="text-sm text-muted">{plan.clarifyingQuestion}</p>
               )}

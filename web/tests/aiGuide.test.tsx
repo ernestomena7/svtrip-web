@@ -149,10 +149,49 @@ describe('AI Guide — no state without a way out', () => {
       latest().onDone('conv-1', 'complete');
     });
 
-    expect(await screen.findByText('Buen surf al atardecer.')).toBeDefined();
+    // TWO occurrences, and that is the requirement, not an accident: the plan
+    // is rendered inline under the answer that produced it AND in the panel
+    // parked on the right. Asserting the count rather than "at least one" is
+    // what would catch either copy silently disappearing — the prose without
+    // its options in the thread was the complaint that prompted this.
+    expect(await screen.findAllByText('Buen surf al atardecer.')).toHaveLength(2);
     // The catalog stub is empty, so the id itself is shown rather than a name
     // conjured from nowhere: a plan stop carries an id, and the guide may only
     // ever point at a place that really exists (feature 004).
-    expect(screen.getByText('el-tunco')).toBeDefined();
+    expect(screen.getAllByText('el-tunco')).toHaveLength(2);
+  });
+
+  it('keeps each answer showing its OWN plan, not the newest one', async () => {
+    renderGuide();
+    ask('playa');
+    await waitFor(() => expect(mocks.calls.length).toBe(1));
+    act(() => {
+      latest().onPlan({
+        outcome: 'plan',
+        intro: 'Primero:',
+        stops: [{ catalogId: 'el-tunco', order: 1, reason: 'Buen surf al atardecer.' }],
+      });
+      latest().onDone('conv-1', 'complete');
+    });
+    await screen.findAllByText('Buen surf al atardecer.');
+
+    ask('volcanes');
+    await waitFor(() => expect(mocks.calls.length).toBe(2));
+    act(() => {
+      latest().onPlan({
+        outcome: 'plan',
+        intro: 'Ahora esto:',
+        stops: [{ catalogId: 'santa-ana-volcano', order: 1, reason: 'Vista al cráter.' }],
+      });
+      latest().onDone('conv-1', 'complete');
+    });
+
+    // The first answer must still show ITS stop. Reading the screen's single
+    // `plan` state from inside the thread would relabel every past answer with
+    // the newest plan the moment a second question was asked — which is why the
+    // plan is carried on the turn instead.
+    expect(await screen.findByText('Buen surf al atardecer.')).toBeDefined();
+    // The newest appears twice: inline with its answer, and in the panel.
+    expect(screen.getAllByText('Vista al cráter.')).toHaveLength(2);
   });
 });
