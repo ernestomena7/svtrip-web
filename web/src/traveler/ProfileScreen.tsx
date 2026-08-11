@@ -4,19 +4,18 @@
 // with their account lives here, and the desktop app has no reason to reinvent
 // preferences the mobile app already owns.
 import { useTranslation } from 'react-i18next';
-import { useNavigate } from 'react-router-dom';
 import type { Language } from '@svtrip/shared';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { signOutUser } from '@svtrip/core/auth/authService';
 import { useUiStore } from '@svtrip/core/uiStore';
 import { Button, Card, cx } from '../components/ui';
+import { LANDING_URL } from '../config';
 import { DesktopLayout } from '../shell/DesktopLayout';
 
 const LANGUAGES: Language[] = ['es', 'en'];
 
 export function ProfileScreen() {
   const { t } = useTranslation();
-  const navigate = useNavigate();
   const { profile } = useAuth();
   const language = useUiStore((s) => s.language);
   const setLanguage = useUiStore((s) => s.setLanguage);
@@ -62,10 +61,21 @@ export function ProfileScreen() {
           </div>
         </Card>
 
+        {/* Signing out leaves for the landing page, not the app's own root.
+            Router `navigate` cannot do this: the landing is a separate
+            deployment on a different origin, so it takes a real browser
+            navigation. Going to '/' instead would bounce off the auth guard
+            straight onto the sign-in screen, which reads as "you have been
+            logged out, now log back in" rather than "you have left".
+
+            The redirect is chained AFTER signOutUser resolves, not fired
+            alongside it: if the sign-out fails, staying put with a visible
+            session is honest, whereas leaving for a public page while still
+            authenticated would look signed out without being signed out. */}
         <Button
           variant="secondary"
           className="justify-self-start"
-          onClick={() => void signOutUser().then(() => navigate('/'))}
+          onClick={() => void signOutUser().then(() => window.location.assign(LANDING_URL))}
         >
           {t('auth.signOut')}
         </Button>
