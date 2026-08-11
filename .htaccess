@@ -1,0 +1,40 @@
+# Serve the built landing page (landing/dist/) instead of the raw repository
+# checkout that Hostinger's GitHub deploy places at this level.
+#
+# WHY THIS FILE EXISTS: this deployment clones the whole svtrip-web repository
+# into public_html/ rather than into a build-only staging area, so without
+# this rewrite, public_html/ IS the repo root — source code, node_modules/,
+# and a live .git/ directory all sitting in a web-servable location. An
+# exposed .git/ is a well-known disclosure: tools exist specifically to
+# reconstruct a full repository (including history) from one. This file
+# closes that by making EVERY request resolve only inside landing/dist/, so
+# nothing outside it is ever reachable by its real path.
+#
+# Committed at the repo root (not inside landing/) so it survives every
+# redeploy automatically — a copy created by hand over SSH would be wiped out
+# the next time Hostinger re-clones the repository into public_html/.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  # Root request → the prerendered Spanish document explicitly, so
+  # DirectoryIndex ambiguity never comes into play.
+  RewriteRule ^$ landing/dist/index.html [L]
+
+  # Everything else (en.html, /assets/*, the hero photo, …) is served from the
+  # same relative path inside landing/dist/. No fallback-to-index: the landing
+  # page has no client-side routing beyond in-page anchors, so a path that
+  # isn't a real file there should 404, not silently serve the homepage.
+  RewriteRule ^(.*)$ landing/dist/$1 [L]
+</IfModule>
+
+# Fingerprinted assets are immutable; the HTML must never be cached, or a
+# visitor keeps a stale build after a deploy.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2|png|jpg|svg)$">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>
