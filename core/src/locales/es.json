@@ -1,0 +1,566 @@
+{
+  "app": {
+    "name": "SVTrip",
+    "tagline": "El Salvador — vos elegís"
+  },
+  "nav": {
+    "guide": "Guía",
+    "discover": "Explorar",
+    "deals": "Ofertas",
+    "profile": "Perfil",
+    "dashboard": "Panel",
+    "services": "Mis negocios",
+    "subscription": "Plan",
+    "saved": "Guardados"
+  },
+  "auth": {
+    "signInTitle": "¿Qué hacemos hoy?",
+    "signInSubtitle": "Descubrí qué hacer cerca de vos en El Salvador.",
+    "signInWithGoogle": "Entrar con Google",
+    "signInError": "No se pudo entrar. Probá de nuevo.",
+    "signOut": "Cerrar sesión",
+    "loading": "Cargando…",
+    "email": "Correo",
+    "emailPlaceholder": "vos@ejemplo.com",
+    "password": "Contraseña",
+    "passwordHint": "Mínimo {{count}} caracteres",
+    "or": "o",
+    "signInWithEmail": "Entrar con correo",
+    "backToSignIn": "Volver",
+    "register": {
+      "link": "Crear una cuenta",
+      "title": "Creá tu cuenta",
+      "subtitle": "Guardá tus planes y preferencias en cualquier dispositivo.",
+      "cta": "Crear cuenta",
+      "haveAccount": "¿Ya tenés cuenta? Iniciá sesión",
+      "intentLegend": "¿Cómo vas a usar SVTrip?",
+      "intent": {
+        "traveler": "Viajero",
+        "business": "Comercio"
+      },
+      "intentHint": {
+        "traveler": "Descubrí lugares, guardá tus favoritos y armá tus planes.",
+        "business": "Además de viajar, vas a poder gestionar tu negocio en SVTrip."
+      }
+    },
+    "forgot": {
+      "link": "¿Olvidaste tu contraseña?",
+      "title": "Recuperá tu acceso",
+      "subtitle": "Te enviamos un enlace para crear una contraseña nueva.",
+      "cta": "Enviar enlace",
+      "sentTitle": "Revisá tu correo",
+      "sentBody": "Si ese correo tiene una cuenta, ya le enviamos un enlace para crear una contraseña nueva. Revisá también el correo no deseado."
+    },
+    "reset": {
+      "title": "Creá una contraseña nueva",
+      "newPassword": "Contraseña nueva",
+      "cta": "Guardar contraseña",
+      "invalidTitle": "Ese enlace ya no sirve",
+      "requestNew": "Pedir un enlace nuevo",
+      "doneTitle": "Listo",
+      "doneBody": "Tu contraseña quedó actualizada. Ya podés iniciar sesión.",
+      "goSignIn": "Iniciar sesión"
+    },
+    "errors": {
+      "invalidCredentials": "Correo o contraseña incorrectos.",
+      "registrationFailed": "No pudimos crear la cuenta con ese correo. Si ya tenés una cuenta, iniciá sesión.",
+      "weakPassword": "La contraseña debe tener al menos 8 caracteres.",
+      "invalidEmail": "Ese correo no parece válido.",
+      "resetLinkExpired": "El enlace venció. Pedí uno nuevo.",
+      "resetLinkInvalid": "El enlace no es válido o ya se usó. Pedí uno nuevo.",
+      "rateLimited": "Demasiados intentos. Esperá un momento y probá de nuevo.",
+      "network": "Sin conexión. Revisá tu internet y probá de nuevo."
+    }
+  },
+  "onboarding": {
+    "title": "¿Qué te late?",
+    "subtitle": "Elegí unos gustos y armamos algo a tu medida.",
+    "continue": "Empezar",
+    "selectAtLeastOne": "Elegí al menos un gusto para seguir."
+  },
+  "moods": {
+    "romantic-date": "Cita romántica",
+    "extreme-adventure": "Aventura extrema",
+    "local-food": "Comida local",
+    "nightlife": "Vida nocturna",
+    "beach": "Playa",
+    "colonial-town": "Pueblos coloniales",
+    "hiking": "Senderismo",
+    "culture": "Cultura"
+  },
+  "guide": {
+    "greeting": "¡Hola! Soy tu guía de SVTrip. Preguntame por playas, volcanes, comida o cómo moverte seguro en El Salvador.",
+    "placeholder": "Preguntá sobre El Salvador…",
+    "send": "Enviar",
+    "thinking": "Pensando…",
+    "error": "La guía no está disponible ahorita. Tu conversación quedó guardada — probá de nuevo.",
+    "retry": "Reintentar",
+    "newChat": "Nuevo",
+    "viewOnMap": "Ver en el mapa",
+    "getDirections": "Cómo llegar",
+    "rating": "Calificación",
+    "offline": "Sin conexión: escribí cuando vuelvas a tener internet.",
+    "suggestions": {
+      "title": "Probá con esto"
+    },
+    "plan": {
+      "stopCount_one": "{{count}} parada en tu plan",
+      "stopCount_other": "{{count}} paradas en tu plan"
+    },
+    "outcome": {
+      "noMatch": "Solo recomendamos lugares de nuestra selección curada, y esta vez ninguno encaja.",
+      "outOfScope": "El guía solo arma planes de viaje en El Salvador."
+    }
+  },
+  "discover": {
+    "forYou": "Para vos",
+    "noResults": "No encontramos lugares para este gusto todavía.",
+    "trendingPlaces": "Lugares en tendencia",
+    "colonialTowns": "Pueblos coloniales",
+    "trendingEvents": "Eventos en tendencia",
+    "event": "Evento",
+    "spinTitle": "Ruleta de planes",
+    "spinSubtitle": "¿Indeciso? Dejá que SVTrip elija por vos.",
+    "spinCta": "Sorprendeme",
+    "spinning": "Girando…",
+    "spinInsufficientData": "Necesitamos más lugares calificados para girar la ruleta todavía.",
+    "save": "Guardar",
+    "unsave": "Quitar de guardados"
+  },
+  "deals": {
+    "validUntil": "Válido hasta {{date}}",
+    "emptyTitle": "No hay ofertas activas",
+    "emptyHint": "Volvé pronto — los negocios salvadoreños publican promos seguido."
+  },
+  "profile": {
+    "language": "Idioma",
+    "mode": "Modo",
+    "traveler": "Viajero",
+    "provider": "Negocio",
+    "back": "Volver",
+    "notFoundTitle": "No encontrado",
+    "notFound": "Este negocio ya no está disponible.",
+    "reviewCount_one": "({{count}} reseña)",
+    "reviewCount_other": "({{count}} reseñas)",
+    "noReviewsYet": "Todavía sin reseñas",
+    "ratingLabel": "{{value}} de 5, promedio de {{n}} reseñas",
+    "editorialPick": "Selección del equipo",
+    "promotions": "Promociones",
+    "services": "Servicios",
+    "save": "Guardar",
+    "unsave": "Quitar de guardados",
+    "editBusiness": "Editar mi negocio",
+    "gallery": {
+      "title": "Fotos",
+      "viewerLabel": "Visor de fotos",
+      "previous": "Anterior",
+      "next": "Siguiente"
+    },
+    "menu": {
+      "title": "Menú",
+      "hint": "Tocá una imagen para verla más grande.",
+      "imageAlt": "Página {{n}} del menú"
+    },
+    "persona": "Modo"
+  },
+  "reviews": {
+    "title": "Reseñas",
+    "empty": "Este negocio todavía no tiene reseñas. Sé el primero en escribir una.",
+    "loadFailed": "No pudimos cargar las reseñas. Intentá de nuevo en un momento.",
+    "writeCta": "Escribir una reseña",
+    "writeTitle": "¿Cómo te fue?",
+    "editTitle": "Tu reseña",
+    "starLabel": "{{n}} de 5 estrellas",
+    "commentPlaceholder": "Contale a otros viajeros cómo te fue (opcional).",
+    "charCount": "{{n}}/{{max}}",
+    "publish": "Publicar",
+    "delete": "Eliminar",
+    "editMine": "Editar mi reseña",
+    "removeMine": "Eliminar mi reseña",
+    "signInToWrite": "Iniciá sesión para dejar tu reseña.",
+    "ownerNotice": "No podés reseñar tu propio negocio, pero sí responder a las reseñas de tus clientes.",
+    "ownerReplyLabel": "Respuesta del negocio",
+    "reply": "Responder",
+    "editReply": "Editar respuesta",
+    "deleteReply": "Eliminar respuesta",
+    "sendReply": "Enviar",
+    "replyPlaceholder": "Respondé con respeto y de forma útil.",
+    "report": "Reportar",
+    "reported": "Reportada",
+    "reportedNotice": "Gracias. Revisaremos el reporte; la reseña sigue visible mientras tanto.",
+    "errors": {
+      "ownBusiness": "No podés reseñar tu propio negocio."
+    }
+  },
+  "publication": {
+    "badge": "Sin terminar",
+    "unfinishedTitle": "Falta poco para publicarlo",
+    "unfinishedHint": "Mientras falte algo, solo vos ves este negocio.",
+    "lastPhotoLocked": "No podés quedarte sin fotos: agregá otra antes de borrar esta, o despublicá el negocio.",
+    "missing": {
+      "photo": "Al menos una foto",
+      "businessType": "El tipo de negocio",
+      "name": "El nombre en español y en inglés",
+      "description": "La descripción en español y en inglés"
+    },
+    "notPublicYet": "Este negocio todavía no está publicado. Su dueño lo está terminando de armar.",
+    "title": "Para publicar",
+    "ready": "Tu negocio cumple todo lo necesario para ser público.",
+    "live": "Público",
+    "notLive": "No público",
+    "legacyNotice": "Esta entrada es anterior a los mínimos actuales. Se te pedirán al guardar."
+  },
+  "claims": {
+    "title": "Gestionar mi negocio",
+    "intro": "Buscá tu negocio en el catálogo y pedí gestionarlo. Un miembro del equipo revisa la solicitud antes de darte el control.",
+    "findTitle": "Buscá tu negocio",
+    "searchPlaceholder": "Nombre del negocio o lugar",
+    "noResults": "No encontramos ese nombre en el catálogo.",
+    "pendingTitle": "Tus solicitudes",
+    "state": {
+      "unmanaged": "Sin gestor todavía",
+      "managed": "Ya tiene gestor — podés pedir el traspaso",
+      "pending": "Solicitud enviada, en revisión",
+      "handoverPending": "Traspaso solicitado, en revisión",
+      "yours": "Ya lo gestionás vos"
+    },
+    "claimExplain": "Vas a pedir gestionar este lugar. El equipo revisa la solicitud antes de darte el control.",
+    "handoverExplain": "Este lugar ya tiene gestor. Vas a pedir el traspaso; su gestor actual lo conserva hasta que el equipo decida.",
+    "messagePlaceholder": "Contanos quién sos y cómo verificamos que el negocio es tuyo (opcional).",
+    "fileCta": "Enviar solicitud",
+    "withdraw": "Retirar solicitud",
+    "notListedTitle": "Mi negocio no está en la lista",
+    "notListedBody": "Creá tu ficha y es tuya de una vez, sin esperar aprobación.",
+    "createCta": "Crear mi negocio",
+    "queueTitle": "Solicitudes pendientes",
+    "queueEmpty": "No hay solicitudes pendientes",
+    "queueDenied": "Esta sección es solo para el equipo de SVTrip.",
+    "notePlaceholder": "Nota de la decisión (opcional).",
+    "approve": "Aprobar",
+    "refuse": "Rechazar",
+    "kind": {
+      "claim": "Reclamo",
+      "handover": "Traspaso"
+    },
+    "warnings": {
+      "ownerHasReview": "Quien solicita ya dejó una reseña en este negocio. Al aprobar queda como una reseña del dueño sobre su propio negocio; puede eliminarla desde el perfil."
+    },
+    "errors": {
+      "alreadyManager": "Ya gestionás este negocio.",
+      "pending": "Ya tenés una solicitud abierta para este negocio.",
+      "superseded": "Otra solicitud para este negocio se aprobó primero.",
+      "notPending": "Esta solicitud ya fue decidida."
+    },
+    "entryCta": "¿Tenés un negocio? Gestionalo acá",
+    "approvalNotice": "Un operador revisa cada solicitud. La propiedad no cambia hasta que la aprueben.",
+    "claimCta": "Solicitar",
+    "mineTitle": "Tus solicitudes",
+    "pending": "Pendiente",
+    "searchLabel": "Buscar tu negocio",
+    "selectHint": "Buscá tu negocio y seleccionalo para enviar la solicitud.",
+    "send": "Enviar solicitud"
+  },
+  "dashboard": {
+    "title": "Panel de control",
+    "profileViews": "Vistas de perfil",
+    "favoriteClicks": "Guardados",
+    "directionsClicks": "Cómo llegar",
+    "activePromotions": "Promos activas",
+    "zeroHint": "Todavía no hay actividad. Cuando los viajeros vean tus negocios, acá aparecerán tus números.",
+    "advancedTitle": "Analítica avanzada",
+    "advancedSubtitle": "Vistas de perfil por día (últimos 7 días).",
+    "advancedLockedHint": "Desbloqueá el detalle diario y las tendencias con el plan Ultra.",
+    "upgrade": "Mejorar a Ultra",
+    "allBusinesses": "Todos",
+    "notAttributableYet": "Todavía no podemos separar estos números por negocio. El desglose empieza a acumularse desde ahora."
+  },
+  "services": {
+    "new": "Nuevo",
+    "emptyTitle": "Aún no tenés negocios",
+    "emptyHint": "Tocá \"Nuevo\" para publicar tu primer negocio, lugar o actividad.",
+    "newListing": "Nuevo negocio",
+    "editListing": "Editar negocio",
+    "name": "Nombre",
+    "namePlaceholder": "Ej. Restaurante El Mirador",
+    "description": "Descripción",
+    "photos": "Fotos",
+    "addPhoto": "Agregar",
+    "uploading": "Subiendo…",
+    "photoUploadUnavailable": "No se pudieron subir fotos (Firebase Storage no está habilitado). Podés guardar sin fotos.",
+    "vibes": "Ambientes",
+    "location": "Ubicación",
+    "latitude": "Latitud",
+    "longitude": "Longitud",
+    "coordsInvalid": "Coordenadas fuera de rango.",
+    "useMyLocation": "Usar mi ubicación",
+    "openingHours": "Horario",
+    "closed": "Cerrado",
+    "markOpen": "Abrir",
+    "markClosed": "Cerrar",
+    "active": "Visible para viajeros",
+    "inactive": "Oculto",
+    "save": "Guardar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "addDeal": "Oferta",
+    "newDeal": "Nueva oferta",
+    "editDeal": "Editar oferta",
+    "dealListing": "Negocio",
+    "dealTitle": "Título de la oferta",
+    "dealTitlePlaceholder": "Ej. 2x1 en entradas",
+    "dealPrice": "Precio",
+    "dealOriginal": "Precio normal",
+    "dealFrom": "Desde",
+    "dealTo": "Hasta",
+    "dealWindowInvalid": "La fecha final debe ser posterior a la inicial.",
+    "businessType": "Tipo de negocio",
+    "businessTypeHint": "Elegí una sola opción: qué es tu negocio.",
+    "banner": "Imagen principal",
+    "addBanner": "Agregar imagen principal",
+    "removeBanner": "Quitar imagen principal",
+    "gallery": "Galería de fotos",
+    "moveEarlier": "Mover antes",
+    "additionalServices": "Servicios adicionales",
+    "menu": "Menú",
+    "menuHint": "Subí fotos de tu menú. Solo aparece en negocios de comida.",
+    "options": {
+      "parking": "Estacionamiento",
+      "wifi": "Wi-Fi",
+      "card-payment": "Pago con tarjeta",
+      "accessible": "Accesible",
+      "pet-friendly": "Acepta mascotas",
+      "reservations": "Reservas",
+      "outdoor-seating": "Terraza",
+      "delivery": "Entrega a domicilio",
+      "takeaway": "Para llevar",
+      "vegetarian": "Opciones vegetarianas",
+      "live-music": "Música en vivo",
+      "happy-hour": "Happy hour",
+      "craft-beer": "Cerveza artesanal",
+      "dance-floor": "Pista de baile",
+      "vip-area": "Área VIP",
+      "dress-code": "Código de vestimenta",
+      "guide-included": "Guía incluido",
+      "transport-included": "Transporte incluido",
+      "equipment-included": "Equipo incluido",
+      "private-tours": "Tours privados",
+      "beginner-friendly": "Apto para principiantes",
+      "lessons": "Clases",
+      "appointments": "Con cita",
+      "massage": "Masajes",
+      "sauna": "Sauna",
+      "pool": "Piscina",
+      "breakfast-included": "Desayuno incluido",
+      "air-conditioning": "Aire acondicionado",
+      "kitchen": "Cocina",
+      "laundry": "Lavandería",
+      "airport-pickup": "Recogida en aeropuerto",
+      "private-driver": "Chofer privado",
+      "english-speaking": "Atención en inglés",
+      "local-crafts": "Artesanía local",
+      "shipping": "Envíos",
+      "custom-orders": "Pedidos a medida",
+      "guided-tours": "Visitas guiadas",
+      "restrooms": "Servicios sanitarios",
+      "gift-shop": "Tienda de regalos"
+    },
+    "contactTitle": "Contacto",
+    "phone": "Teléfono",
+    "whatsapp": "WhatsApp",
+    "phoneInvalid": "Usá el formato internacional completo, con código de país (ej. +503 7000 0000).",
+    "contactHint": "Ambos son opcionales. Si no ponés ninguno, tu ficha simplemente no muestra botón de contacto.",
+    "addressPlaceholder": "Buscá tu dirección",
+    "addressNoResults": "No encontramos esa dirección. Podés colocar el pin a mano en el mapa.",
+    "addressUnavailable": "La búsqueda de direcciones no está disponible ahorita. Colocá el pin a mano en el mapa.",
+    "mapLabel": "Mapa para ubicar tu negocio",
+    "mapHint": "Tocá el mapa o arrastrá el pin hasta la entrada de tu negocio.",
+    "mapUnavailable": "No pudimos cargar el mapa. Ingresá las coordenadas abajo.",
+    "enterCoordinates": "Ingresar coordenadas a mano",
+    "mapLoading": "Cargando el mapa…",
+    "photoTypeRejected": "Ese archivo no es una imagen JPG, PNG o WebP. Tu galería quedó como estaba.",
+    "photoSizeRejected": "Esa imagen pesa más de {{mb}} MB. Probá con una más liviana; tu galería quedó como estaba.",
+    "reorderLeft": "Mover antes",
+    "reorderRight": "Mover después",
+    "dealEndPast": "La fecha de fin ya pasó. Elegí una fecha futura para publicar la promoción.",
+    "confirmDelete": "¿Seguro que querés eliminar este negocio?",
+    "emptyBody": "Publicá tu primer negocio, lugar o actividad.",
+    "locationMissing": "Falta la ubicación. Marcá el punto en el mapa o ingresá las coordenadas.",
+    "searchAddress": "Buscar",
+    "sessionLostHint": "Tu sesión venció. Tu trabajo sigue acá; iniciá sesión en otra pestaña y volvé para guardar."
+  },
+  "days": {
+    "sun": "Dom",
+    "mon": "Lun",
+    "tue": "Mar",
+    "wed": "Mié",
+    "thu": "Jue",
+    "fri": "Vie",
+    "sat": "Sáb"
+  },
+  "subscription": {
+    "title": "Tu plan",
+    "recommended": "Recomendado",
+    "free": "Gratis",
+    "perMonth": "/mes",
+    "choose": "Elegir {{tier}}",
+    "current": "Plan actual",
+    "simulatedNote": "El cobro es simulado en esta versión. Podés cambiar de plan cuando querás.",
+    "tiers": {
+      "basic": "Basic",
+      "pro": "Pro",
+      "ultra": "Ultra"
+    },
+    "features": {
+      "rankBoost": "Aparecé primero en Explorar",
+      "ads": "Espacios publicitarios",
+      "advancedAnalytics": "Analítica avanzada"
+    },
+    "featureBoost": "Mejor posición en las listas",
+    "featureAds": "Espacios promocionados"
+  },
+  "common": {
+    "empty": "Aún no hay nada aquí.",
+    "loading": "Cargando…",
+    "somethingWrong": "Algo salió mal.",
+    "close": "Cerrar",
+    "offline": "Sin conexión. Estás viendo contenido guardado.",
+    "retry": "Reintentar"
+  },
+  "businessTypes": {
+    "restaurant-cafe": "Restaurante o cafetería",
+    "bar-brewery": "Bar o cervecería",
+    "nightclub": "Club nocturno",
+    "tour-operator": "Tour operador o guía",
+    "outdoor-activity": "Actividad al aire libre",
+    "wellness-spa": "Bienestar y spa",
+    "lodging": "Hospedaje",
+    "transport": "Transporte",
+    "shop-crafts": "Tienda o artesanías",
+    "attraction": "Atracción o sitio de interés",
+    "other": "Otro"
+  },
+  "bilingual": {
+    "es": "Español",
+    "en": "Inglés",
+    "missing": "Falta en este idioma",
+    "incomplete": "Completá en ambos idiomas: {{fields}}"
+  },
+  "landing": {
+    "nav": {
+      "signIn": "Iniciar sesión",
+      "skipToContent": "Ir al contenido"
+    },
+    "hero": {
+      "eyebrow": "El Salvador · vos elegís",
+      "title": "¿Qué hacemos hoy?",
+      "subtitle": "Playas, volcanes, pueblos coloniales y la mejor comida. Encontrá el plan perfecto para vos, tu familia o esa cita especial.",
+      "cta": "Empezar",
+      "secondary": "Ver cómo funciona"
+    },
+    "how": {
+      "eyebrow": "Así funciona",
+      "title": "De \"no sé qué hacer\" a un plan, en tres pasos",
+      "step1Title": "Decí cómo te sentís",
+      "step1Body": "¿Playa, aventura, comida tranquila o una cita especial? Elegí tu mood y la app se acomoda a vos.",
+      "step2Title": "La guía te arma el plan",
+      "step2Body": "Nuestra guía te propone lugares reales del catálogo salvadoreño. Nunca inventa un lugar que no existe.",
+      "step3Title": "Salí a disfrutar",
+      "step3Body": "Cómo llegar, horarios, promociones vigentes y reseñas de gente que ya fue."
+    },
+    "travelers": {
+      "eyebrow": "Para viajeros",
+      "title": "Descubrí El Salvador sin perderte lo bueno",
+      "body": "Seas turista o de acá, con familia, en pareja o solo.",
+      "b1": "Lugares curados, no una lista infinita",
+      "b2": "Promociones vigentes de negocios locales",
+      "b3": "Reseñas reales que el negocio no puede borrar",
+      "b4": "Todo en español e inglés"
+    },
+    "businesses": {
+      "eyebrow": "Para negocios",
+      "title": "Poné tu negocio donde la gente lo está buscando",
+      "body": "Vos manejás tu perfil. Los cambios se publican al instante.",
+      "b1": "Tu perfil en español e inglés",
+      "b2": "Fotos, horarios y tu punto exacto en el mapa",
+      "b3": "Promociones con fecha de fin, sin sorpresas",
+      "b4": "Mirá cuánta gente te ve y te busca",
+      "cta": "Registrá tu negocio"
+    },
+    "showcase": {
+      "title": "Algunos lugares para empezar",
+      "subtitle": "Una probadita del catálogo. Iniciá sesión para verlo completo.",
+      "cta": "Ver todo el catálogo"
+    },
+    "footer": {
+      "tagline": "Hecho en El Salvador · vos elegís",
+      "rights": "Todos los derechos reservados."
+    },
+    "language": {
+      "label": "Idioma",
+      "es": "Español",
+      "en": "English"
+    },
+    "meta": {
+      "title": "SVTrip — ¿Qué hacemos hoy?",
+      "description": "Descubrí qué hacer en El Salvador: playas, volcanes, pueblos coloniales y la mejor comida. Planes para vos, tu familia o esa cita especial."
+    },
+    "whatIs": {
+      "eyebrow": "Qué es SVTrip",
+      "title": "Tu compañero de viaje para El Salvador",
+      "body": "SVTrip combina un catálogo curado de lugares reales con una guía que entiende de qué tenés ganas — y arma el plan por vos. Nada de listas genéricas ni lugares inventados.",
+      "stat1Value": "19+",
+      "stat1Label": "lugares curados",
+      "stat2Value": "2",
+      "stat2Label": "idiomas, siempre completos",
+      "stat3Value": "100%",
+      "stat3Label": "lugares reales, verificados"
+    },
+    "testimonials": {
+      "eyebrow": "Lo que dice la gente",
+      "title": "Viajeros y negocios ya lo están usando",
+      "quote1": "Le pedí un plan para un sábado en pareja y me armó una ruta completa: desayuno, playa y cena. Todo lugares que existen de verdad.",
+      "name1": "Andrea M.",
+      "role1": "Viajera, San Salvador",
+      "quote2": "Publiqué mi negocio una tarde y esa misma semana ya tenía gente llegando por la app. El panel me deja ver todo clarito.",
+      "name2": "Carlos R.",
+      "role2": "Dueño de restaurante, La Libertad",
+      "quote3": "Vine de visita sin saber nada del país y la guía me llevó a lugares que ni en las guías turísticas normales aparecen.",
+      "name3": "Sofía T.",
+      "role3": "Turista, Guatemala",
+      "disclaimer": "Testimonios ilustrativos mientras crece la comunidad de SVTrip."
+    }
+  },
+  "search": {
+    "label": "Buscar",
+    "placeholder": "Buscá un plan, lugar o pueblo…",
+    "noResults": "No encontramos nada con eso"
+  },
+  "web": {
+    "preview": {
+      "eyebrow": "Vista previa",
+      "title": "Una probadita de El Salvador",
+      "body": "Estos son algunos lugares del catálogo. Iniciá sesión para verlo completo, guardar tus favoritos y armar tu plan con la guía.",
+      "cta": "Iniciar sesión",
+      "register": "Crear cuenta",
+      "moreTitle": "Hay mucho más adentro",
+      "moreBody": "El catálogo completo, las promociones vigentes, las reseñas y la guía con IA."
+    },
+    "gated": {
+      "title": "Iniciá sesión para ver esto",
+      "body": "Te llevamos de vuelta a donde ibas apenas entres."
+    },
+    "saved": {
+      "title": "Tus guardados",
+      "empty": "Aún no guardás nada",
+      "emptyBody": "Tocá el corazón en cualquier lugar para guardarlo acá."
+    },
+    "footer": {
+      "tagline": "Hecho en El Salvador · vos elegís"
+    },
+    "history": {
+      "title": "Tus conversaciones",
+      "empty": "Todavía no tenés conversaciones guardadas.",
+      "untitled": "Sin título"
+    }
+  }
+}

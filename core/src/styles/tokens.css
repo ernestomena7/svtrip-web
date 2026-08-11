@@ -1,0 +1,62 @@
+/* SVTrip brand tokens — mirrors SVTrip_Design_System/tokens/*.css.
+   Warm sunset palette (gold→orange→red) inked in navy, warm cream surfaces.
+   Light-only: the brand has no dark theme. Values are exact (sampled from logo). */
+:root {
+  /* Brand core */
+  --svt-gold: #ffc83c;
+  --svt-orange: #ff7a2f;
+  --svt-red: #f02828;
+  --svt-navy: #002850;
+
+  --red-500: #f02828;
+  --red-600: #d11420;
+  --red-700: #a30f1a;
+  --gold-400: #ffc83c;
+  --gold-500: #f5a623;
+  --navy-800: #002850;
+
+  /* Warm neutrals */
+  --n-0: #ffffff;
+  --n-50: #fbf8f3; /* warm app background */
+  --n-100: #f4efe7;
+  --n-200: #e9e1d5;
+  --n-300: #d8cdbc;
+
+  /* Semantic (RGB triplets for Tailwind rgb(var(--x)/alpha)) */
+  --bg: 251 248 243; /* n-50 cream */
+  --surface: 255 255 255; /* white cards */
+  --surface-2: 244 239 231; /* n-100 sunk */
+  --border: 233 225 213; /* n-200 */
+  --text: 14 43 73; /* text-strong navy ink */
+  --text-body: 43 71 99;
+  --muted: 107 126 146; /* text-muted */
+  --primary: 240 40 40; /* brand red */
+  --primary-fg: 255 255 255;
+  --accent: 255 200 60; /* brand gold */
+  --navy: 0 40 80;
+
+  /* Signature gradients */
+  --gradient-sunset: linear-gradient(120deg, #ffc83c 0%, #ff7a2f 48%, #f02828 100%);
+  --gradient-sunset-soft: linear-gradient(120deg, #ffd15c 0%, #ff8c3c 55%, #fb4d2e 100%);
+  --gradient-dusk: linear-gradient(160deg, #002850 0%, #0a3a66 55%, #18527f 100%);
+  --gradient-gold: linear-gradient(120deg, #ffd15c 0%, #ffb02e 100%);
+  --scrim-bottom: linear-gradient(
+    0deg,
+    rgba(0, 28, 58, 0.88) 0%,
+    rgba(0, 28, 58, 0.55) 35%,
+    rgba(0, 28, 58, 0) 80%
+  );
+
+  /* Warm navy-tinted elevation (never harsh black) */
+  --shadow-sm: 0 2px 6px rgba(0, 28, 58, 0.08);
+  --shadow-md: 0 6px 18px rgba(0, 28, 58, 0.1);
+  --shadow-lg: 0 14px 34px rgba(0, 28, 58, 0.14);
+  --shadow-red: 0 8px 22px rgba(240, 40, 40, 0.34);
+  --shadow-gold: 0 8px 22px rgba(245, 166, 35, 0.38);
+
+  /* Radii */
+  --r-md: 14px;
+  --r-lg: 20px;
+  --r-xl: 28px;
+  --r-pill: 999px;
+}

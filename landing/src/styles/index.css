@@ -1,0 +1,60 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@500;600;700;800&family=Nunito:wght@400;500;600;700;800&display=swap');
+/* The brand token mirror, shared with the mobile client and the web app. The
+   Tailwind preset names these variables; this file is what defines them. */
+@import '@svtrip/core/styles/tokens.css';
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+body {
+  @apply bg-bg text-text antialiased;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  font-family: 'Poppins', system-ui, sans-serif;
+}
+
+/* Signature sunset gradient fills — primary actions and hero panels. */
+.bg-sunset {
+  background: var(--gradient-sunset);
+}
+.bg-dusk {
+  background: var(--gradient-dusk);
+}
+.bg-gold-gradient {
+  background: var(--gradient-gold);
+}
+
+/* Gradient-clipped wordmark treatment for big brand words. */
+.text-sunset {
+  background: var(--gradient-sunset);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Small tracked eyebrow / kicker — uppercase is allowed HERE and only here. */
+.eyebrow {
+  font-weight: 800;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: #e85f1c;
+}
+
+/* Navy scrim for legible white text over photography. */
+.bg-scrim-bottom {
+  background: var(--scrim-bottom);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.001ms !important;
+    transition-duration: 0.001ms !important;
+  }
+}
