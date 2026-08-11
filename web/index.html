@@ -7,11 +7,16 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <!-- Same icon the mobile app and the landing declare, downscaled to 180px.
-         Relative path, not absolute: web/ can be deployed at a domain root
-         (app.svtrip.com) or under a subdirectory, and a leading slash would
-         break the second case exactly the way APP_BASE_PATH exists to avoid. -->
-    <link rel="icon" href="./brand/app-icon.png" />
-    <link rel="apple-touch-icon" href="./brand/app-icon.png" />
+         %BASE_URL% is Vite's build-time placeholder for the configured base, so
+         one file serves a root deployment (app.svtrip.com) and a subdirectory
+         one (APP_BASE_PATH=/app/) without a leading slash hardcoding either.
+
+         NOT a relative "./brand/…": a relative href resolves against the
+         CURRENT URL, not the site root, so on a client route like
+         /place/el-tunco the browser asked for /place/brand/app-icon.png and
+         got an error on every deep page. That was the first version here. -->
+    <link rel="icon" href="%BASE_URL%brand/app-icon.png" />
+    <link rel="apple-touch-icon" href="%BASE_URL%brand/app-icon.png" />
   </head>
   <body>
     <div id="root"></div>
