@@ -9,6 +9,15 @@
     <meta name="description" content="Descubrí qué hacer en El Salvador: playas, volcanes, pueblos y la mejor comida." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Same icon the mobile app declares, so all three surfaces show one
+         brand mark. Downscaled to 180px (34 KB) rather than reusing the
+         1024px original (812 KB): a browser requests this on every page load
+         and the landing has a speed budget to keep (check:landing-speed).
+         Placed AFTER the description meta on purpose — prerender.ts replaces
+         the title-through-description block wholesale, so anything inside it
+         would be discarded at build time. -->
+    <link rel="icon" href="/brand/app-icon.png" />
+    <link rel="apple-touch-icon" href="/brand/app-icon.png" />
   </head>
   <body>
     <div id="root"></div>

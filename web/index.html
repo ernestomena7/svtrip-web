@@ -6,6 +6,12 @@
     <title>SVTrip</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Same icon the mobile app and the landing declare, downscaled to 180px.
+         Relative path, not absolute: web/ can be deployed at a domain root
+         (app.svtrip.com) or under a subdirectory, and a leading slash would
+         break the second case exactly the way APP_BASE_PATH exists to avoid. -->
+    <link rel="icon" href="./brand/app-icon.png" />
+    <link rel="apple-touch-icon" href="./brand/app-icon.png" />
   </head>
   <body>
     <div id="root"></div>
