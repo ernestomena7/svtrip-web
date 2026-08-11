@@ -123,9 +123,15 @@ export function subscribeToConversations(
  * returns a sortable numeric string, so `updatedAt > 0` passed its guard and
  * the code went on to `new Date(theObject)` — Invalid Date — and
  * `Intl.DateTimeFormat.format()` threw `RangeError: Invalid time value`,
- * uncaught, taking the whole React tree down with it. The sort above was
- * quietly broken too: object minus object is NaN, so the list was never
- * actually ordered by recency.
+ * uncaught, taking the whole React tree down with it.
+ *
+ * The sort above was NOT broken by this, contrary to what the commit that
+ * introduced this function claimed. Because `valueOf()` returns a numeric
+ * string, `b.updatedAt - a.updatedAt` coerced both sides to numbers and
+ * ordered correctly. The claim was written from reasoning; the regression test
+ * then ran against the old code and the sort assertion passed, which is how the
+ * mistake was caught. Left recorded here because a plausible wrong explanation
+ * in a comment outlives the commit message that carried it.
  *
  * Messages do not need this — `persistTurn` writes their `createdAt` as a
  * plain `Date.now()`. Only the conversation document uses a server timestamp,

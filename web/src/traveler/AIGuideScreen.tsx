@@ -28,6 +28,7 @@ import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { useUiStore } from '@svtrip/core/uiStore';
 import { Icon } from '@svtrip/core/Icon';
 import { Button, Card, EmptyState, TextInput, cx } from '../components/ui';
+import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ConversationHistory } from './ConversationHistory';
 import { DesktopLayout } from '../shell/DesktopLayout';
 
@@ -297,16 +298,24 @@ export function AIGuideScreen() {
             </Card>
           )}
 
-          <ConversationHistory
-            activeId={conversationId}
-            onSelect={(id) => {
-              setTurns([]);
-              setPlan(null);
-              setError(null);
-              planRef.current = null;
-              setConversationId(id);
-            }}
-          />
+          {/* `fallback={null}` rather than a notice, matching the rule
+              ConversationHistory already states for its own load failures: the
+              history is a convenience beside a working conversation, and its
+              absence must not imply the guide itself is broken. The boundary
+              exists because a THROW is different from a failed load — this
+              subtree once took the whole screen down with it. */}
+          <ErrorBoundary label="ConversationHistory" fallback={null}>
+            <ConversationHistory
+              activeId={conversationId}
+              onSelect={(id) => {
+                setTurns([]);
+                setPlan(null);
+                setError(null);
+                planRef.current = null;
+                setConversationId(id);
+              }}
+            />
+          </ErrorBoundary>
         </aside>
       </div>
     </DesktopLayout>

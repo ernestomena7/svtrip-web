@@ -561,6 +561,11 @@
       "title": "Tus conversaciones",
       "empty": "Todavía no tenés conversaciones guardadas.",
       "untitled": "Sin título"
+    },
+    "crash": {
+      "title": "Esta sección no cargó",
+      "body": "El resto de la aplicación sigue funcionando. Probá recargar la página.",
+      "action": "Recargar"
     }
   }
 }

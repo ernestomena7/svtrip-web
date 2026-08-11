@@ -561,6 +561,11 @@
       "title": "Your conversations",
       "empty": "No saved conversations yet.",
       "untitled": "Untitled"
+    },
+    "crash": {
+      "title": "This section didn't load",
+      "body": "The rest of the app is still working. Try reloading the page.",
+      "action": "Reload"
     }
   }
 }
