@@ -4,11 +4,11 @@
 # WHY THIS FILE EXISTS: this deployment clones the whole svtrip-web repository
 # into public_html/ rather than into a build-only staging area, so without
 # this rewrite, public_html/ IS the repo root — source code, node_modules/,
-# and a live .git/ directory all sitting in a web-servable location. An
-# exposed .git/ is a well-known disclosure: tools exist specifically to
-# reconstruct a full repository (including history) from one. This file
-# closes that by making EVERY request resolve only inside landing/dist/, so
-# nothing outside it is ever reachable by its real path.
+# and a live .git/ directory all sitting in a web-servable location. Setting
+# Hostinger's "Output directory" to landing/dist does NOT change the document
+# root; verified by listing public_html/ after a redeploy, which still showed
+# the whole checkout. So this file is what closes the exposure: a path is
+# reachable ONLY if it exists inside landing/dist/, and everything else 404s.
 #
 # Committed at the repo root (not inside landing/) so it survives every
 # redeploy automatically — a copy created by hand over SSH would be wiped out
@@ -17,24 +17,41 @@
   RewriteEngine On
   RewriteBase /
 
+  # THE GUARD THAT MATTERS. Apache reprocesses this whole ruleset against the
+  # internally rewritten URI, so a catch-all rule will happily rewrite its own
+  # output ("landing/dist/x" → "landing/dist/landing/dist/x", …) until the
+  # internal redirect limit trips and returns 500 "Internal Redirection limit
+  # exceeded" — a 500, note, not a clean 404 or a browser redirect loop.
+  #
+  # This must match against the CURRENT path, which per-directory reprocessing
+  # does update. An earlier attempt guarded with `RewriteCond %{REQUEST_URI}
+  # !^/landing/dist/` and still 500'd, because in .htaccess context
+  # %{REQUEST_URI} keeps the ORIGINAL request URI — on the second pass it was
+  # still "/", the condition still passed, and the loop was untouched. The
+  # rule pattern below has no such problem: it sees the rewritten path.
+  RewriteRule ^landing/dist/ - [L]
+
   # Root request → the prerendered Spanish document explicitly, so
   # DirectoryIndex ambiguity never comes into play.
   RewriteRule ^$ landing/dist/index.html [L]
 
-  # THE GUARD THAT MATTERS: without this condition, the rule below rewrites
-  # its OWN output. Apache reprocesses the ruleset against the internally
-  # rewritten URI, "landing/dist/x" matches "^(.*)$" again, and it becomes
-  # "landing/dist/landing/dist/x", forever — until Apache's internal redirect
-  # limit (10) trips and it returns 500 "Internal Redirection limit
-  # exceeded", not a clean 404. This is what actually produced the 500 the
-  # first version of this file caused.
-  RewriteCond %{REQUEST_URI} !^/landing/dist/
-
-  # Everything else (en.html, /assets/*, the hero photo, …) is served from the
-  # same relative path inside landing/dist/. No fallback-to-index: the landing
-  # page has no client-side routing beyond in-page anchors, so a path that
-  # isn't a real file there should 404, not silently serve the homepage.
+  # Anything that really exists inside landing/dist/ (en.html, /assets/*, the
+  # hero photo, …) is served from there. The -f test is a second, independent
+  # brake on the loop: on a reprocessed pass it would be checking for
+  # landing/dist/landing/dist/…, which never exists.
+  RewriteCond %{DOCUMENT_ROOT}/landing/dist/$1 -f
   RewriteRule ^(.*)$ landing/dist/$1 [L]
+
+  # Everything else has no public URL: package.json, node_modules/, .git/,
+  # core/, web/, shared/, the sources. Without this line those would fall
+  # through to the real files at the repo root and be served, which is the
+  # whole problem this file exists to solve. 404 rather than 403 so the
+  # response says nothing about what does or doesn't exist on disk.
+  #
+  # This also covers paths that simply aren't in the landing build: the page
+  # has no client-side routing beyond in-page anchors, so there is no reason
+  # to fall back to index.html and pretend an unknown URL is the homepage.
+  RewriteRule ^ - [R=404,L]
 </IfModule>
 
 # Fingerprinted assets are immutable; the HTML must never be cached, or a
