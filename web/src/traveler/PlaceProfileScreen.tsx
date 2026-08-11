@@ -180,7 +180,7 @@ export function PlaceProfileScreen() {
                     key={url}
                     type="button"
                     onClick={() => setViewerIndex(i)}
-                    aria-label={t('profile.gallery.open', 'Ver foto')}
+                    aria-label={t('profile.gallery.open')}
                     className="overflow-hidden rounded-md transition hover:opacity-90"
                   >
                     <img src={url} alt="" loading="lazy" className="h-40 w-full object-cover" />
@@ -217,7 +217,7 @@ export function PlaceProfileScreen() {
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <Card className="space-y-4 p-6">
             <Button fullWidth iconLeft="navigation" onClick={openDirections}>
-              {t('profile.directions', 'Cómo llegar')}
+              {t('profile.directions')}
             </Button>
             <Button
               fullWidth

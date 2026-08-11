@@ -178,7 +178,7 @@ export function LocationPicker({
       <div
         ref={container}
         className="h-[360px] w-full overflow-hidden rounded-lg border border-border"
-        aria-label={t('services.map', 'Mapa')}
+        aria-label={t('services.map')}
       />
       {mapFailed && <p className="text-xs text-muted">{t('services.mapUnavailable')}</p>}
 

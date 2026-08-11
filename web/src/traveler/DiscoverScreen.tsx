@@ -84,7 +84,7 @@ export function DiscoverScreen() {
           faster than reading a wrapped block of twelve chips. */}
       <div className="mt-8 flex snap-x gap-2 overflow-x-auto pb-2">
         <Chip active={mood === null} onClick={() => setMood(null)}>
-          {t('discover.allMoods', 'Todos')}
+          {t('discover.allMoods')}
         </Chip>
         {MOODS.map((m) => (
           <Chip key={m} active={mood === m} onClick={() => setMood(m)} iconLeft={MOOD_ICON[m]}>

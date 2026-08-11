@@ -202,7 +202,7 @@ export function ReviewsSection({ targetId }: { targetId: string }) {
                     {review.reply && (
                       <div className="mt-3 rounded-md bg-surface-2 p-3">
                         <p className="text-xs font-extrabold text-muted">
-                          {t('reviews.ownerReply', 'Respuesta del negocio')}
+                          {t('reviews.ownerReplyLabel')}
                         </p>
                         <p className="mt-1 text-sm text-text">{review.reply.text}</p>
                       </div>

@@ -45,7 +45,7 @@ export function OpeningHoursEditor({
               hour.closed ? 'bg-surface text-muted' : 'bg-sunset text-white shadow-red',
             )}
           >
-            {hour.closed ? t('services.closed', 'Cerrado') : t('services.open', 'Abierto')}
+            {hour.closed ? t('services.closed') : t('services.open')}
           </button>
 
           {!hour.closed && (
@@ -54,7 +54,7 @@ export function OpeningHoursEditor({
                 type="time"
                 value={hour.open}
                 onChange={(e) => update(hour.day, { open: e.target.value })}
-                aria-label={t('services.openTime', 'Hora de apertura')}
+                aria-label={t('services.openTime')}
                 className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-text outline-none focus:border-primary"
               />
               <span className="text-muted">—</span>
@@ -62,7 +62,7 @@ export function OpeningHoursEditor({
                 type="time"
                 value={hour.close}
                 onChange={(e) => update(hour.day, { close: e.target.value })}
-                aria-label={t('services.closeTime', 'Hora de cierre')}
+                aria-label={t('services.closeTime')}
                 className="rounded-md border border-border bg-surface px-2.5 py-1.5 text-sm text-text outline-none focus:border-primary"
               />
             </div>

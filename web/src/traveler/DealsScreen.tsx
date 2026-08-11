@@ -73,7 +73,7 @@ export function DealsScreen() {
         {!error && deals === null && <Spinner label={t('common.loading')} />}
 
         {!error && deals !== null && deals.length === 0 && (
-          <EmptyState icon="ticket" title={t('deals.empty', 'No hay promociones activas')} />
+          <EmptyState icon="ticket" title={t('deals.emptyTitle')} />
         )}
 
         {!error && deals && deals.length > 0 && (
@@ -107,7 +107,7 @@ export function DealsScreen() {
                     </p>
                     <p className="flex items-center gap-1.5 text-xs font-bold text-muted">
                       <Icon name="clock" size={13} />
-                      {t('deals.until', { date: until, defaultValue: `Hasta ${until}` })}
+                      {t('deals.validUntil', { date: until })}
                     </p>
                     {placeName && (
                       <Button

@@ -272,7 +272,15 @@ export function AIGuideScreen() {
         <aside className="space-y-4 lg:sticky lg:top-24 lg:self-start">
           {plan ? (
             <Card className="space-y-4 p-6">
-              <h2 className="font-display text-lg font-extrabold text-text">{t('guide.plan')}</h2>
+              {/* `guide.plan` is a NAMESPACE, not a string — it holds the
+                  pluralized stopCount. Rendering it directly printed i18next's
+                  "returned an object instead of string" complaint as the
+                  panel's heading. Uses the same key the mobile PlanView does,
+                  so both surfaces title a plan identically instead of one
+                  inventing its own wording. */}
+              <h2 className="font-display text-lg font-extrabold text-text">
+                {t('guide.plan.stopCount', { count: plan.stops.length })}
+              </h2>
               {plan.intro && <p className="text-sm leading-relaxed text-muted">{plan.intro}</p>}
               <ol className="space-y-3">
                 {plan.stops.map((stop) => (
@@ -294,7 +302,12 @@ export function AIGuideScreen() {
             </Card>
           ) : (
             <Card className="p-6">
-              <p className="text-sm text-muted">{t('guide.plan')}</p>
+              {/* Its own key, not a reused one: this is the placeholder BEFORE
+                  any plan exists, and it says what the panel is for. The old
+                  code pointed both this and the heading above at the same
+                  namespace, which is how one mistake produced two wrong
+                  strings. */}
+              <p className="text-sm text-muted">{t('web.plan.empty')}</p>
             </Card>
           )}
 

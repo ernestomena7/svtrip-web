@@ -125,7 +125,8 @@
     "spinning": "Girando…",
     "spinInsufficientData": "Necesitamos más lugares calificados para girar la ruleta todavía.",
     "save": "Guardar",
-    "unsave": "Quitar de guardados"
+    "unsave": "Quitar de guardados",
+    "allMoods": "Todos"
   },
   "deals": {
     "validUntil": "Válido hasta {{date}}",
@@ -154,14 +155,16 @@
       "title": "Fotos",
       "viewerLabel": "Visor de fotos",
       "previous": "Anterior",
-      "next": "Siguiente"
+      "next": "Siguiente",
+      "open": "Ver foto"
     },
     "menu": {
       "title": "Menú",
       "hint": "Tocá una imagen para verla más grande.",
       "imageAlt": "Página {{n}} del menú"
     },
-    "persona": "Modo"
+    "persona": "Modo",
+    "directions": "Cómo llegar"
   },
   "reviews": {
     "title": "Reseñas",
@@ -386,7 +389,11 @@
     "emptyBody": "Publicá tu primer negocio, lugar o actividad.",
     "locationMissing": "Falta la ubicación. Marcá el punto en el mapa o ingresá las coordenadas.",
     "searchAddress": "Buscar",
-    "sessionLostHint": "Tu sesión venció. Tu trabajo sigue acá; iniciá sesión en otra pestaña y volvé para guardar."
+    "sessionLostHint": "Tu sesión venció. Tu trabajo sigue acá; iniciá sesión en otra pestaña y volvé para guardar.",
+    "map": "Mapa",
+    "open": "Abierto",
+    "openTime": "Hora de apertura",
+    "closeTime": "Hora de cierre"
   },
   "days": {
     "sun": "Dom",
@@ -566,6 +573,9 @@
       "title": "Esta sección no cargó",
       "body": "El resto de la aplicación sigue funcionando. Probá recargar la página.",
       "action": "Recargar"
+    },
+    "plan": {
+      "empty": "Acá te va a quedar el plan, para que lo tengás a la vista mientras seguís conversando."
     }
   }
 }

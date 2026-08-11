@@ -125,7 +125,8 @@
     "spinning": "Spinning…",
     "spinInsufficientData": "We need a few more rated places before we can spin.",
     "save": "Save",
-    "unsave": "Remove from saved"
+    "unsave": "Remove from saved",
+    "allMoods": "All"
   },
   "deals": {
     "validUntil": "Valid until {{date}}",
@@ -154,14 +155,16 @@
       "title": "Photos",
       "viewerLabel": "Photo viewer",
       "previous": "Previous",
-      "next": "Next"
+      "next": "Next",
+      "open": "View photo"
     },
     "menu": {
       "title": "Menu",
       "hint": "Tap an image to see it larger.",
       "imageAlt": "Menu page {{n}}"
     },
-    "persona": "Mode"
+    "persona": "Mode",
+    "directions": "Get directions"
   },
   "reviews": {
     "title": "Reviews",
@@ -386,7 +389,11 @@
     "emptyBody": "Publish your first business, place or activity.",
     "locationMissing": "Location is missing. Drop the pin on the map or enter the coordinates.",
     "searchAddress": "Search",
-    "sessionLostHint": "Your session expired. Your work is still here — sign in on another tab and come back to save."
+    "sessionLostHint": "Your session expired. Your work is still here — sign in on another tab and come back to save.",
+    "map": "Map",
+    "open": "Open",
+    "openTime": "Opening time",
+    "closeTime": "Closing time"
   },
   "days": {
     "sun": "Sun",
@@ -566,6 +573,9 @@
       "title": "This section didn't load",
       "body": "The rest of the app is still working. Try reloading the page.",
       "action": "Reload"
+    },
+    "plan": {
+      "empty": "Your plan will stay here, in view while you keep the conversation going."
     }
   }
 }
