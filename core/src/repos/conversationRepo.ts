@@ -99,11 +99,46 @@ export function subscribeToConversations(
   return onSnapshot(
     convosCol(uid),
     (snap) => {
-      const rows = snap.docs.map((d) => d.data() as Conversation);
-      cb(rows.sort((a, b) => (b.updatedAt ?? 0) - (a.updatedAt ?? 0)));
+      const rows = snap.docs.map(
+        (d): Conversation => ({
+          ...(d.data() as Conversation),
+          createdAt: millis(d.get('createdAt')),
+          updatedAt: millis(d.get('updatedAt')),
+        }),
+      );
+      cb(rows.sort((a, b) => b.updatedAt - a.updatedAt));
     },
     () => onError?.(),
   );
+}
+
+/**
+ * Firestore hands back what it stored, and `serverTimestamp()` is stored as a
+ * `Timestamp` object — never the `number` the `Conversation` type declares.
+ * `d.data() as Conversation` only ASSERTED that; it never made it true, so
+ * every reader downstream was handed an object while the compiler promised a
+ * number.
+ *
+ * This surfaced as a blank page, not a type error. `Timestamp.valueOf()`
+ * returns a sortable numeric string, so `updatedAt > 0` passed its guard and
+ * the code went on to `new Date(theObject)` — Invalid Date — and
+ * `Intl.DateTimeFormat.format()` threw `RangeError: Invalid time value`,
+ * uncaught, taking the whole React tree down with it. The sort above was
+ * quietly broken too: object minus object is NaN, so the list was never
+ * actually ordered by recency.
+ *
+ * Messages do not need this — `persistTurn` writes their `createdAt` as a
+ * plain `Date.now()`. Only the conversation document uses a server timestamp,
+ * which is the right call there (it must not trust a client's clock for
+ * ordering) and is precisely why the conversion belongs here.
+ *
+ * Returns 0 for a null mid-write value, matching the documented behaviour
+ * above: the row stays in the list and simply renders without a date.
+ */
+function millis(value: unknown): number {
+  if (typeof value === 'number') return value;
+  const ts = value as { toMillis?: () => number } | null;
+  return typeof ts?.toMillis === 'function' ? ts.toMillis() : 0;
 }
 
 /** Live subscription to a conversation's messages, ordered chronologically. */
