@@ -74,6 +74,44 @@ work — without it, every deep link (`/place/el-tunco`, a reload on any route
 other than `/`) 404s while the app itself is fine. Confirm it uploaded; many
 FTP clients hide dotfiles by default.
 
+### Deploying as a Node app from GitHub
+
+Hostinger's "deploy a Node app from GitHub" flow expects ONE application at the
+repository root: it runs `npm install`, then `npm run build`, then `npm start`.
+This repo is two static sites instead, so `server.js` at the root is the adapter
+between the two shapes. It renders nothing and imports nothing from the app — it
+serves the `dist/` folders the build already produced.
+
+```bash
+npm install
+npm run build
+npm start          # honours PORT, defaults to 4173
+```
+
+Which surface it serves:
+
+| `SVTRIP_SURFACE` | Serves |
+|---|---|
+| `landing` | the marketing page only |
+| `web` | the desktop app only |
+| *(unset)* | decides per request: an `app.*` Host gets the web app, anything else gets the landing |
+
+That covers both Hostinger layouts without a rebuild: two application slots from
+this one repo, or a single slot with both domains pointed at it.
+
+It refuses to start if a `dist/` is missing, rather than coming up and serving
+404s — a host that reports "running" while every request 404s is the hardest
+kind of broken to diagnose from outside.
+
+**Set `VITE_LANDING_URL=https://svtrip.com`** in the deploy environment. It is
+read at runtime by the web app to send a visitor back to the marketing site on
+sign-out; unset, it falls back to the app's own origin, so sign-out quietly
+keeps people inside the app.
+
+Note that the subdomain-vs-subdirectory choice is a **build** decision, not a
+server one — `server.js` handles either, but `web/dist` has its base URL baked
+in. See `APP_BASE_PATH` above.
+
 ## Where everything else lives
 
 | Piece | Where |
