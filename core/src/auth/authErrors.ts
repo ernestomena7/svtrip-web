@@ -17,6 +17,8 @@ export type AuthErrorCode =
   | 'invalid_email'
   | 'reset_link_expired'
   | 'reset_link_invalid'
+  | 'wrong_current_password'
+  | 'requires_recent_login'
   | 'rate_limited'
   | 'network'
   | 'unknown';
@@ -64,6 +66,39 @@ export function mapAuthError(err: unknown): MappedAuthError {
   const raw = (err as { code?: unknown })?.code;
   if (typeof raw !== 'string') return UNKNOWN;
   return MAP[raw] ?? UNKNOWN;
+}
+
+/**
+ * Normalize an error from changing the password of a SIGNED-IN account
+ * (feature 011).
+ *
+ * A separate mapper, and the separation is the whole point. `MAP` above collapses
+ * `auth/wrong-password` into the generic credential failure and says "never
+ * split these" — correct at SIGN-IN, where distinguishing "wrong password" from
+ * "no such user" tells an attacker which emails have accounts.
+ *
+ * Changing your own password is not that situation. The traveler is already
+ * signed in and has already proved they own the account, so naming the actual
+ * problem leaks nothing and saves them guessing which of three fields is wrong.
+ * Re-pointing `auth/wrong-password` globally would have been the tempting fix
+ * and would have quietly reopened the sign-in oracle.
+ */
+export function mapPasswordChangeError(err: unknown): MappedAuthError {
+  const raw = (err as { code?: unknown })?.code;
+  if (typeof raw !== 'string') return UNKNOWN;
+  switch (raw) {
+    case 'auth/wrong-password':
+    case 'auth/invalid-credential':
+    case 'auth/invalid-login-credentials':
+      return { code: 'wrong_current_password', messageKey: 'auth.errors.wrongCurrentPassword' };
+    case 'auth/requires-recent-login':
+      // The reauthentication above should prevent this, but a session can still
+      // age out between the two calls. Telling them to sign in again is the only
+      // honest instruction.
+      return { code: 'requires_recent_login', messageKey: 'auth.errors.requiresRecentLogin' };
+    default:
+      return mapAuthError(err);
+  }
 }
 
 /** Client-side password check so the traveler gets an immediate, localized message. */

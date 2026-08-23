@@ -31,6 +31,7 @@ import { Icon } from '@svtrip/core/Icon';
 import { ScoreBadge } from '../components/ScoreBadge';
 import { Button, Card, ErrorState, Spinner } from '../components/ui';
 import { GalleryViewer } from './GalleryViewer';
+import { LocationPreviewMap } from './LocationPreviewMap';
 import { ReviewsSection } from './ReviewsSection';
 import { DesktopLayout } from '../shell/DesktopLayout';
 
@@ -216,6 +217,10 @@ export function PlaceProfileScreen() {
             when someone has decided to go. */}
         <aside className="lg:sticky lg:top-24 lg:self-start">
           <Card className="space-y-4 p-6">
+            {/* The map sits with the practical facts rather than in the story
+                column: it answers "where is this and can I get there", the same
+                question as the directions button directly under it. */}
+            <LocationPreviewMap lat={place.lat} lng={place.lng} />
             <Button fullWidth iconLeft="navigation" onClick={openDirections}>
               {t('profile.directions')}
             </Button>

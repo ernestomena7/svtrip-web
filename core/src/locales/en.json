@@ -41,7 +41,9 @@
       "intentHint": {
         "traveler": "Discover places, save favorites and build your plans.",
         "business": "You can travel too, and manage your business on SVTrip."
-      }
+      },
+      "withGoogle": "Continue with Google",
+      "orEmail": "or sign up with your email"
     },
     "forgot": {
       "link": "Forgot your password?",
@@ -69,7 +71,9 @@
       "resetLinkExpired": "That link expired. Request a new one.",
       "resetLinkInvalid": "That link isn't valid or was already used. Request a new one.",
       "rateLimited": "Too many attempts. Wait a moment and try again.",
-      "network": "You're offline. Check your connection and try again."
+      "network": "You're offline. Check your connection and try again.",
+      "wrongCurrentPassword": "That current password is not correct.",
+      "requiresRecentLogin": "For your security, sign in again before changing your password."
     }
   },
   "onboarding": {
@@ -135,6 +139,7 @@
   },
   "profile": {
     "language": "Language",
+    "moods": "Interests",
     "mode": "Mode",
     "traveler": "Traveler",
     "provider": "Business",
@@ -164,7 +169,10 @@
       "imageAlt": "Menu page {{n}}"
     },
     "persona": "Mode",
-    "directions": "Get directions"
+    "directions": "Get directions",
+    "map": {
+      "label": "Map showing the business location"
+    }
   },
   "reviews": {
     "title": "Reviews",
@@ -576,6 +584,65 @@
     },
     "plan": {
       "empty": "Your plan will stay here, in view while you keep the conversation going."
+    }
+  },
+  "admin": {
+    "title": "Taxonomies",
+    "subtitle": "Add, rename or deactivate the business types, interests and services the rest of the product offers as choices.",
+    "tabs": {
+      "businessTypes": "Business types",
+      "moods": "Interests",
+      "services": "Services"
+    },
+    "existing": "Current entries",
+    "addNew": "Add an entry",
+    "key": "Key",
+    "labelEs": "Name (Español)",
+    "labelEn": "Name (English)",
+    "scope": "Applies to",
+    "scopeUniversal": "All types",
+    "scopeSpecific": "Specific types",
+    "create": "Add",
+    "deactivate": "Deactivate",
+    "reactivate": "Reactivate",
+    "custom": "added by you",
+    "changedAt": "last changed {{date}}",
+    "confirmLastActive": "This is the last active entry. Deactivating it leaves nobody anything to choose. Are you sure?",
+    "openManager": "Manage taxonomies"
+  },
+  "account": {
+    "firstName": "First name",
+    "lastName": "Last name",
+    "gender": "Gender",
+    "age": "Age",
+    "country": "Country of residence",
+    "maritalStatus": "Marital status",
+    "genderOption": {
+      "masculine": "Male",
+      "feminine": "Female"
+    },
+    "maritalOption": {
+      "single": "Single",
+      "married": "Married"
+    },
+    "maritalOptional": "Optional",
+    "confirmPassword": "Confirm password",
+    "changePassword": "Change password",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "savePassword": "Save password",
+    "passwordChanged": "Your password has been updated.",
+    "emailLocked": "Your email identifies your account and cannot be changed.",
+    "save": "Save changes",
+    "saved": "Changes saved.",
+    "completeTitle": "Tell us a bit about you",
+    "completeSubtitle": "Just this left to finish your profile.",
+    "incompleteNotice": "Your profile is missing a few details: {{fields}}.",
+    "errors": {
+      "required": "Please fill this in.",
+      "passwordMismatch": "The passwords do not match.",
+      "ageRange": "Enter an age between {{min}} and {{max}}.",
+      "ageDigits": "Age only accepts numbers."
     }
   }
 }

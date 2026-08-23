@@ -35,7 +35,8 @@ import {
 } from '@svtrip/shared';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { createListing, updateListing, type ListingInput } from '@svtrip/core/repos/listingsRepo';
-import { MOOD_ICON } from '@svtrip/core/moodIcons';
+import { moodIcon } from '@svtrip/core/moodIcons';
+import { useMergedTaxonomy, useScopedServices } from '@svtrip/core/taxonomy/useTaxonomy';
 import { Button, Card, Chip, cx } from '../components/ui';
 import { BilingualField, fromLegacy } from './BilingualField';
 import { BusinessTypePicker } from './BusinessTypePicker';
@@ -100,6 +101,15 @@ export function ListingForm({
   const lastPhotoLocked = Boolean(existing && existing.active !== false && isPublishable(existing));
 
   const availableServices = servicesFor(businessType);
+  // Admin-managed vocabularies (feature 010). `servicesFor()` still owns which
+  // BUILT-IN services suit this type; admin-created ones carry their own scope,
+  // so both are merged here rather than either one deciding alone.
+  const { keys: moodKeys, label: moodLabel } = useMergedTaxonomy('moods', MOODS, moods);
+  const { keys: scopedServices, label: serviceLabel } = useScopedServices(
+    businessType,
+    availableServices,
+    services,
+  );
 
   function toggle(list: string[], value: string, set: (next: string[]) => void) {
     set(list.includes(value) ? list.filter((v) => v !== value) : [...list, value]);
@@ -200,13 +210,13 @@ export function ListingForm({
         <div className="space-y-2">
           <p className="text-sm font-bold text-muted">{t('services.additionalServices')}</p>
           <div className="flex flex-wrap gap-2">
-            {availableServices.map((key) => (
+            {scopedServices.map((key) => (
               <Chip
                 key={key}
                 active={services.includes(key)}
                 onClick={() => toggle(services, key, setServices)}
               >
-                {t(`services.options.${key}`)}
+                {serviceLabel(key)}
               </Chip>
             ))}
           </div>
@@ -215,14 +225,14 @@ export function ListingForm({
         <div className="space-y-2">
           <p className="text-sm font-bold text-muted">{t('services.vibes')}</p>
           <div className="flex flex-wrap gap-2">
-            {MOODS.map((mood) => (
+            {moodKeys.map((mood) => (
               <Chip
                 key={mood}
                 active={moods.includes(mood)}
-                iconLeft={MOOD_ICON[mood]}
+                iconLeft={moodIcon(mood)}
                 onClick={() => toggle(moods, mood, setMoods)}
               >
-                {t(`moods.${mood}`)}
+                {moodLabel(mood)}
               </Chip>
             ))}
           </div>

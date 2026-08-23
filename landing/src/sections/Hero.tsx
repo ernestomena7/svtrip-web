@@ -31,11 +31,11 @@ export function Hero() {
             fetchPriority prop" warning — HTML attribute names are
             case-insensitive at parse time, so the shipped
             `fetchPriority="high"` is read by every real browser as
-            `fetchpriority`, identically. Verified in the built output
-            (landing/dist/index.html) rather than assumed. A lowercase-typed
-            fix was tried and reverted: TypeScript's ImgHTMLAttributes has no
-            slot for an untyped lowercase attribute, so it broke the build for
-            a warning that was never a functional problem. */}
+            `fetchpriority`, identically. Verified in the built output rather
+            than assumed. A lowercase-typed fix was tried and reverted:
+            TypeScript's ImgHTMLAttributes has no slot for an untyped
+            lowercase attribute, so it broke the build for a warning that was
+            never a functional problem. */}
         <img
           src="/hero-beach.jpg"
           alt=""

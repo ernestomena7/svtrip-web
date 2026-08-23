@@ -41,7 +41,9 @@
       "intentHint": {
         "traveler": "Descubrí lugares, guardá tus favoritos y armá tus planes.",
         "business": "Además de viajar, vas a poder gestionar tu negocio en SVTrip."
-      }
+      },
+      "withGoogle": "Continuar con Google",
+      "orEmail": "o registrate con tu correo"
     },
     "forgot": {
       "link": "¿Olvidaste tu contraseña?",
@@ -69,7 +71,9 @@
       "resetLinkExpired": "El enlace venció. Pedí uno nuevo.",
       "resetLinkInvalid": "El enlace no es válido o ya se usó. Pedí uno nuevo.",
       "rateLimited": "Demasiados intentos. Esperá un momento y probá de nuevo.",
-      "network": "Sin conexión. Revisá tu internet y probá de nuevo."
+      "network": "Sin conexión. Revisá tu internet y probá de nuevo.",
+      "wrongCurrentPassword": "La contraseña actual no es correcta.",
+      "requiresRecentLogin": "Por seguridad, volvé a iniciar sesión antes de cambiar tu contraseña."
     }
   },
   "onboarding": {
@@ -135,6 +139,7 @@
   },
   "profile": {
     "language": "Idioma",
+    "moods": "Gustos",
     "mode": "Modo",
     "traveler": "Viajero",
     "provider": "Negocio",
@@ -164,7 +169,10 @@
       "imageAlt": "Página {{n}} del menú"
     },
     "persona": "Modo",
-    "directions": "Cómo llegar"
+    "directions": "Cómo llegar",
+    "map": {
+      "label": "Mapa con la ubicación del negocio"
+    }
   },
   "reviews": {
     "title": "Reseñas",
@@ -576,6 +584,65 @@
     },
     "plan": {
       "empty": "Acá te va a quedar el plan, para que lo tengás a la vista mientras seguís conversando."
+    }
+  },
+  "admin": {
+    "title": "Taxonomías",
+    "subtitle": "Agregá, renombrá o desactivá los tipos de negocio, gustos y servicios que el resto del producto ofrece para elegir.",
+    "tabs": {
+      "businessTypes": "Tipos de negocio",
+      "moods": "Gustos",
+      "services": "Servicios"
+    },
+    "existing": "Entradas actuales",
+    "addNew": "Agregar una entrada",
+    "key": "Clave",
+    "labelEs": "Nombre (Español)",
+    "labelEn": "Nombre (English)",
+    "scope": "Aplica a",
+    "scopeUniversal": "Todos los tipos",
+    "scopeSpecific": "Tipos específicos",
+    "create": "Agregar",
+    "deactivate": "Desactivar",
+    "reactivate": "Reactivar",
+    "custom": "agregada por vos",
+    "changedAt": "último cambio {{date}}",
+    "confirmLastActive": "Es la última entrada activa. Si la desactivás, nadie va a tener nada que elegir. ¿Seguro?",
+    "openManager": "Administrar taxonomías"
+  },
+  "account": {
+    "firstName": "Nombre",
+    "lastName": "Apellido",
+    "gender": "Género",
+    "age": "Edad",
+    "country": "País de residencia",
+    "maritalStatus": "Estado civil",
+    "genderOption": {
+      "masculine": "Masculino",
+      "feminine": "Femenino"
+    },
+    "maritalOption": {
+      "single": "Soltero/a",
+      "married": "Casado/a"
+    },
+    "maritalOptional": "Opcional",
+    "confirmPassword": "Confirmar contraseña",
+    "changePassword": "Cambiar contraseña",
+    "currentPassword": "Contraseña actual",
+    "newPassword": "Contraseña nueva",
+    "savePassword": "Guardar contraseña",
+    "passwordChanged": "Tu contraseña quedó actualizada.",
+    "emailLocked": "Tu correo identifica tu cuenta y no se puede cambiar.",
+    "save": "Guardar cambios",
+    "saved": "Cambios guardados.",
+    "completeTitle": "Contanos un poco de vos",
+    "completeSubtitle": "Solo nos falta esto para terminar tu perfil.",
+    "incompleteNotice": "Te faltan algunos datos en tu perfil: {{fields}}.",
+    "errors": {
+      "required": "Completá este campo.",
+      "passwordMismatch": "Las contraseñas no coinciden.",
+      "ageRange": "Ingresá una edad entre {{min}} y {{max}}.",
+      "ageDigits": "La edad solo acepta números."
     }
   }
 }

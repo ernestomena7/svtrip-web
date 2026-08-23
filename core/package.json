@@ -37,7 +37,10 @@
     "./uiStore": "./src/uiStore.ts",
     "./useOnlineStatus": "./src/useOnlineStatus.ts",
     "./locales/en.json": "./src/locales/en.json",
-    "./locales/es.json": "./src/locales/es.json"
+    "./locales/es.json": "./src/locales/es.json",
+    "./taxonomy/useTaxonomy": "./src/taxonomy/useTaxonomy.ts",
+    "./taxonomy/resolveTaxonomyLabel": "./src/taxonomy/resolveTaxonomyLabel.ts",
+    "./countries": "./src/countries.ts"
   },
   "scripts": {
     "test": "vitest run",

@@ -20,6 +20,7 @@
 //      rather than rendering a screen the nav never links to.
 import { lazy, Suspense } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
+import { isProfileComplete, predatesProfileFields } from '@svtrip/shared';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { useUiStore } from '@svtrip/core/uiStore';
 import { Spinner } from '../components/ui';
@@ -68,6 +69,22 @@ const SubscriptionScreen = lazy(() =>
 );
 const ClaimBusinessScreen = lazy(() =>
   import('../business/ClaimBusinessScreen').then((m) => ({ default: m.ClaimBusinessScreen })),
+);
+
+// The first-run completion step (feature 011). Rendered by the gate below rather
+// than mounted as a route: it is a checkpoint, not a destination, and giving it
+// a URL would let a traveler bookmark their way past the very thing it gates.
+const CompleteProfileScreen = lazy(() =>
+  import('../account/CompleteProfileScreen').then((m) => ({ default: m.CompleteProfileScreen })),
+);
+const ChooseMoodsScreen = lazy(() =>
+  import('../account/ChooseMoodsScreen').then((m) => ({ default: m.ChooseMoodsScreen })),
+);
+
+// Super-admin only (feature 010), and web only by product decision. Split like
+// the rest: almost nobody who signs in will ever load this bundle.
+const TaxonomyScreen = lazy(() =>
+  import('../admin/TaxonomyScreen').then((m) => ({ default: m.TaxonomyScreen })),
 );
 
 const Loading = () => (
@@ -119,6 +136,13 @@ function SignedInRoutes() {
         <Route path="/subscription" element={<SubscriptionScreen />} />
         <Route path="/claim" element={<ClaimBusinessScreen />} />
 
+        {/* Mounted for every signed-in account on purpose: the screen itself
+            checks the claim and redirects, and the BFF refuses every write
+            regardless. Mounting it conditionally would leak who is a super
+            admin — a non-admin would get a redirect from the guard while an
+            admin got a screen, but an UNMOUNTED route 404s differently. */}
+        <Route path="/admin/taxonomy" element={<TaxonomyScreen />} />
+
         <Route path="*" element={<Navigate to={index} replace />} />
       </Routes>
     </Suspense>
@@ -126,14 +150,51 @@ function SignedInRoutes() {
 }
 
 function AppRoutes() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
 
   // FR-013: wait for the SDK to restore the session. Rendering the signed-out
   // tree here would flash the preview screen on every reload for a signed-in
   // visitor, and briefly redirect deep links to sign-in for no reason.
   if (loading) return <Loading />;
 
-  return user ? <SignedInRoutes /> : <SignedOutRoutes />;
+  if (!user) return <SignedOutRoutes />;
+
+  // The first-run gate (feature 011). This surface has never had one — the same
+  // gap feature 009 found for moods, and the reason a web-only account could
+  // never set them.
+  //
+  // The `profileVersion` condition is what makes grandfathering work. An account
+  // created before feature 011 carries no stamp and is NEVER stopped here
+  // (FR-018); it gets a non-blocking invitation on its profile screen instead.
+  // Only an account born after the feature — which should have been asked at
+  // signup — can be missing something it was actually asked for.
+  if (profile && !predatesProfileFields(profile) && !isProfileComplete(profile)) {
+    return (
+      <Suspense fallback={<Loading />}>
+        <CompleteProfileScreen />
+      </Suspense>
+    );
+  }
+
+  // Then the moods, in that order — "who are you" precedes "what do you like",
+  // matching the mobile app exactly.
+  //
+  // Unlike the step above this one carries NO profileVersion condition, and it
+  // must not: `onboardingComplete` is a field the product has had since feature
+  // 001, so an older account already answered this and is already `true`.
+  // Measured against the live project before shipping: of 32 real accounts,
+  // exactly one is not `true` — the one created while testing this flow. Adding
+  // a grandfathering condition here would instead permanently exempt the only
+  // accounts that genuinely never chose.
+  if (profile && !profile.onboardingComplete) {
+    return (
+      <Suspense fallback={<Loading />}>
+        <ChooseMoodsScreen />
+      </Suspense>
+    );
+  }
+
+  return <SignedInRoutes />;
 }
 
 export function Router() {

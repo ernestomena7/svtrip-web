@@ -47,6 +47,23 @@ export async function getJson<T>(path: string): Promise<T> {
   return res.json() as Promise<T>;
 }
 
+/** PATCH with the same auth + error normalization as postJson (feature 010). */
+export async function patchJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText, code: 'error' }));
+    throw Object.assign(new Error(err.error ?? 'Request failed'), {
+      code: err.code,
+      status: res.status,
+    });
+  }
+  return res.json() as Promise<T>;
+}
+
 /** DELETE with the same auth + error normalization as postJson. */
 export async function deleteJson<T>(path: string): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {

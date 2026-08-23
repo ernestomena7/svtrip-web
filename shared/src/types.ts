@@ -28,12 +28,44 @@ export interface PreferenceSet {
 
 export interface UserProfile {
   uid: string;
+  /**
+   * The name shown everywhere a traveler is named — including on public reviews
+   * and in the operator's claim-approval queue, both of which read this field
+   * SERVER-SIDE (`reviewService.ts`, `claimService.ts`).
+   *
+   * From feature 011 it is DERIVED from `firstName` + `lastName` rather than
+   * independently editable, so the two cannot disagree. It is deliberately NOT
+   * removed: the two services that read it are untouched by that feature, and
+   * leaving it unwritten would silently fall those screens back to their generic
+   * placeholder on reviews that are already published.
+   */
   displayName: string;
   email: string;
   photoURL?: string;
   persona: Persona;
   onboardingComplete: boolean;
   preferences: PreferenceSet;
+  // --- Traveler profile data (feature 011) -----------------------------------
+  // All optional on the TYPE because accounts created before that feature carry
+  // none of them and stay valid and usable (FR-018). Required-ness is a RULE,
+  // checked by `missingProfileFields()`, not a type constraint — encoding it here
+  // would make every pre-011 record fail to typecheck for a reason that has
+  // nothing to do with correctness.
+  firstName?: string;
+  lastName?: string;
+  gender?: 'masculine' | 'feminine';
+  /**
+   * Whole number, 13-120. A stored age goes stale — someone who is 30 today is
+   * still 30 next year unless they return and edit it. A date of birth would
+   * stay accurate on its own; storing the age was the product owner's explicit
+   * choice, recorded here so the tradeoff stays visible.
+   */
+  age?: number;
+  /** ISO 3166-1 alpha-2. The CODE, never the localized name (feature 011). */
+  countryCode?: string;
+  maritalStatus?: 'single' | 'married';
+  /** Absent = the account predates feature 011 = grandfathered, never gated. */
+  profileVersion?: number;
   createdAt: number;
   updatedAt: number;
 }

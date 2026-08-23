@@ -4,7 +4,9 @@
 // and bridge the resulting credential into the Firebase JS SDK so the rest of
 // the app (Firestore + BFF token) keeps working unchanged.
 import { Capacitor } from '@capacitor/core';
+import type { User } from 'firebase/auth';
 import {
+  EmailAuthProvider,
   GoogleAuthProvider,
   confirmPasswordReset,
   createUserWithEmailAndPassword,
@@ -13,6 +15,8 @@ import {
   signInWithEmailAndPassword,
   signInWithPopup,
   signOut,
+  reauthenticateWithCredential,
+  updatePassword,
   verifyPasswordResetCode,
 } from 'firebase/auth';
 import { auth, googleProvider } from '../firebase';
@@ -91,4 +95,39 @@ export function verifyResetCode(oobCode: string): Promise<string> {
 /** Set the new password; the code is consumed and cannot be reused (FR-017). */
 export async function completePasswordReset(oobCode: string, newPassword: string): Promise<void> {
   await confirmPasswordReset(auth, oobCode, newPassword);
+}
+
+/**
+ * Does this account have a password of the product's own? (feature 011.)
+ *
+ * A Google account does not, so "change your password" has nothing to change and
+ * "current password" has nothing to mean — which is why the profile screen must
+ * not offer it (FR-011). Asks whether a password EXISTS rather than whether the
+ * account is Google: an account that has linked both providers correctly keeps
+ * the option.
+ */
+export function hasPasswordProvider(user: User | null): boolean {
+  return Boolean(user?.providerData.some((p) => p.providerId === 'password'));
+}
+
+/**
+ * Change the password of a signed-in account (feature 011, FR-015/FR-016).
+ *
+ * The reauthentication IS the current-password check, and that is not a
+ * shortcut — Firebase refuses `updatePassword` on a session that is not recent
+ * (`auth/requires-recent-login`), so reauthenticating was always going to be
+ * necessary. Doing it with the password the traveler just typed proves the
+ * password is correct AND refreshes the session in one call. Verifying the
+ * current password separately would check the same secret twice and still leave
+ * the reauth to do.
+ *
+ * Confirmation matching is the caller's job — it is a form concern with nothing
+ * to ask the server about.
+ */
+export async function changePassword(currentPassword: string, newPassword: string): Promise<void> {
+  const user = auth.currentUser;
+  if (!user?.email) throw new Error('not_signed_in');
+  const credential = EmailAuthProvider.credential(user.email, currentPassword);
+  await reauthenticateWithCredential(user, credential);
+  await updatePassword(user, newPassword);
 }

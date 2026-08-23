@@ -14,6 +14,7 @@ import type {
   ButtonHTMLAttributes,
   InputHTMLAttributes,
   ReactNode,
+  SelectHTMLAttributes,
   TextareaHTMLAttributes,
 } from 'react';
 import { Icon, type IconName } from '@svtrip/core/Icon';
@@ -106,6 +107,27 @@ const FIELD =
 
 export function TextInput(props: InputHTMLAttributes<HTMLInputElement>) {
   return <input {...props} className={cx(FIELD, props.className)} />;
+}
+
+
+/**
+ * A native select, styled from the same token string every other input uses.
+ *
+ * The first component of its kind in the product (feature 011). The country
+ * list has ~249 options, and every existing choice pattern here — pills, chips,
+ * segmented toggles — is built for small fixed sets: 249 pills is unusable, and
+ * on a 390px phone it is not even scrollable in any sensible way.
+ *
+ * Native rather than a custom listbox on purpose. The platform picker already
+ * handles keyboard navigation, type-ahead, and the full-screen wheel a phone
+ * shows for long lists — all of which a hand-rolled version would have to
+ * reimplement and would get subtly wrong. `SVTrip_Design_System/` defines no
+ * select pattern; this extends its tokens rather than inventing a visual
+ * language, and the gap is recorded in the feature plan so the system can
+ * absorb it.
+ */
+export function Select(props: SelectHTMLAttributes<HTMLSelectElement>) {
+  return <select {...props} className={cx(FIELD, 'appearance-none pr-9', props.className)} />;
 }
 
 export function TextArea(props: TextareaHTMLAttributes<HTMLTextAreaElement>) {
