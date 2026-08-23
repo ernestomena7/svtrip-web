@@ -112,35 +112,23 @@ Note that the subdomain-vs-subdirectory choice is a **build** decision, not a
 server one — `server.js` handles either, but `web/dist` has its base URL baked
 in. See `APP_BASE_PATH` above.
 
-## Two things in package.json that look wrong and are not
+## One thing in package.json that looks redundant and is not
 
-Both exist to close CVE-2026-12151 (undici WebSocket DoS, high). Deleting either
-silently reintroduces it, and nothing will fail to tell you.
+`web/package.json` declares `firebase` even though nothing under `web/src`
+imports it — the app reaches Firebase through `@svtrip/core`. Removing it looks
+like an obvious cleanup and breaks the build:
 
-**1. `overrides.undici`.** Every `@firebase/*` package pins undici to an *exact*
-`6.19.7` — no caret. The fix is `6.27.0`, in the same major, but npm cannot get
-there on its own, which is why `npm audit` reports the only fix as `firebase@12`.
-The override takes the patched version without dragging the SDK across two
-majors.
-
-**2. `firebase` in the root devDependencies.** The root does not import firebase —
-`core/` does. It is listed anyway because **npm applies root `overrides` only to
-the root package’s own dependency graph, not into a workspace’s**. Verified here
-rather than assumed: with firebase declared only in `core/`, the override was
-ignored across a plain install, `--package-lock-only`, and a full lockfile
-regeneration, while a control override on `ms` (reached through the root’s own
-`express`) applied immediately. Listing firebase at the root puts it in that
-graph. It downloads nothing extra — the same install already had it.
-
-Overrides placed in `core/package.json` are ignored entirely; npm honours them
-only at the root of the install.
-
-To check the pair is still doing its job:
-
-```bash
-npm ls undici --all      # every entry must be >= 6.27.0
-npm audit                # undici must not appear
 ```
+"getAuth" is not exported by "__vite-optional-peer-dep:firebase/auth:@capacitor-firebase/authentication"
+```
+
+`@capacitor-firebase/authentication` (pulled in by `core/` for native Google
+sign-in) declares `firebase/auth` as an **optional peer** and resolves it from
+the importing package’s context. Without the declaration in `web/`, Rollup has
+nothing to resolve and fails at bundle time, not at install time.
+
+It was removed once during the firebase 12 upgrade and put back for exactly this
+reason.
 
 ## Where everything else lives
 
