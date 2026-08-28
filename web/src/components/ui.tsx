@@ -195,7 +195,13 @@ export function Chip({
   children: ReactNode;
   active?: boolean;
   onClick?: () => void;
-  iconLeft?: IconName;
+  /**
+   * Either an icon NAME from the brand line set, or a rendered node — which is
+   * how a Material Symbols glyph gets in (feature 014). Two icon sets now
+   * coexist, and a chip that only accepted one would quietly exclude every
+   * admin-assigned icon from whatever it labels.
+   */
+  iconLeft?: IconName | ReactNode;
 }) {
   return (
     <button
@@ -207,7 +213,7 @@ export function Chip({
         active ? 'border-transparent bg-sunset text-white shadow-red' : 'border-border bg-surface text-text',
       )}
     >
-      {iconLeft && <Icon name={iconLeft} size={14} />}
+      {typeof iconLeft === 'string' ? <Icon name={iconLeft as IconName} size={14} /> : iconLeft}
       {children}
     </button>
   );

@@ -16,6 +16,7 @@ import { patchJson, postJson } from '@svtrip/core/apiClient';
 import { useTaxonomy } from '@svtrip/core/taxonomy/useTaxonomy';
 import { resolveTaxonomyLabel } from '@svtrip/core/taxonomy/resolveTaxonomyLabel';
 import { Button, Card, ErrorState, Spinner, TextInput, cx } from '../components/ui';
+import { IconField, isSubmittableIcon } from './IconField';
 import { DesktopLayout } from '../shell/DesktopLayout';
 import { useSuperAdmin } from './useSuperAdmin';
 
@@ -200,6 +201,7 @@ function CreateEntryForm({
   const [en, setEn] = useState('');
   const [universal, setUniversal] = useState(true);
   const [types, setTypes] = useState<string[]>([]);
+  const [icon, setIcon] = useState('');
   const [busy, setBusy] = useState(false);
 
   const isService = vocabulary === 'services';
@@ -208,6 +210,10 @@ function CreateEntryForm({
     key.trim().length > 0 &&
     es.trim().length > 0 &&
     en.trim().length > 0 &&
+    // Optional, so blank passes — but a name that resolves to nothing must not
+    // be submittable (FR-029). The server checks the same thing; this only
+    // saves the admin a round trip.
+    isSubmittableIcon(icon) &&
     (!isService || universal || types.length > 0);
 
   const typeChoices = useMemo(() => {
@@ -227,10 +233,12 @@ function CreateEntryForm({
         key: key.trim(),
         labelI18n: { es: es.trim(), en: en.trim() },
         ...(scope ? { scope } : {}),
+        ...(icon.trim() ? { icon: icon.trim() } : {}),
       });
       setKey('');
       setEs('');
       setEn('');
+      setIcon('');
       setTypes([]);
       setUniversal(true);
       onCreated();
@@ -263,6 +271,11 @@ function CreateEntryForm({
           <TextInput value={en} onChange={(e) => setEn(e.target.value)} />
         </label>
       </div>
+
+      {/* Offered for ALL THREE vocabularies (D2): the field lives on the
+          taxonomy entry, not on a mood, so moods, business types and services
+          all carry it under identical rules. */}
+      <IconField value={icon} onChange={setIcon} />
 
       {isService && (
         <div className="space-y-2">

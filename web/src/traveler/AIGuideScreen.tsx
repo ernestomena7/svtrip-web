@@ -19,6 +19,9 @@ import type { GeneratedPlan, Message, Place } from '@svtrip/shared';
 import { resolveLocalized } from '@svtrip/shared';
 import { fetchPlaces } from '@svtrip/core/repos/discoverRepo';
 import { streamChat } from '@svtrip/core/apiClient';
+import { ClarifyOptions } from './ClarifyOptions';
+import { IntroductionCard } from './IntroductionCard';
+import { loadExposure, recordShown, recordTakenUp } from '@svtrip/core/repos/exposureRepo';
 import {
   persistTurn,
   subscribeToMessages,
@@ -117,6 +120,12 @@ export function AIGuideScreen() {
   // Held in a ref as well as state: `onDone` fires in the same tick as the last
   // `onPlan`, so reading the state there would persist the previous turn's plan.
   const planRef = useRef<GeneratedPlan | null>(null);
+  /**
+   * The entry introduced on the previous turn (feature 013, FR-013). A ref, so
+   * it is read at send time rather than captured in a closure — an invitation
+   * the traveler ignored must not come straight back.
+   */
+  const lastIntroduced = useRef<string | null>(null);
 
   // A plan stop carries a catalog id and nothing else — feature 004's guarantee
   // that the guide can only ever point at a place that really exists. The name
@@ -163,7 +172,19 @@ export function AIGuideScreen() {
     bottom.current?.scrollIntoView?.({ behavior: 'smooth' });
   }, [turns.length, live]);
 
-  function ask(prompt: string) {
+  /**
+   * The question this reply answers, if any (feature 012).
+   *
+   * Passed explicitly rather than read from state, so a question the traveler
+   * scrolled back to cannot hijack the current thread (FR-014).
+   */
+  interface AnswerRef {
+    clarifyId: string;
+    value: string;
+    options: string[];
+  }
+
+  function ask(prompt: string, answer?: AnswerRef) {
     const text = prompt.trim();
     if (!text || busy) return;
     lastPrompt.current = text;
@@ -174,8 +195,24 @@ export function AIGuideScreen() {
     setBusy(true);
 
     let buffer = '';
-    void streamChat(
-      { message: text, conversationId: conversationId ?? null, language },
+    // Read once per send; a failed read means "seen nothing", which is exactly
+    // how a brand-new traveler is served (FR-007).
+    void loadExposure(user?.uid ?? '').then((seen) =>
+      streamChat(
+      {
+        message: text,
+        conversationId: conversationId ?? null,
+        language,
+        seen,
+        ...(lastIntroduced.current ? { lastIntroduced: lastIntroduced.current } : {}),
+        ...(answer
+          ? {
+              answersClarifyId: answer.clarifyId,
+              answerValue: answer.value,
+              answerOptions: answer.options,
+            }
+          : {}),
+      },
       {
         onToken: (delta) => {
           buffer += delta;
@@ -187,6 +224,16 @@ export function AIGuideScreen() {
         },
         onDone: (id, status) => {
           if (id) setConversationId(id);
+          // Record what was put in front of the traveler, introduction included
+          // (feature 013). Fire-and-forget: a failed write costs a staler
+          // ranking, while awaiting it would put the reply behind a round trip
+          // (FR-006).
+          if (user && planRef.current) {
+            const ids = planRef.current.stops.map((s) => s.catalogId);
+            if (planRef.current.introduction) ids.push(planRef.current.introduction.catalogId);
+            recordShown(user.uid, ids);
+            lastIntroduced.current = planRef.current.introduction?.catalogId ?? null;
+          }
           // From the ref, not from `plan` state: onPlan and onDone land in the
           // same tick, so reading state here would attach the PREVIOUS turn's
           // plan — the same reason planRef exists for persistence below.
@@ -229,6 +276,7 @@ export function AIGuideScreen() {
           setError(message || t('guide.error'));
         },
       },
+      ),
     );
   }
 
@@ -370,8 +418,36 @@ export function AIGuideScreen() {
               {plan.intro && <p className="text-sm leading-relaxed text-muted">{plan.intro}</p>}
               <PlanStops plan={plan} nameFor={nameFor} onOpen={(id) => navigate(`/place/${id}`)} />
               {plan.clarifyingQuestion && (
-                <p className="text-sm text-muted">{plan.clarifyingQuestion}</p>
+                <p className="text-sm text-muted">{t(plan.clarifyingQuestion)}</p>
               )}
+              {/* One unseen place, offered (feature 013, FR-012). Outside the
+                  numbered stops on purpose: an invitation, not a stop. */}
+              {plan.introduction && (
+                <IntroductionCard
+                  introduction={plan.introduction}
+                  name={nameFor(plan.introduction.catalogId)}
+                  onOpen={(catalogId) => {
+                    // Acting on it records it as taken up, so it is never
+                    // introduced as unseen again (FR-002).
+                    if (user) recordTakenUp(user.uid, catalogId);
+                    navigate(`/place/${catalogId}`);
+                  }}
+                />
+              )}
+              {plan.clarifyOptions?.length ? (
+                <ClarifyOptions
+                  options={plan.clarifyOptions}
+                  hintKey="guide.clarify.hint"
+                  disabled={busy}
+                  onPick={(option) =>
+                    ask(t(option.labelKey), {
+                      clarifyId: plan.clarifyId ?? '',
+                      value: option.value,
+                      options: (plan.clarifyOptions ?? []).map((o) => o.value),
+                    })
+                  }
+                />
+              ) : null}
             </Card>
           ) : (
             <Card className="p-6">

@@ -58,6 +58,35 @@ export interface TaxonomyEntry {
   active: boolean;
   /** Set only on services created through the admin interface. */
   scope?: ServiceScope;
+  /**
+   * A Material Symbols icon name a super admin chose (feature 014, US4).
+   *
+   * Optional, so the eleven built-in business types, the eight built-in moods
+   * and every entry already created stay valid with no migration and no
+   * backfill. Absent means "fall back" — see `moodIcon()` for the chain.
+   *
+   * The NAME is the source of truth: human-readable, admin-editable, and stable
+   * across a font upgrade that renumbers glyphs.
+   */
+  icon?: string;
+  /**
+   * The glyph for `icon`, derived and stored by the server.
+   *
+   * Denormalised on purpose, and the reason is a size decision rather than a
+   * performance one. Icons render by CODEPOINT rather than by ligature, because
+   * a ligature paints the literal string `person_check` into the UI the moment
+   * the font is unavailable. Resolving a name to a codepoint needs the official
+   * 4,271-entry map — 94 KB — and the mobile app is installed, so that would be
+   * 94 KB of APK on top of the 362 KB font.
+   *
+   * Storing the codepoint moves that map to where it is already needed: the
+   * server, which validates the name anyway, and the admin form, which previews
+   * it. The phone renders what it was given and carries neither.
+   *
+   * Never written by a client. Never authoritative — if it and `icon` ever
+   * disagree, `icon` wins and this is re-derived.
+   */
+  iconCodepoint?: string;
   /** Who last created/edited/deactivated/reactivated this, from the verified token. */
   lastChangedByUid: string;
   lastChangedAt: number;

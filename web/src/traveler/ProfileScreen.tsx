@@ -22,9 +22,10 @@ import {
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { hasPasswordProvider, signOutUser } from '@svtrip/core/auth/authService';
 import { saveProfileFields, updatePreferences } from '@svtrip/core/auth/userProfile';
+import { clearExposure, useExposure } from '@svtrip/core/repos/exposureRepo';
 import { useUiStore } from '@svtrip/core/uiStore';
-import { Icon } from '@svtrip/core/Icon';
-import { moodIcon } from '@svtrip/core/moodIcons';
+import { Avatar } from '@svtrip/core/Avatar';
+import { TaxonomyGlyph } from '@svtrip/core/TaxonomyGlyph';
 import { useMergedTaxonomy } from '@svtrip/core/taxonomy/useTaxonomy';
 import { Button, Card, Spinner, cx } from '../components/ui';
 import { LANDING_URL } from '../config';
@@ -45,6 +46,9 @@ export function ProfileScreen() {
   const { user, profile } = useAuth();
   const language = useUiStore((s) => s.language);
   const setLanguage = useUiStore((s) => s.setLanguage);
+  // Live, so clearing it updates the count without a reload (feature 013).
+  const { entries: exposure } = useExposure();
+  const [clearing, setClearing] = useState(false);
   /** True from the moment sign-out starts until the browser leaves the app. */
   const [leaving, setLeaving] = useState(false);
   const navigate = useNavigate();
@@ -100,7 +104,11 @@ export function ProfileScreen() {
   const vibes = profile?.preferences.vibes ?? [];
   // Admin-managed moods (feature 010): additions appear here and
   // deactivations disappear, without a release.
-  const { keys: moodKeys, label: moodLabel } = useMergedTaxonomy('moods', MOODS, vibes);
+  const {
+    keys: moodKeys,
+    label: moodLabel,
+    icon: moodGlyph,
+  } = useMergedTaxonomy('moods', MOODS, vibes);
 
   async function toggleMood(mood: string) {
     if (!user) return;
@@ -133,13 +141,14 @@ export function ProfileScreen() {
 
       <div className="mt-8 grid max-w-3xl gap-5">
         <Card className="flex items-center gap-4 bg-dusk p-6 text-white">
-          <span className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-full bg-white/15 font-display text-xl font-extrabold">
-            {profile?.photoURL ? (
-              <img src={profile.photoURL} alt="" className="h-full w-full object-cover" />
-            ) : (
-              (profile?.displayName ?? '?').slice(0, 1).toUpperCase()
-            )}
-          </span>
+          {/* On the navy card, so the fallback needs the light treatment rather
+              than the default surface one. */}
+          <Avatar
+            photoURL={profile?.photoURL}
+            name={profile?.displayName}
+            size={56}
+            className="!bg-white/15 !text-white"
+          />
           <div>
             <p className="font-display text-lg font-extrabold">{profile?.displayName}</p>
             <p className="text-sm text-white/70">{profile?.email}</p>
@@ -153,7 +162,20 @@ export function ProfileScreen() {
               <button
                 key={code}
                 type="button"
-                onClick={() => setLanguage(code)}
+                // Persisted, not only set locally — and this was a real bug.
+                // `setLanguage` writes the zustand store and localStorage but
+                // never the profile, while `AuthProvider`'s subscription calls
+                // `hydrateFrom(preferences.language)` on EVERY snapshot. So the
+                // choice held until the next snapshot and then silently
+                // reverted: switching to English on this screen worked, and
+                // navigating anywhere put the app back in Spanish.
+                //
+                // The mobile profile screen has always done both. This is that
+                // line, missing on this surface.
+                onClick={() => {
+                  setLanguage(code);
+                  if (user) void updatePreferences(user.uid, { language: code });
+                }}
                 aria-pressed={language === code}
                 className={cx(
                   'rounded-pill px-4 py-2 text-sm font-bold transition',
@@ -223,12 +245,45 @@ export function ProfileScreen() {
                     locked && 'opacity-70',
                   )}
                 >
-                  <Icon name={moodIcon(mood)} size={15} />
+                  <TaxonomyGlyph resolved={moodGlyph(mood)} size={15} />
                   {moodLabel(mood)}
                 </button>
               );
             })}
           </div>
+        </Card>
+
+        {/* What the guide remembers, and the way to clear it (feature 013,
+            FR-005).
+
+            A traveler must be able to see behavioural history the product keeps
+            about them and delete it. This is the most personal thing SVTrip
+            stores about a person, so the control lives on the profile beside
+            their other settings rather than buried in the guide — and clearing
+            it returns them to being served exactly as a brand-new traveler
+            (FR-007), which is also what makes eviction safe. */}
+        <Card className="p-6">
+          <p className="text-sm font-bold text-muted">{t('profile.history.title')}</p>
+          <p className="mt-1 text-sm text-muted">{t('profile.history.body')}</p>
+          <p className="mt-3 text-sm text-text">
+            {exposure.length
+              ? t('profile.history.count', { count: exposure.length })
+              : t('profile.history.empty')}
+          </p>
+          {exposure.length > 0 && (
+            <Button
+              variant="secondary"
+              className="mt-3"
+              disabled={clearing}
+              onClick={() => {
+                if (!user) return;
+                setClearing(true);
+                void clearExposure(user.uid).finally(() => setClearing(false));
+              }}
+            >
+              {t('profile.history.clear')}
+            </Button>
+          )}
         </Card>
 
         {/* The way in to the taxonomy manager (feature 010).

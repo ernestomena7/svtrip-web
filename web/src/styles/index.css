@@ -2,6 +2,10 @@
 /* The brand token mirror, shared with the mobile client and the web app. The
    Tailwind preset names these variables; this file is what defines them. */
 @import '@svtrip/core/styles/tokens.css';
+/* Only the two surfaces that draw admin-assigned taxonomy icons pull the
+   362 KB Material Symbols font. The landing page does not — see the note in
+   the file itself. */
+@import '@svtrip/core/styles/taxonomy-icons.css';
 
 @tailwind base;
 @tailwind components;

@@ -49,6 +49,12 @@ export function listingToPlace(l: Listing): Place {
     contentVersion: l.contentVersion,
     phone: l.phone,
     whatsapp: l.whatsapp,
+    // Feature 013 added this to the SERVER mapper and not to this one.
+    // Nothing on the client read it, so the asymmetry stayed invisible —
+    // which is how the original omission hid too.
+    createdAt: l.createdAt,
+    // Feature 014. Copied in BOTH mappers deliberately; see `Place.priceBand`.
+    priceBand: l.priceBand,
   };
 }
 

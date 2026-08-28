@@ -16,6 +16,7 @@ import { TAXONOMY_COLLECTION, mergeTaxonomyKeys, serviceAppliesTo } from '@svtri
 import { db } from '../firebase';
 import { useUiStore } from '../uiStore';
 import { taxonomyLabeller } from './resolveTaxonomyLabel';
+import { resolveEntryIcon, type ResolvedIcon } from '../moodIcons';
 
 const cache = new Map<TaxonomyVocabulary, TaxonomyEntry[]>();
 
@@ -96,7 +97,7 @@ export function useMergedTaxonomy(
   vocabulary: TaxonomyVocabulary,
   builtIn: readonly string[],
   alwaysInclude: readonly string[] = [],
-): { keys: string[]; label: (key: string) => string } {
+): { keys: string[]; label: (key: string) => string; icon: (key: string) => ResolvedIcon } {
   const { t } = useTranslation();
   const language = useUiStore((s) => s.language);
   const { entries } = useTaxonomy(vocabulary);
@@ -114,7 +115,17 @@ export function useMergedTaxonomy(
     [vocabulary, entries, t, language],
   );
 
-  return { keys, label };
+  // Icon resolution rides along with the labels, for the same reason they do:
+  // every picker on both surfaces goes through this one hook, so an assigned
+  // icon lands everywhere at once. A call site that resolved icons for itself is
+  // how a mood ends up with one icon on the phone and another on the desktop —
+  // which FR-042 says is worse than having no icon at all.
+  const icon = useMemo(() => {
+    const byKey = new Map(entries.map((e) => [e.key, e]));
+    return (key: string) => resolveEntryIcon(vocabulary, key, byKey.get(key));
+  }, [vocabulary, entries]);
+
+  return { keys, label, icon };
 }
 
 /**

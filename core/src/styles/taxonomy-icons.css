@@ -1,0 +1,33 @@
+/* Material Symbols, for icons a super admin assigns to a taxonomy entry
+   (feature 014, US4).
+
+   SEPARATE FROM tokens.css ON PURPOSE.
+
+   This lived in `tokens.css` first, and tokens.css is imported by all three
+   surfaces — including the landing page, which has no taxonomy icons and never
+   will. Measured: the landing shipped 362 KB of font inside a 635 KB bundle,
+   **57% of its total weight**, for glyphs it does not render. That page is a
+   marketing page whose first paint is a gate of its own
+   (`npm run check:landing-speed`), so this was not a rounding error.
+
+   Import this only where taxonomy entries are drawn: `client/` and `web/`.
+
+   BUNDLED, never fetched from fonts.googleapis.com — the mobile app is
+   installed and its first launch can be offline (FR-037).
+
+   This is the pinned-axis instance (opsz 24, wght 400, FILL 0, GRAD 0) at
+   362 KB. The full variable font is 5,227 KB and renders identically at the one
+   size and weight used here; shipping it would be a 5 MB mistake nobody could
+   see on screen (FR-036).
+
+   `font-display: block` rather than `swap`: during loading the slot stays EMPTY
+   instead of falling back to readable text. Combined with rendering by codepoint
+   rather than by ligature, there is no state in which an icon's name appears as
+   words in the UI (FR-031, FR-039). */
+@font-face {
+  font-family: 'Material Symbols Rounded';
+  font-style: normal;
+  font-weight: 400;
+  font-display: block;
+  src: url('../assets/material-symbols-rounded.woff2') format('woff2');
+}

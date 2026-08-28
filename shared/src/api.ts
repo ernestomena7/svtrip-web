@@ -6,6 +6,7 @@ import type {
   Recommendation,
   EngagementType,
   GeneratedPlan,
+  ExposureEntry,
 } from './types.js';
 
 export interface ChatHistoryTurn {
@@ -28,6 +29,30 @@ export interface ChatRequest {
    */
   interests?: string[];
   source?: ChatPromptSource;
+  /**
+   * The clarifying question this message answers (feature 012).
+   *
+   * All three are optional so a client that has not been updated keeps working:
+   * without them the message is ordinary prose and still reaches a correct plan
+   * through conversation history — it just does not get the token saving the
+   * fold provides. The mobile client ships inside an installed app, so a
+   * traveler who has not updated must not break.
+   */
+  answersClarifyId?: string;
+  /** The `value` of the option the traveler tapped. */
+  answerValue?: string;
+  /** The values that were offered, so the server can refuse one that was not. */
+  answerOptions?: string[];
+  /**
+   * What the guide has already shown this traveler (feature 013), most recent
+   * first and bounded.
+   *
+   * Optional, so an un-updated client is treated as having seen nothing —
+   * identical to today's behaviour (FR-007).
+   */
+  seen?: ExposureEntry[];
+  /** The entry introduced last turn, so an ignored one is not repeated (FR-013). */
+  lastIntroduced?: string;
 }
 
 /** SSE event payloads streamed from POST /api/ai/chat. */

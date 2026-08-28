@@ -24,7 +24,31 @@ const authState = vi.hoisted(() => ({
   loading: false,
 }));
 vi.mock('@svtrip/core/auth/AuthProvider', () => ({ useAuth: () => authState }));
+// Feature 013 added this dependency to the guide screen, and it initializes
+// Firebase on import. Mocking it is a new-dependency stub, not a change to what
+// any assertion below checks.
+vi.mock('@svtrip/core/repos/exposureRepo', () => ({
+  loadExposure: async () => [],
+  recordShown: () => undefined,
+  recordTakenUp: () => undefined,
+  clearExposure: async () => undefined,
+  useExposure: () => ({ entries: [], loading: false }),
+  SEEN_LIMIT: 60,
+}));
 vi.mock('@svtrip/core/repos/discoverRepo', () => ({ fetchPlaces: async () => [] }));
+
+// `ClarifyOptions` began calling the taxonomy hook in feature 014, which pulls
+// the real module — and with it the Firebase Web SDK — into this suite. Stubbed
+// so the file loads; nothing here is about taxonomy.
+vi.mock('@svtrip/core/taxonomy/useTaxonomy', () => ({
+  useMergedTaxonomy: () => ({
+    keys: [],
+    label: (k: string) => k,
+    icon: () => ({ kind: 'builtIn', name: 'star' }),
+  }),
+  useTaxonomy: () => ({ entries: [], loading: false, reload: () => {} }),
+  useScopedServices: () => ({ keys: [], label: (k: string) => k }),
+}));
 vi.mock('@svtrip/core/repos/useManagedBusinesses', () => ({
   useManagedBusinesses: () => ({ listings: [] }),
 }));

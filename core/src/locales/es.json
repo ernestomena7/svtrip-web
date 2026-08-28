@@ -114,6 +114,17 @@
     "outcome": {
       "noMatch": "Solo recomendamos lugares de nuestra selección curada, y esta vez ninguno encaja.",
       "outOfScope": "El guía solo arma planes de viaje en El Salvador."
+    },
+    "clarify": {
+      "question": "¿Y qué buscás para esta salida?",
+      "hint": "Elegí una opción para que te arme algo que te calce."
+    },
+    "introduce": {
+      "none": "Este no lo has probado. ¿Le damos una oportunidad?",
+      "well-rated": "Este no lo has probado, y a otros viajeros les gustó mucho.",
+      "new": "Este es nuevo en SVTrip y todavía no lo has probado.",
+      "popular": "Este no lo has probado, y ahorita anda muy movido.",
+      "heading": "Una idea más"
     }
   },
   "discover": {
@@ -130,7 +141,22 @@
     "spinInsufficientData": "Necesitamos más lugares calificados para girar la ruleta todavía.",
     "save": "Guardar",
     "unsave": "Quitar de guardados",
-    "allMoods": "Todos"
+    "allMoods": "Todos",
+    "greeting": "¿Qué hacemos hoy?",
+    "moodQuestion": "¿Cuál es tu mood?",
+    "clearMood": "Quitar",
+    "showing_one": "Mostrando {{mood}} · {{count}} lugar",
+    "showing_other": "Mostrando {{mood}} · {{count}} lugares",
+    "emptyTitle": "Aún no hay lugares con esta combinación",
+    "emptyHint": "Probá otro mood o quitá un filtro — El Salvador tiene más para ofrecer.",
+    "emptyAction": "Ver todos los moods",
+    "searchPlaceholder": "Playa, pupusas, volcán…",
+    "filters": "Filtros",
+    "nearby": "Cerca de ti",
+    "recommended": "Recomendados para vos",
+    "featured": "Plan del día",
+    "popular": "Populares esta semana",
+    "moreIn": "Más en {{mood}}"
   },
   "deals": {
     "validUntil": "Válido hasta {{date}}",
@@ -172,6 +198,14 @@
     "directions": "Cómo llegar",
     "map": {
       "label": "Mapa con la ubicación del negocio"
+    },
+    "history": {
+      "title": "Lo que el guía recuerda",
+      "body": "Estos lugares ya te los mostró. Los usa para no repetirse.",
+      "empty": "Todavía no te ha mostrado nada.",
+      "count": "{{count}} lugares recordados",
+      "clear": "Borrar historial",
+      "cleared": "Listo, el guía empieza de cero."
     }
   },
   "reviews": {
@@ -608,7 +642,10 @@
     "custom": "agregada por vos",
     "changedAt": "último cambio {{date}}",
     "confirmLastActive": "Es la última entrada activa. Si la desactivás, nadie va a tener nada que elegir. ¿Seguro?",
-    "openManager": "Administrar taxonomías"
+    "openManager": "Administrar taxonomías",
+    "icon": "Ícono",
+    "iconUnknown": "Ese ícono no existe. Probá otro nombre.",
+    "iconHint": "Opcional. Si lo dejás vacío, se usa el ícono por defecto."
   },
   "account": {
     "firstName": "Nombre",
@@ -644,5 +681,14 @@
       "ageRange": "Ingresá una edad entre {{min}} y {{max}}.",
       "ageDigits": "La edad solo acepta números."
     }
+  },
+  "pricing": {
+    "label": "Rango de precio",
+    "hint": "Opcional. Si lo dejás vacío, la tarjeta no muestra precio.",
+    "none": "Sin especificar",
+    "free": "Gratis",
+    "low": "$",
+    "medium": "$$",
+    "high": "$$$"
   }
 }

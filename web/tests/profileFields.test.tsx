@@ -35,6 +35,17 @@ vi.mock('@svtrip/core/auth/AuthProvider', () => ({
   }),
 }));
 
+// Feature 013 added this dependency to the profile screen, and it initializes
+// Firebase on import. A new-dependency stub, not a change to any assertion.
+vi.mock('@svtrip/core/repos/exposureRepo', () => ({
+  useExposure: () => ({ entries: [], loading: false }),
+  clearExposure: async () => undefined,
+  loadExposure: async () => [],
+  recordShown: () => undefined,
+  recordTakenUp: () => undefined,
+  SEEN_LIMIT: 60,
+}));
+
 vi.mock('@svtrip/core/auth/authService', () => ({
   signOutUser: vi.fn(() => Promise.resolve()),
   hasPasswordProvider: () => hasPassword,
@@ -44,7 +55,7 @@ vi.mock('@svtrip/core/auth/authService', () => ({
 vi.mock('@svtrip/core/taxonomy/useTaxonomy', async () => {
   const { MOODS } = await import('@svtrip/shared');
   return {
-    useMergedTaxonomy: () => ({ keys: [...MOODS], label: (k: string) => k }),
+    useMergedTaxonomy: () => ({ keys: [...MOODS], label: (k: string) => k, icon: () => ({ kind: 'builtIn' as const, name: 'star' as const }) }),
     useTaxonomy: () => ({ entries: [], loading: false, reload: () => {} }),
     useScopedServices: () => ({ keys: [], label: (k: string) => k }),
   };

@@ -114,6 +114,17 @@
     "outcome": {
       "noMatch": "We only recommend places from our curated selection, and none of them fit this time.",
       "outOfScope": "The guide only builds travel plans for El Salvador."
+    },
+    "clarify": {
+      "question": "What are you in the mood for?",
+      "hint": "Pick one so the plan actually fits."
+    },
+    "introduce": {
+      "none": "You haven't tried this one. Want to give it a chance?",
+      "well-rated": "You haven't tried this one, and other travelers rated it well.",
+      "new": "This one is new on SVTrip and you haven't tried it yet.",
+      "popular": "You haven't tried this one, and it's busy right now.",
+      "heading": "One more idea"
     }
   },
   "discover": {
@@ -130,7 +141,22 @@
     "spinInsufficientData": "We need a few more rated places before we can spin.",
     "save": "Save",
     "unsave": "Remove from saved",
-    "allMoods": "All"
+    "allMoods": "All",
+    "greeting": "What shall we do today?",
+    "moodQuestion": "What's your mood?",
+    "clearMood": "Clear",
+    "showing_one": "Showing {{mood}} · {{count}} place",
+    "showing_other": "Showing {{mood}} · {{count}} places",
+    "emptyTitle": "No places match this combination yet",
+    "emptyHint": "Try another mood or clear a filter — El Salvador has more to offer.",
+    "emptyAction": "See all moods",
+    "searchPlaceholder": "Beach, pupusas, volcano…",
+    "filters": "Filters",
+    "nearby": "Near you",
+    "recommended": "Recommended for you",
+    "featured": "Today's plan",
+    "popular": "Popular this week",
+    "moreIn": "More in {{mood}}"
   },
   "deals": {
     "validUntil": "Valid until {{date}}",
@@ -172,6 +198,14 @@
     "directions": "Get directions",
     "map": {
       "label": "Map showing the business location"
+    },
+    "history": {
+      "title": "What the guide remembers",
+      "body": "These are places it has already shown you. It uses them to avoid repeating itself.",
+      "empty": "It has not shown you anything yet.",
+      "count": "{{count}} places remembered",
+      "clear": "Clear history",
+      "cleared": "Done — the guide starts fresh."
     }
   },
   "reviews": {
@@ -608,7 +642,10 @@
     "custom": "added by you",
     "changedAt": "last changed {{date}}",
     "confirmLastActive": "This is the last active entry. Deactivating it leaves nobody anything to choose. Are you sure?",
-    "openManager": "Manage taxonomies"
+    "openManager": "Manage taxonomies",
+    "icon": "Icon",
+    "iconUnknown": "That icon doesn't exist. Try another name.",
+    "iconHint": "Optional. Left empty, the default icon is used."
   },
   "account": {
     "firstName": "First name",
@@ -644,5 +681,14 @@
       "ageRange": "Enter an age between {{min}} and {{max}}.",
       "ageDigits": "Age only accepts numbers."
     }
+  },
+  "pricing": {
+    "label": "Price range",
+    "hint": "Optional. Left empty, the card shows no price.",
+    "none": "Not specified",
+    "free": "Free",
+    "low": "$",
+    "medium": "$$",
+    "high": "$$$"
   }
 }

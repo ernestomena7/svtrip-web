@@ -1,5 +1,6 @@
 // Shared domain entities for SVTrip. Mirrors specs/.../data-model.md.
 // Used by both the client and the Express BFF.
+import type { PriceBand } from './pricing.js';
 import type { BusinessType } from './businessTypes.js';
 import type { LocalizedText } from './i18nContent.js';
 
@@ -120,6 +121,87 @@ export interface PlanStop {
   reason: string;
 }
 
+/**
+ * One catalog entry the guide has already put in front of this traveler
+ * (feature 013).
+ *
+ * Persisted at `users/{uid}/shown/{catalogId}` — one document per entry, which
+ * is what bounds the collection to the catalog's size without a cleanup job
+ * (FR-004). An append-only log would be unbounded by construction.
+ */
+export interface ExposureEntry {
+  catalogId: string;
+  /** Epoch ms of the last time it appeared in a reply. */
+  shownAt: number;
+  /**
+   * Set once the traveler opened, saved, or asked to get to it (FR-002).
+   *
+   * Separate from `shownAt` because the two facts call for opposite treatment:
+   * shown three times and ignored should stop being offered, while shown once
+   * and visited is a success worth learning from. A record that cannot tell
+   * them apart supports neither.
+   */
+  takenUpAt?: number;
+  /** How many times it has appeared in a reply. */
+  shownCount?: number;
+}
+
+/**
+ * What the guide is allowed to ASSERT about an entry (feature 013).
+ *
+ * Each value has a predicate checkable against that entry's own data, and each
+ * is used only when true (FR-017). `undefined` is a first-class case rather
+ * than a gap: an entry qualifying for nothing is still introducible, because
+ * "you haven't tried this" is true of everything unseen and needs no supporting
+ * evidence. That fourth case is what lets this ship while only 3 of 36 catalog
+ * entries have a review average.
+ *
+ * A boost is NOT here and never becomes one (FR-018). It may inform ordering;
+ * it may not inform a sentence.
+ */
+export type PlaceClaim = 'well-rated' | 'new' | 'popular';
+
+/** One unseen entry offered alongside a reply. At most one per reply (FR-012). */
+export interface Introduction {
+  /** Validated against the catalog exactly like a plan stop (FR-024). */
+  catalogId: string;
+  /** Absent when the entry qualifies for no claim. */
+  claim?: PlaceClaim;
+  /**
+   * i18n key, resolved on the surface — replies are persisted, so rendered text
+   * would freeze a stored introduction in whichever language produced it.
+   */
+  copyKey: string;
+}
+
+/**
+ * What the guide asks about when it cannot tell which catalog entries fit
+ * (feature 012). Ordered by how decisively each one narrows the catalog:
+ * `mood` ranks first because it is what entries are actually tagged with.
+ */
+export type ClarifyDimension = 'mood' | 'companion' | 'time';
+
+/** One tappable answer to a clarifying question (feature 012, FR-006). */
+export interface ClarifyOption {
+  /**
+   * Stable identity, not a rendered label: a mood KEY for `mood` (so an
+   * admin-added mood works with no code change), or an authored token for
+   * `companion` / `time`. Carrying the key is what lets the server fold the
+   * answer into the next request in code instead of re-interpreting prose.
+   */
+  value: string;
+  /**
+   * i18n key, resolved on the surface — so a stored reply renders in the
+   * language the traveler is using NOW, not the one it was generated in.
+   */
+  labelKey: string;
+  /**
+   * Resolved through `moodIcon(key)`, which falls back rather than rendering an
+   * undefined icon for an admin-created mood (feature 010).
+   */
+  icon?: string;
+}
+
 /** The assistant's answer to one prompt. */
 export interface GeneratedPlan {
   outcome: PlanOutcome;
@@ -129,6 +211,28 @@ export interface GeneratedPlan {
   stops: PlanStop[];
   /** Present only when outcome is 'clarify'; at most one question (FR-004). */
   clarifyingQuestion?: string;
+  /**
+   * 2-4 tappable answers (feature 012, FR-006). Present only when outcome is
+   * 'clarify'.
+   *
+   * ADDITIVE AND OPTIONAL, deliberately: conversations are persisted per
+   * traveler and the guide screens still render shapes that predate feature
+   * 004. Absent means "a question with no options" — exactly what ships today.
+   */
+  clarifyOptions?: ClarifyOption[];
+  /**
+   * Identifies this question so an answer can be matched to it, and a stale one
+   * ignored (feature 012, FR-014).
+   */
+  clarifyId?: string;
+  /**
+   * At most one unseen entry offered alongside the plan (feature 013, FR-012).
+   *
+   * ADDITIVE AND OPTIONAL: conversations are persisted, and a reply generated
+   * before this feature carries none. Absent means "no invitation", which is
+   * exactly today's behaviour.
+   */
+  introduction?: Introduction;
 }
 
 export type MessageRole = 'user' | 'assistant';
@@ -191,6 +295,14 @@ export interface Place {
   ratingAvg?: number;
   ratingCount?: number;
   /**
+   * When this entry joined the catalog (feature 013).
+   *
+   * Optional because seed places predate the `listings` collection and carry no
+   * timestamp at all. An entry without one is simply never described as "new" —
+   * absence is not newness, the same way absence of reviews is not a low rating.
+   */
+  createdAt?: number;
+  /**
    * Bilingual content carried over from the underlying listing (feature 006).
    * Read through `resolveLocalized()`, never directly.
    */
@@ -201,6 +313,19 @@ export interface Place {
   /** Carried from the listing; see the note there (FR-032). */
   phone?: string;
   whatsapp?: string;
+  /**
+   * What this costs, as a RANGE (feature 014).
+   *
+   * Optional, and absent on all 18 seed destinations — most of them free
+   * public beaches, towns and plazas — whose cards omit the line entirely.
+   * Assigning them a band would state something false about real places and
+   * break SC-008.
+   *
+   * Carried here by BOTH `listingToPlace` mappers. A range rather than an
+   * amount: an exact price goes stale fastest, and a wrong one is worse than
+   * none at all.
+   */
+  priceBand?: PriceBand;
 }
 
 export interface SvEvent {
@@ -269,6 +394,9 @@ export interface Listing {
    */
   phone?: string;
   whatsapp?: string;
+  /** Optional price range the owner sets (feature 014). Never required —
+   *  it must not join the publication floor, which guards regression only. */
+  priceBand?: PriceBand;
   /** Business profile fields (feature 005) — all optional so nothing existing breaks. */
   businessType?: BusinessType;
   bannerURL?: string;

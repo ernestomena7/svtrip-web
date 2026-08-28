@@ -9,8 +9,12 @@
   "exports": {
     ".": "./src/index.ts",
     "./styles/tokens.css": "./src/styles/tokens.css",
+    "./styles/taxonomy-icons.css": "./src/styles/taxonomy-icons.css",
     "./tailwind.preset": "./tailwind.preset.ts",
+    "./Avatar": "./src/Avatar.tsx",
     "./Icon": "./src/Icon.tsx",
+    "./TaxonomyIcon": "./src/TaxonomyIcon.tsx",
+    "./TaxonomyGlyph": "./src/TaxonomyGlyph.tsx",
     "./apiClient": "./src/apiClient.ts",
     "./auth/AuthProvider": "./src/auth/AuthProvider.tsx",
     "./auth/authErrors": "./src/auth/authErrors.ts",
@@ -32,6 +36,7 @@
     "./repos/reviewsRepo": "./src/repos/reviewsRepo.ts",
     "./repos/subscriptionRepo": "./src/repos/subscriptionRepo.ts",
     "./repos/useEntitlements": "./src/repos/useEntitlements.ts",
+    "./repos/exposureRepo": "./src/repos/exposureRepo.ts",
     "./repos/useFavorites": "./src/repos/useFavorites.ts",
     "./repos/useManagedBusinesses": "./src/repos/useManagedBusinesses.ts",
     "./uiStore": "./src/uiStore.ts",
@@ -57,6 +62,8 @@
     "zustand": "^5.0.1"
   },
   "devDependencies": {
+    "@testing-library/jest-dom": "^6.6.2",
+    "@testing-library/react": "^16.0.1",
     "@types/react": "^18.3.12",
     "jsdom": "^25.0.1",
     "vite": "^6.4.3",

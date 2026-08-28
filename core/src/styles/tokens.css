@@ -1,6 +1,7 @@
 /* SVTrip brand tokens — mirrors SVTrip_Design_System/tokens/*.css.
    Warm sunset palette (gold→orange→red) inked in navy, warm cream surfaces.
    Light-only: the brand has no dark theme. Values are exact (sampled from logo). */
+
 :root {
   /* Brand core */
   --svt-gold: #ffc83c;
@@ -14,6 +15,17 @@
   --gold-400: #ffc83c;
   --gold-500: #f5a623;
   --navy-800: #002850;
+  /* Soft tints, mirrored from SVTrip_Design_System/tokens/colors.css.
+     These were missing here while the design system has always defined them —
+     its own CategoryTile references --gold-100, --red-50 and --info-bg, so a
+     tile built from the DS component could not resolve its own fills. Added for
+     the mood grid (feature 014, US1); values copied, not invented. */
+  --gold-100: #ffedc2;
+  --gold-700: #a8620f;
+  --red-50: #ffeeeb;
+  --orange-700: #bc4810;
+  --navy-700: #0a3a66;
+  --info-bg: #e4eef6;
 
   /* Warm neutrals */
   --n-0: #ffffff;

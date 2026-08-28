@@ -17,8 +17,7 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { MOODS } from '@svtrip/shared';
-import { Icon } from '@svtrip/core/Icon';
-import { moodIcon } from '@svtrip/core/moodIcons';
+import { TaxonomyGlyph } from '@svtrip/core/TaxonomyGlyph';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { completeOnboarding } from '@svtrip/core/auth/userProfile';
 import { useMergedTaxonomy } from '@svtrip/core/taxonomy/useTaxonomy';
@@ -32,7 +31,11 @@ export function ChooseMoodsScreen() {
   const [failed, setFailed] = useState(false);
   // Admin-managed moods (feature 010): an entry added in the taxonomy manager
   // appears here without a release, and a deactivated one disappears.
-  const { keys: moodKeys, label: moodLabel } = useMergedTaxonomy('moods', MOODS, selected);
+  const {
+    keys: moodKeys,
+    label: moodLabel,
+    icon: moodGlyph,
+  } = useMergedTaxonomy('moods', MOODS, selected);
 
   function toggle(mood: string) {
     setSelected((prev) => (prev.includes(mood) ? prev.filter((m) => m !== mood) : [...prev, mood]));
@@ -85,7 +88,7 @@ export function ChooseMoodsScreen() {
                     : 'border-border bg-surface text-text hover:bg-surface-2',
                 )}
               >
-                <Icon name={moodIcon(mood)} size={15} />
+                <TaxonomyGlyph resolved={moodGlyph(mood)} size={15} />
                 {moodLabel(mood)}
               </button>
             );

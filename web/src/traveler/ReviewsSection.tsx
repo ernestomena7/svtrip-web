@@ -24,6 +24,7 @@ import {
   submitReview,
   subscribeToReviews,
 } from '@svtrip/core/repos/reviewsRepo';
+import { Avatar } from '@svtrip/core/Avatar';
 import { Icon } from '@svtrip/core/Icon';
 import { Button, Card, Spinner, TextArea, cx } from '../components/ui';
 
@@ -177,13 +178,12 @@ export function ReviewsSection({ targetId }: { targetId: string }) {
                 <li key={review.reviewId}>
                   <Card className={cx('p-5', review.authorUid === user?.uid && 'ring-1 ring-border')}>
                     <div className="flex items-center gap-3">
-                      <span className="flex h-9 w-9 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-sm font-extrabold text-muted">
-                        {review.authorPhotoURL ? (
-                          <img src={review.authorPhotoURL} alt="" className="h-full w-full object-cover" />
-                        ) : (
-                          review.authorName.slice(0, 1).toUpperCase()
-                        )}
-                      </span>
+                      {/* Avatar handles the case the old check could not see: a
+                          URL that is present and unloadable. Google serves profile
+                          photos without the CORS headers Chrome requires, so every
+                          Google reviewer's avatar was blocked by ORB and rendered as
+                          a broken-image icon. */}
+                      <Avatar photoURL={review.authorPhotoURL} name={review.authorName} size={36} />
                       <div className="min-w-0">
                         <p className="truncate text-sm font-extrabold text-text">{review.authorName}</p>
                         <p className="text-xs text-muted">

@@ -15,7 +15,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useUiStore } from '@svtrip/core/uiStore';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
-import { Icon } from '@svtrip/core/Icon';
+import { Avatar } from '@svtrip/core/Avatar';
 import { SearchInput, cx } from '../components/ui';
 import { PersonaSwitch } from './PersonaSwitch';
 
@@ -98,11 +98,10 @@ export function WebNav({
             aria-label={t('nav.profile')}
             className="flex h-10 w-10 items-center justify-center overflow-hidden rounded-full bg-surface-2 text-muted ring-2 ring-transparent transition hover:ring-primary"
           >
-            {profile?.photoURL ? (
-              <img src={profile.photoURL} alt="" className="h-full w-full object-cover" />
-            ) : (
-              <Icon name="user" size={18} />
-            )}
+            {/* Avatar owns both cases now: absent, and present-but-unloadable.
+                A Google photo URL is the second one — blocked by ORB — which the
+                old `photoURL ?` check treated as a working image. */}
+            <Avatar photoURL={profile?.photoURL} name={profile?.displayName} size={36} />
           </button>
         </div>
       </div>

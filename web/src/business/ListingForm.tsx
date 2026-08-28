@@ -35,9 +35,9 @@ import {
 } from '@svtrip/shared';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { createListing, updateListing, type ListingInput } from '@svtrip/core/repos/listingsRepo';
-import { moodIcon } from '@svtrip/core/moodIcons';
+import { TaxonomyGlyph } from '@svtrip/core/TaxonomyGlyph';
 import { useMergedTaxonomy, useScopedServices } from '@svtrip/core/taxonomy/useTaxonomy';
-import { Button, Card, Chip, cx } from '../components/ui';
+import { Field, Button, Card, Chip, cx } from '../components/ui';
 import { BilingualField, fromLegacy } from './BilingualField';
 import { BusinessTypePicker } from './BusinessTypePicker';
 import { ContactFields } from './ContactFields';
@@ -45,6 +45,7 @@ import { MediaManager } from './MediaManager';
 import { OpeningHoursEditor, defaultOpeningHours } from './OpeningHoursEditor';
 import { PublicationChecklist } from './PublicationChecklist';
 import { LocationPicker } from './LocationPicker';
+import { PRICE_BANDS, priceBandLabelKey, type PriceBand } from '@svtrip/shared';
 
 export function ListingForm({
   existing,
@@ -66,6 +67,7 @@ export function ListingForm({
   const [lng, setLng] = useState(existing ? String(existing.lng) : '');
   const [hours, setHours] = useState(existing?.openingHours ?? defaultOpeningHours());
   const [moods, setMoods] = useState<string[]>(existing?.moods ?? []);
+  const [priceBand, setPriceBand] = useState<PriceBand | undefined>(existing?.priceBand);
   const [photos, setPhotos] = useState<string[]>(existing?.photos ?? []);
   const [businessType, setBusinessType] = useState<BusinessType | undefined>(existing?.businessType);
   const [bannerURL, setBannerURL] = useState<string | undefined>(existing?.bannerURL);
@@ -104,7 +106,11 @@ export function ListingForm({
   // Admin-managed vocabularies (feature 010). `servicesFor()` still owns which
   // BUILT-IN services suit this type; admin-created ones carry their own scope,
   // so both are merged here rather than either one deciding alone.
-  const { keys: moodKeys, label: moodLabel } = useMergedTaxonomy('moods', MOODS, moods);
+  const {
+    keys: moodKeys,
+    label: moodLabel,
+    icon: moodGlyph,
+  } = useMergedTaxonomy('moods', MOODS, moods);
   const { keys: scopedServices, label: serviceLabel } = useScopedServices(
     businessType,
     availableServices,
@@ -136,6 +142,7 @@ export function ListingForm({
       lng: Number(lng),
       openingHours: hours,
       moods,
+      ...(priceBand ? { priceBand } : {}),
       active,
       ...(businessType ? { businessType } : {}),
       ...(bannerURL ? { bannerURL } : {}),
@@ -175,6 +182,38 @@ export function ListingForm({
         />
 
         <BusinessTypePicker value={businessType} onChange={setBusinessType} />
+        {/*
+          The optional price band (feature 014). A RANGE, never an amount: an
+          exact price is the field that goes stale fastest and nobody returns
+          to update, and a wrong price on a card is worse than none.
+        
+          "Not specified" is a real choice and the default — every one of the 18
+          seed destinations sits here, and their cards simply omit the line.
+        */}
+        <Field label={t('pricing.label')}>
+          <p className="pb-1 text-xs text-muted">{t('pricing.hint')}</p>
+          <div className="flex flex-wrap gap-2">
+            {[undefined, ...PRICE_BANDS].map((band) => {
+              const on = priceBand === band;
+              return (
+                <button
+                  key={band ?? 'none'}
+                  type="button"
+                  aria-pressed={on}
+                  onClick={() => setPriceBand(band)}
+                  className={cx(
+                    'rounded-pill border px-3.5 py-2 text-sm font-bold transition',
+                    on
+                      ? 'border-transparent bg-sunset text-white shadow-red'
+                      : 'border-border bg-surface text-text',
+                  )}
+                >
+                  {band ? t(priceBandLabelKey(band)) : t('pricing.none')}
+                </button>
+              );
+            })}
+          </div>
+        </Field>
 
         <MediaManager
           label={t('services.photos')}
@@ -229,7 +268,7 @@ export function ListingForm({
               <Chip
                 key={mood}
                 active={moods.includes(mood)}
-                iconLeft={moodIcon(mood)}
+                iconLeft={<TaxonomyGlyph resolved={moodGlyph(mood)} size={14} />}
                 onClick={() => toggle(moods, mood, setMoods)}
               >
                 {moodLabel(mood)}
