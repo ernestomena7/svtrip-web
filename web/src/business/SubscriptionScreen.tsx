@@ -13,6 +13,7 @@ import { useTranslation } from 'react-i18next';
 import {
   COMMERCIAL_PLANS,
   PLAN_ENTITLEMENTS,
+  placeLimitFor,
   priceInEffect,
   type CommercialPlanCode,
   type SubscriptionState,
@@ -32,8 +33,28 @@ import { DesktopLayout } from '../shell/DesktopLayout';
 const RECOMMENDED: CommercialPlanCode = 'premium';
 
 /** The matrix rows, in the spec's order. Same list as the mobile screen. */
-const ROWS: Array<{ key: string; has: (p: CommercialPlanCode) => boolean }> = [
-  { key: 'catalogVisible', has: (p) => PLAN_ENTITLEMENTS[p].catalogVisible },
+const ROWS: Array<{
+  key: string;
+  has: (p: CommercialPlanCode) => boolean;
+  /** Optional per-plan label, for a row whose wording differs between plans. */
+  label?: (p: CommercialPlanCode) => string;
+  count?: (p: CommercialPlanCode) => number;
+}> = [
+  // The place cap is the most concrete difference between the two plans, and it
+  // was the one thing this list did NOT say: both cards rendered the same
+  // sentence. The label now varies by plan, and the COUNT comes from
+  // `placeLimitFor()` rather than being typed into the copy — the same reason
+  // that function exists at all, so the number a merchant reads cannot drift
+  // from the one the BFF enforces with its 409.
+  {
+    key: 'catalogVisible',
+    has: (p) => PLAN_ENTITLEMENTS[p].catalogVisible,
+    label: (p) =>
+      placeLimitFor(p) === null
+        ? 'subscription.features.catalogVisibleUnlimited'
+        : 'subscription.features.catalogVisibleLimited',
+    count: (p) => placeLimitFor(p) ?? 0,
+  },
   { key: 'selfService', has: (p) => PLAN_ENTITLEMENTS[p].selfService },
   { key: 'ownProfilePromotions', has: (p) => PLAN_ENTITLEMENTS[p].ownProfilePromotions },
   { key: 'basicMetrics', has: (p) => PLAN_ENTITLEMENTS[p].basicMetrics },
@@ -236,7 +257,9 @@ export function SubscriptionScreen() {
                           <span className={cx('mt-0.5', included ? 'text-primary' : 'text-border')}>
                             <Icon name={included ? 'check' : 'minus'} size={16} />
                           </span>
-                          {t(`subscription.features.${row.key}`)}
+                          {row.label
+                            ? t(row.label(code), { count: row.count?.(code) ?? 0 })
+                            : t(`subscription.features.${row.key}`)}
                         </li>
                       );
                     })}

@@ -462,6 +462,8 @@
     "current": "Current plan",
     "features": {
       "catalogVisible": "Your place visible in the catalog",
+      "catalogVisibleLimited": "{{count}} business/branch visible in the catalog",
+      "catalogVisibleUnlimited": "Unlimited businesses/branches visible in the catalog",
       "selfService": "Edit your whole profile",
       "ownProfilePromotions": "Promotions on your own profile",
       "basicMetrics": "Visits and contacts",
