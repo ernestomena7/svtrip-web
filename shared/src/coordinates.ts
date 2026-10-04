@@ -22,3 +22,26 @@ export function isValidLat(v: number): boolean {
 export function isValidLng(v: number): boolean {
   return Number.isFinite(v) && v >= -180 && v <= 180;
 }
+
+/**
+ * The same two checks, for a FORM FIELD rather than a number.
+ *
+ * `isValidLat`/`isValidLng` take a number and cannot defend against absence:
+ * `Number('')` is 0, and 0 is a perfectly valid latitude. So a listing form
+ * that fed them `Number(lat)` accepted an untouched map and saved the business
+ * at 0,0 — in the Gulf of Guinea — where every distance, "near you" and map
+ * surface then read that position as real.
+ *
+ * That was live on BOTH surfaces. The header above already warned that "a blank
+ * field must not read as a valid equator"; the warning could not be acted on
+ * from inside a function that only ever sees a number, which is why the guard
+ * belongs here, beside it, rather than repeated at each call site.
+ */
+export function isLatInput(v: string): boolean {
+  return v.trim() !== '' && isValidLat(Number(v));
+}
+
+/** The longitude half of {@link isLatInput}. */
+export function isLngInput(v: string): boolean {
+  return v.trim() !== '' && isValidLng(Number(v));
+}

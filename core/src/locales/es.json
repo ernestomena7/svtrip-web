@@ -11,7 +11,8 @@
     "dashboard": "Panel",
     "services": "Mis negocios",
     "subscription": "Plan",
-    "saved": "Guardados"
+    "saved": "Guardados",
+    "trips": "Trips"
   },
   "auth": {
     "signInTitle": "¿Qué hacemos hoy?",
@@ -30,7 +31,7 @@
     "register": {
       "link": "Crear una cuenta",
       "title": "Creá tu cuenta",
-      "subtitle": "Guardá tus planes y preferencias en cualquier dispositivo.",
+      "subtitle": "Guardá tus Trips y preferencias en cualquier dispositivo.",
       "cta": "Crear cuenta",
       "haveAccount": "¿Ya tenés cuenta? Iniciá sesión",
       "intentLegend": "¿Cómo vas a usar SVTrip?",
@@ -39,7 +40,7 @@
         "business": "Comercio"
       },
       "intentHint": {
-        "traveler": "Descubrí lugares, guardá tus favoritos y armá tus planes.",
+        "traveler": "Descubrí lugares, guardá tus favoritos y armá tus Trips.",
         "business": "Además de viajar, vas a poder gestionar tu negocio en SVTrip."
       },
       "withGoogle": "Continuar con Google",
@@ -80,7 +81,8 @@
     "title": "¿Qué te late?",
     "subtitle": "Elegí unos gustos y armamos algo a tu medida.",
     "continue": "Empezar",
-    "selectAtLeastOne": "Elegí al menos un gusto para seguir."
+    "selectAtLeastOne": "Elegí al menos un gusto para seguir.",
+    "eyebrow": "Armá tu perfil"
   },
   "moods": {
     "romantic-date": "Cita romántica",
@@ -108,8 +110,8 @@
       "title": "Probá con esto"
     },
     "plan": {
-      "stopCount_one": "{{count}} parada en tu plan",
-      "stopCount_other": "{{count}} paradas en tu plan"
+      "stopCount_one": "{{count}} parada",
+      "stopCount_other": "{{count}} paradas"
     },
     "outcome": {
       "noMatch": "Solo recomendamos lugares de nuestra selección curada, y esta vez ninguno encaja.",
@@ -154,9 +156,12 @@
     "filters": "Filtros",
     "nearby": "Cerca de ti",
     "recommended": "Recomendados para vos",
-    "featured": "Plan del día",
+    "featured": "Sugerencia para hoy",
     "popular": "Populares esta semana",
-    "moreIn": "Más en {{mood}}"
+    "moreIn": "Más en {{mood}}",
+    "showMore": "Ver más moods",
+    "showLess": "Ver menos",
+    "featuredEyebrow": "Destacado"
   },
   "deals": {
     "validUntil": "Válido hasta {{date}}",
@@ -235,7 +240,8 @@
     "reportedNotice": "Gracias. Revisaremos el reporte; la reseña sigue visible mientras tanto.",
     "errors": {
       "ownBusiness": "No podés reseñar tu propio negocio."
-    }
+    },
+    "confirmRemove": "¿Eliminar tu reseña? No se puede deshacer."
   },
   "publication": {
     "badge": "Sin terminar",
@@ -435,7 +441,9 @@
     "map": "Mapa",
     "open": "Abierto",
     "openTime": "Hora de apertura",
-    "closeTime": "Hora de cierre"
+    "closeTime": "Hora de cierre",
+    "dealInOfertas": "Mostrar en Ofertas",
+    "dealInOfertasHint": "Además de tu perfil, aparece en la sección donde los viajeros buscan promociones."
   },
   "days": {
     "sun": "Dom",
@@ -449,23 +457,64 @@
   "subscription": {
     "title": "Tu plan",
     "recommended": "Recomendado",
-    "free": "Gratis",
     "perMonth": "/mes",
-    "choose": "Elegir {{tier}}",
+    "choose": "Elegí {{plan}}",
     "current": "Plan actual",
-    "simulatedNote": "El cobro es simulado en esta versión. Podés cambiar de plan cuando querás.",
-    "tiers": {
-      "basic": "Basic",
-      "pro": "Pro",
-      "ultra": "Ultra"
-    },
     "features": {
-      "rankBoost": "Aparecé primero en Explorar",
-      "ads": "Espacios publicitarios",
-      "advancedAnalytics": "Analítica avanzada"
+      "catalogVisible": "Tu lugar visible en el catálogo",
+      "selfService": "Editás todo tu perfil",
+      "ownProfilePromotions": "Promociones en tu propio perfil",
+      "basicMetrics": "Visitas y contactos",
+      "rankBoost": "Tu comercio destacado en las listas",
+      "offersPublishing": "Publicás promociones en Ofertas",
+      "expandedMetrics": "Métricas ampliadas"
     },
-    "featureBoost": "Mejor posición en las listas",
-    "featureAds": "Espacios promocionados"
+    "plans": {
+      "basico": "Básico",
+      "premium": "Premium",
+      "internal": "Interno"
+    },
+    "states": {
+      "campaign": "En campaña",
+      "active": "Activo",
+      "grace": "Por vencer",
+      "suspended": "Suspendido",
+      "cancelled": "Cancelado",
+      "pending_payment": "Falta el pago"
+    },
+    "campaignEyebrow": "Precio de lanzamiento",
+    "payingNow": "Hoy pagás ${{amount}} por mes",
+    "thenFrom": "Desde el {{date}} pasás a ${{amount}} por mes",
+    "coversCount": "Cubre {{covered}} de {{total}} lugares",
+    "chooseCoveredPlace": "Básico cubre un solo lugar. Decinos cuál querés mantener visible.",
+    "noChargeYet": "Todavía no estamos cobrando. Elegir un plan no mueve dinero.",
+    "gateTitle": "Elegí tu plan para administrar tu negocio",
+    "gateHint": "Todavía no elegiste plan, así que tu lugar no se está mostrando. Elegí uno y volvés a tener todo el control de tu perfil.",
+    "gateAction": "Ver los planes",
+    "offersLocked": "Publicar en Ofertas es parte del Premium",
+    "offersLockedHint": "Con Básico tu promoción se ve en tu propio perfil. Con Premium además aparece en Ofertas, donde la buscan los viajeros.",
+    "metricsLocked": "Las métricas ampliadas son parte del Premium",
+    "metricsLockedHint": "De dónde vienen tus visitas, cómo te va contra tu categoría, y cómo rindió cada promoción.",
+    "upgradeAction": "Pasar a Premium",
+    "campaignEndsBasico": "En {{days}} días empezás a pagar",
+    "campaignEndsPremium": "En {{days}} días pasás a precio pleno",
+    "campaignEndsBody": "Desde el {{date}} tu plan cuesta ${{amount}} por mes. Si no hay pago activo, tu lugar deja de mostrarse.",
+    "graceTitle": "Tu campaña terminó",
+    "graceBody": "Tenés 7 días para activar tu pago. Mientras tanto tu lugar sigue mostrándose.",
+    "suspendedTitle": "Tu lugar no se está mostrando",
+    "suspendedBody": "Activá tu pago y vuelve a aparecer de inmediato, con todo tu contenido intacto.",
+    "pendingTitle": "Falta activar tu pago",
+    "pendingBody": "Elegiste plan pero todavía no hay un pago activo, así que tu lugar no se está mostrando.",
+    "hiddenTitle": "Por qué tu lugar no se está mostrando",
+    "hiddenNoPlan": "No hay un plan activo que lo cubra.",
+    "hiddenUnfinished": "Al perfil le falta contenido para publicarse.",
+    "secondPlaceNeedsPremium": "Básico cubre un solo lugar. Pasá a Premium para agregar otro.",
+    "cancelPlan": "Cancelar mi plan",
+    "cancelConfirm": "Tu lugar se deja de mostrar al final del periodo que ya pagaste. No se borra nada.",
+    "cancelAction": "Sí, cancelar",
+    "keepPlan": "Mejor no",
+    "coveredPlaceTitle": "¿Cuál lugar cubre tu Básico?",
+    "coveredPlaceHint": "Los otros dejan de mostrarse, pero no se borra nada y vuelven si subís a Premium."
   },
   "common": {
     "empty": "Aún no hay nada aquí.",
@@ -473,7 +522,11 @@
     "somethingWrong": "Algo salió mal.",
     "close": "Cerrar",
     "offline": "Sin conexión. Estás viendo contenido guardado.",
-    "retry": "Reintentar"
+    "retry": "Reintentar",
+    "saveFailed": "No se pudo guardar. Revisá tu conexión y probá de nuevo.",
+    "deleteFailed": "No se pudo eliminar. Probá de nuevo.",
+    "save": "Guardar",
+    "unsave": "Quitar de guardados"
   },
   "businessTypes": {
     "restaurant-cafe": "Restaurante o cafetería",
@@ -511,7 +564,7 @@
       "title": "De \"no sé qué hacer\" a un plan, en tres pasos",
       "step1Title": "Decí cómo te sentís",
       "step1Body": "¿Playa, aventura, comida tranquila o una cita especial? Elegí tu mood y la app se acomoda a vos.",
-      "step2Title": "La guía te arma el plan",
+      "step2Title": "La guía te arma el recorrido",
       "step2Body": "Nuestra guía te propone lugares reales del catálogo salvadoreño. Nunca inventa un lugar que no existe.",
       "step3Title": "Salí a disfrutar",
       "step3Body": "Cómo llegar, horarios, promociones vigentes y reseñas de gente que ya fue."
@@ -626,7 +679,8 @@
     "tabs": {
       "businessTypes": "Tipos de negocio",
       "moods": "Gustos",
-      "services": "Servicios"
+      "services": "Servicios",
+      "plans": "Planes"
     },
     "existing": "Entradas actuales",
     "addNew": "Agregar una entrada",
@@ -645,7 +699,24 @@
     "openManager": "Administrar taxonomías",
     "icon": "Ícono",
     "iconUnknown": "Ese ícono no existe. Probá otro nombre.",
-    "iconHint": "Opcional. Si lo dejás vacío, se usa el ícono por defecto."
+    "iconHint": "Opcional. Si lo dejás vacío, se usa el ícono por defecto.",
+    "plans": {
+      "pricesTitle": "Precios",
+      "pricesHint": "Un cambio de precio aplica hacia adelante. A nadie se le recalcula el periodo que ya está pagando.",
+      "campaignTitle": "Campaña de lanzamiento",
+      "campaignClosed": "La ventana de inscripción está cerrada. Los comercios nuevos entran a precio pleno.",
+      "campaignOpen": "Abierta desde el {{date}}. Los comercios nuevos entran con descuento por 90 días.",
+      "openWindow": "Abrir la ventana hoy",
+      "closeWindow": "Cerrar la ventana",
+      "subscriptionsTitle": "Suscripciones",
+      "noneYet": "Todavía no hay suscripciones.",
+      "places": "{{count}} lugar(es)",
+      "activate": "Activar pago",
+      "deactivate": "Desactivar pago",
+      "extend15": "Extender 15 días",
+      "notePrompt": "¿Por qué? Queda registrado con tu nombre.",
+      "lastManual": "Último cambio manual por {{by}}: {{note}}"
+    }
   },
   "account": {
     "firstName": "Nombre",
@@ -690,5 +761,78 @@
     "low": "$",
     "medium": "$$",
     "high": "$$$"
+  },
+  "trips": {
+    "title": "Trips",
+    "navLabel": "Trips",
+    "empty": {
+      "title": "Todavía no tenés ningún Trip",
+      "body": "Un Trip junta los lugares que querés visitar, con la fecha en que arranca. Agregale paradas desde Explorar o desde el perfil de cualquier lugar.",
+      "cta": "Crear un Trip"
+    },
+    "create": "Crear un Trip",
+    "edit": "Editar Trip",
+    "name": "Nombre",
+    "namePlaceholder": "Fin de semana en la costa",
+    "nameRequired": "Ponele un nombre a tu Trip.",
+    "startDate": "Fecha de inicio",
+    "startDateRequired": "Elegí la fecha en que arranca.",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "delete": "Eliminar Trip",
+    "deleteConfirm": "Se elimina este Trip y todas sus paradas. No se puede deshacer.",
+    "removeStop": "Quitar del Trip",
+    "stopCount_one": "{{count}} parada",
+    "stopCount_other": "{{count}} paradas",
+    "addTo": "Agregar a un Trip",
+    "addToNew": "Crear un Trip nuevo",
+    "added": "Agregado a tu Trip {{name}}",
+    "scheduled": "Con fecha",
+    "unscheduled": "Sin fecha",
+    "date": "Fecha",
+    "time": "Hora",
+    "clearDate": "Quitar la fecha",
+    "dateFloor": "La fecha no puede ser antes del {{date}}, que es cuando arranca el Trip.",
+    "unavailable": "Ya no disponible",
+    "conflicting": "Antes del inicio del Trip",
+    "moveUp": "Subir",
+    "moveDown": "Bajar",
+    "reorderHint": "Arrastrá para reordenar, o usá los botones.",
+    "fromGuide": "Según la guía",
+    "keepOffer": "Guardar en Trips",
+    "keepAlready": "Ya guardaste este plan en un Trip.",
+    "addToCta": "Agregar a Trip",
+    "alreadyInTrip": "Este lugar ya está en {{name}}.",
+    "removeStopConfirm": "Se quita esta parada del Trip. Podés volver a agregarla después."
+  },
+  "metrics": {
+    "originTitle": "De dónde vienen tus visitas",
+    "originHint": "La pantalla desde la que te abrieron. Nunca quién.",
+    "originDiscover": "Explorar",
+    "originSearch": "Búsqueda",
+    "originGuide": "La guía",
+    "originDeals": "Ofertas",
+    "originLanding": "Sitio web",
+    "originDirect": "Enlace directo",
+    "unattributed": "Sin atribuir",
+    "unattributedHint": "Visitas que no podemos ubicar: enlaces pegados, recargas, y las que vienen de los Trips de un viajero.",
+    "notAttributableYet": "Todavía no hay visitas con origen registrado. Las anteriores a este cambio siguen contadas en el total.",
+    "benchmarkTitle": "Cómo te va contra tu categoría",
+    "benchmarkAbove": "Estás {{percent}}% arriba del promedio de {{category}}",
+    "benchmarkBelow": "Estás {{percent}}% abajo del promedio de {{category}}",
+    "benchmarkEven": "Estás en el promedio de {{category}}",
+    "benchmarkBasis": "Comparado con {{count}} negocios de tu categoría",
+    "benchmarkRefused": "Todavía no podemos compararte: hay {{count}} negocios más en {{category}}, y con tan pocos el promedio sería el número de uno solo.",
+    "benchmarkNoCategory": "Tu lugar no tiene categoría asignada, así que no hay con quién compararlo.",
+    "dealsTitle": "Cómo rindió cada promoción",
+    "dealsViews": "vistas",
+    "dealsClicks": "clics",
+    "dealsRate": "{{percent}}% de clics",
+    "dealsNoRate": "sin vistas todavía",
+    "dealsNone": "Todavía no publicaste promociones en Ofertas.",
+    "dealsNotAttributable": "Todavía no hay datos por promoción. Empiezan a contarse desde ahora."
+  },
+  "place": {
+    "unavailableNow": "Este lugar no está disponible ahora. Volvé a intentar más tarde."
   }
 }

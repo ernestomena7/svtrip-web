@@ -25,8 +25,8 @@ import {
   isFoodType,
   isLocalizedComplete,
   isPublishable,
-  isValidLat,
-  isValidLng,
+  isLatInput,
+  isLngInput,
   isValidPhone,
   normalizePhone,
   servicesFor,
@@ -35,6 +35,8 @@ import {
 } from '@svtrip/shared';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { createListing, updateListing, type ListingInput } from '@svtrip/core/repos/listingsRepo';
+import { canManageAnotherPlace } from '@svtrip/shared';
+import { useEntitlements } from '@svtrip/core/repos/useEntitlements';
 import { TaxonomyGlyph } from '@svtrip/core/TaxonomyGlyph';
 import { useMergedTaxonomy, useScopedServices } from '@svtrip/core/taxonomy/useTaxonomy';
 import { Field, Button, Card, Chip, cx } from '../components/ui';
@@ -78,6 +80,8 @@ export function ListingForm({
   const [whatsapp, setWhatsapp] = useState(existing?.whatsapp ?? '');
   const [active, setActive] = useState(existing?.active ?? true);
   const [saving, setSaving] = useState(false);
+  const [premiumRequired, setPremiumRequired] = useState(false);
+  const { planCode, managedPlaceIds } = useEntitlements();
   const [saveError, setSaveError] = useState<string | null>(null);
 
   // T109 — session expiry mid-edit. A business profile takes real minutes to
@@ -86,7 +90,11 @@ export function ListingForm({
   // do; nothing is discarded and nothing is auto-submitted into a void.
   const [sessionLost, setSessionLost] = useState(false);
   useEffect(() => {
-    if (!user) setSessionLost(true);
+    // Follows the session in BOTH directions. Setting it only on loss meant a
+    // momentary null — a token refresh — left the warning up permanently on a
+    // form that was perfectly usable, telling the owner to sign in again while
+    // they already were.
+    setSessionLost(!user);
   }, [user]);
 
   const nameOk = isLocalizedComplete(nameI18n);
@@ -95,7 +103,9 @@ export function ListingForm({
     ...(nameI18n.es.trim() && nameI18n.en.trim() ? [] : ['name']),
     ...(descriptionI18n.es.trim() && descriptionI18n.en.trim() ? [] : ['description']),
   ];
-  const coordsOk = isValidLat(Number(lat)) && isValidLng(Number(lng));
+  // Absence first: `Number('')` is 0 and 0 is a valid latitude, so a range
+  // check alone let an untouched map save the business at 0,0.
+  const coordsOk = isLatInput(lat) && isLngInput(lng);
   const phonesBad = !isValidPhone(phone) || !isValidPhone(whatsapp);
   const canSave = nameOk && descriptionOk && coordsOk && !phonesBad && !saving && !sessionLost;
 
@@ -152,7 +162,18 @@ export function ListingForm({
     };
     try {
       if (existing) await updateListing(existing.listingId, input);
-      else await createListing(user.uid, input);
+      else {
+        // FR-050. The cap cannot live in the rules — Firestore cannot count
+        // (research R8) — and it is really expressed by what the subscription
+        // COVERS: a second place on Básico is simply not covered, therefore not
+        // visible. This guard is what SAYS SO, instead of leaving the merchant
+        // with an invisible listing and no explanation.
+        if (!canManageAnotherPlace(planCode ?? 'basico', managedPlaceIds.length)) {
+          setPremiumRequired(true);
+          return;
+        }
+        await createListing(user.uid, input);
+      }
       onClose();
     } catch {
       setSaveError(t('common.somethingWrong'));
@@ -353,6 +374,15 @@ export function ListingForm({
                 {t('web.preview.cta')}
               </a>
             </div>
+          )}
+
+          {/* FR-050: says WHY rather than leaving the merchant with a listing
+              that saves and never appears. The cap cannot live in the rules
+              (Firestore cannot count), so this is the only place it is visible. */}
+          {premiumRequired && (
+            <p className="rounded-md bg-surface-2 p-3.5 text-sm font-bold text-primary">
+              {t('subscription.secondPlaceNeedsPremium')}
+            </p>
           )}
 
           <Button fullWidth iconLeft="check" disabled={!canSave} onClick={() => void save()}>

@@ -27,8 +27,11 @@ export function PersonaSwitch() {
     navigate(next === 'provider' ? '/dashboard' : '/discover');
   }
 
+  // Visible at every width. `hidden sm:flex` removed the control entirely below
+  // 640px with nothing in its place, so a business owner on a narrow window had
+  // no way back to the traveler side — and no way to tell a switch existed.
   return (
-    <div className="hidden rounded-pill bg-surface-2 p-1 sm:flex" role="group" aria-label={t('profile.persona')}>
+    <div className="flex rounded-pill bg-surface-2 p-1" role="group" aria-label={t('profile.persona')}>
       {(['traveler', 'provider'] as const).map((value) => (
         <button
           key={value}

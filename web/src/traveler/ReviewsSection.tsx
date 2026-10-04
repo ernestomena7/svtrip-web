@@ -77,10 +77,19 @@ export function ReviewsSection({ targetId }: { targetId: string }) {
   const [comment, setComment] = useState('');
   const [busy, setBusy] = useState(false);
   const [writing, setWriting] = useState(false);
+  /** A refused publish or delete, kept apart from the load failure. */
+  const [actionFailed, setActionFailed] = useState(false);
 
   useEffect(() => {
     setReviews(null);
     setFailed(false);
+    // The draft belongs to the place being looked at. Without this it followed
+    // the traveler: a rating typed for one business stayed in the form on the
+    // next, ready to be published against a place they never rated.
+    setRating(0);
+    setComment('');
+    setWriting(false);
+    setActionFailed(false);
     return subscribeToReviews(
       targetId,
       (list) => setReviews(list),
@@ -102,9 +111,15 @@ export function ReviewsSection({ targetId }: { targetId: string }) {
   async function publish() {
     if (rating < 1) return;
     setBusy(true);
+    setActionFailed(false);
     try {
       await submitReview(targetId, rating, comment.trim() || undefined);
       setWriting(false);
+    } catch {
+      // A review the BFF refused used to close nothing and say nothing. The
+      // form stayed open with the text still in it, which reads as the button
+      // not working rather than the write being rejected.
+      setActionFailed(true);
     } finally {
       setBusy(false);
     }
@@ -112,11 +127,14 @@ export function ReviewsSection({ targetId }: { targetId: string }) {
 
   async function remove() {
     setBusy(true);
+    setActionFailed(false);
     try {
       await removeReview(targetId);
       setRating(0);
       setComment('');
       setWriting(false);
+    } catch {
+      setActionFailed(true);
     } finally {
       setBusy(false);
     }
@@ -127,6 +145,9 @@ export function ReviewsSection({ targetId }: { targetId: string }) {
       <h2 className="font-display text-lg font-extrabold text-text">{t('reviews.title')}</h2>
 
       {failed && <p className="mt-3 text-sm text-muted">{t('reviews.loadFailed')}</p>}
+      {actionFailed && (
+        <p className="mt-3 text-sm font-bold text-primary">{t('common.saveFailed')}</p>
+      )}
       {!failed && reviews === null && <Spinner label={t('common.loading')} />}
 
       {!failed && reviews !== null && (

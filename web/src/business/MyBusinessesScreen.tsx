@@ -31,10 +31,18 @@ export function MyBusinessesScreen() {
   const [listings, setListings] = useState<Listing[] | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [error, setError] = useState(false);
+  /** A failed delete, kept apart from `error` so it does not blank the list. */
+  const [actionError, setActionError] = useState(false);
   const [editor, setEditor] = useState<Editor>(null);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // `listings === null` is what renders the spinner, so returning early
+      // without touching it left this screen loading forever whenever `user`
+      // is momentarily null — during sign-out, or a token refresh.
+      setListings([]);
+      return;
+    }
     const fail = () => setError(true);
     const stopListings = subscribeToMyListings(user.uid, setListings, fail);
     const stopDeals = subscribeToMyDeals(user.uid, setDeals, fail);
@@ -79,6 +87,7 @@ export function MyBusinessesScreen() {
       </div>
 
       {error && <ErrorState message={t('common.somethingWrong')} />}
+      {actionError && <ErrorState message={t('common.deleteFailed')} />}
       {!error && listings === null && <Spinner label={t('common.loading')} />}
 
       {!error && listings?.length === 0 && (
@@ -146,7 +155,12 @@ export function MyBusinessesScreen() {
                         variant="ghost"
                         onClick={() => {
                           if (window.confirm(t('services.confirmDelete'))) {
-                            void deleteListing(listing.listingId);
+                            // A rejected delete used to vanish: the row stayed
+                            // on screen with no explanation, which reads as the
+                            // button not working.
+                            void deleteListing(listing.listingId).catch(() =>
+                              setActionError(true),
+                            );
                           }
                         }}
                       >

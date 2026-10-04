@@ -4,7 +4,7 @@
 // `aria-modal`, Escape to close, and arrow keys to move. On a desktop the
 // keyboard is how people page through photos, and a viewer that only responds
 // to clicks is a viewer half the audience cannot drive.
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Icon } from '@svtrip/core/Icon';
 
@@ -21,6 +21,24 @@ export function GalleryViewer({
 }) {
   const { t } = useTranslation();
   const open = index !== null;
+
+  // A dialog that declares aria-modal must actually TAKE focus.
+  //
+  // Without this the keyboard stays wherever it was — behind the scrim, on a
+  // page the visitor can no longer see — so Tab walks through controls that
+  // are visually covered, and a screen reader never announces the dialog it
+  // was just told is modal.
+  const panel = useRef<HTMLDivElement | null>(null);
+  const restoreTo = useRef<HTMLElement | null>(null);
+  useEffect(() => {
+    if (!open) return;
+    restoreTo.current = document.activeElement as HTMLElement | null;
+    panel.current?.focus();
+    return () => {
+      // Back to the thumbnail they opened, not to the top of the document.
+      restoreTo.current?.focus?.();
+    };
+  }, [open]);
 
   useEffect(() => {
     if (!open) return;

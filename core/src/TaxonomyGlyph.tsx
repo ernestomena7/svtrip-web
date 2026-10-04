@@ -24,6 +24,17 @@ export function TaxonomyGlyph({
   // The brand set: inline SVG, self-contained, what every other icon in the
   // product is drawn with.
   if (resolved.kind === 'builtIn') {
+    // `Icon` takes no accessible name, so the label is carried by a wrapper
+    // rather than dropped. Before this, the same glyph announced itself on the
+    // Material Symbols branch and was silent on this one — the difference
+    // being which icon set a super admin happened to pick.
+    if (label) {
+      return (
+        <span role="img" aria-label={label} style={{ display: 'inline-flex' }}>
+          <Icon name={resolved.name} size={size} />
+        </span>
+      );
+    }
     return <Icon name={resolved.name} size={size} />;
   }
   // Material Symbols, by codepoint. Covers both an assigned icon and the

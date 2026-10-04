@@ -39,13 +39,38 @@ describe('link 1 — an icon a super admin assigned', () => {
 });
 
 describe('link 2 — the built-in map, which must NOT be dropped', () => {
-  it.each(Object.keys(MOOD_ICON))(
+  /**
+   * The expected pairs, written out.
+   *
+   * This used to iterate `MOOD_ICON` and compare each entry against
+   * `MOOD_ICON` — so changing an icon changed the expectation with it, and
+   * the test could only ever prove that the resolver reads the map. Which
+   * icon each mood carries is a brand decision; changing one should turn a
+   * test red and be a deliberate act, not a silent edit.
+   */
+  const EXPECTED: Record<string, string> = {
+    'romantic-date': 'heart',
+    'extreme-adventure': 'navigation',
+    'local-food': 'utensils',
+    nightlife: 'music',
+    beach: 'waves',
+    'colonial-town': 'home',
+    hiking: 'mountain',
+    culture: 'camera',
+  };
+
+  it.each(Object.entries(EXPECTED))(
     'keeps %s on its existing brand icon when nothing is assigned',
-    (key) => {
-      const r = resolveEntryIcon('moods', key);
-      expect(r).toEqual({ kind: 'builtIn', name: MOOD_ICON[key as keyof typeof MOOD_ICON] });
+    (key, name) => {
+      expect(resolveEntryIcon('moods', key)).toEqual({ kind: 'builtIn', name });
     },
   );
+
+  it('expects every mood the map declares, and no others', () => {
+    // Keeps the two lists honest: a mood added to MOOD_ICON without a line
+    // above would otherwise go untested.
+    expect(Object.keys(EXPECTED).sort()).toEqual(Object.keys(MOOD_ICON).sort());
+  });
 
   it('covers all eight built-in moods, so none can quietly fall to the default', () => {
     const resolved = Object.keys(MOOD_ICON).map((k) => resolveEntryIcon('moods', k).kind);
@@ -100,5 +125,28 @@ describe('moodIcon, the older helper the line-icon call sites still use', () => 
     // Reaching `<Icon name={undefined}>` is the failure feature 010 introduced
     // this helper to prevent.
     expect(moodIcon('sunset-run')).toBe('star');
+  });
+});
+
+// --- feature 015 follow-up: a plain lookup reaches the prototype ------------
+
+describe('an admin-created key cannot borrow from Object.prototype', () => {
+  // Moods stopped being a closed set in feature 010: a super admin types the
+  // key. `MOOD_ICON[key]` on a plain object resolves inherited properties too,
+  // so a mood keyed `constructor` returned a FUNCTION where an icon name was
+  // expected — reaching `<Icon name={...}>` as exactly the value the `?? 'star'`
+  // fallback exists to prevent, because `??` only catches null and undefined.
+  it('falls back for keys that exist on every object', () => {
+    for (const key of ['constructor', 'toString', 'hasOwnProperty', '__proto__', 'valueOf']) {
+      expect(moodIcon(key)).toBe('star');
+    }
+  });
+
+  it('still falls back for an ordinary unknown key', () => {
+    expect(moodIcon('mood-que-no-existe')).toBe('star');
+  });
+
+  it('still resolves a real built-in mood', () => {
+    expect(moodIcon('romantic-date')).toBe('heart');
   });
 });

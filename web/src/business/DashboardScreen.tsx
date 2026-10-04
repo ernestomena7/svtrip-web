@@ -20,6 +20,7 @@ import {
 import { subscribeToMyDeals } from '@svtrip/core/repos/providerDealsRepo';
 import { useManagedBusinesses } from '@svtrip/core/repos/useManagedBusinesses';
 import { useEntitlements } from '@svtrip/core/repos/useEntitlements';
+import { ExpandedMetrics } from './ExpandedMetrics';
 import { Icon, type IconName } from '@svtrip/core/Icon';
 import { Button, Card, ErrorState, Spinner, cx } from '../components/ui';
 import { DesktopLayout } from '../shell/DesktopLayout';
@@ -39,7 +40,12 @@ export function DashboardScreen() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
-    if (!user) return;
+    if (!user) {
+      // Same reason as MyBusinessesScreen: leaving `loading` true here means
+      // the dashboard spins forever the moment `user` is null.
+      setLoading(false);
+      return;
+    }
     setLoading(true);
     setError(false);
     const fail = () => {
@@ -135,7 +141,18 @@ export function DashboardScreen() {
             </p>
           )}
 
-          {entitlements.analyticsDepth !== 'advanced' && (
+          {entitlements.expandedMetrics && (
+            // The three FR-013 names. The daily series above predates this
+            // feature and stays: it was the whole of the old `ultra` tier's
+            // advanced analytics, and a Premium merchant losing it would be a
+            // downgrade dressed as a feature.
+            <ExpandedMetrics
+              metrics={shown}
+              listingId={selected === 'all' ? undefined : selected}
+            />
+          )}
+
+          {!entitlements.expandedMetrics && (
             <Card className="flex flex-col items-start gap-4 p-6 md:flex-row md:items-center md:justify-between">
               <div className="flex items-start gap-3">
                 <span className="text-accent">
@@ -143,13 +160,14 @@ export function DashboardScreen() {
                 </span>
                 <div>
                   <h2 className="font-display text-base font-extrabold text-text">
-                    {t('dashboard.advancedTitle')}
+                    {t('subscription.metricsLocked')}
                   </h2>
-                  <p className="mt-1 text-sm text-muted">{t('dashboard.advancedLockedHint')}</p>
+                  {/* Names the three, so the upsell says what is behind it. */}
+                  <p className="mt-1 text-sm text-muted">{t('subscription.metricsLockedHint')}</p>
                 </div>
               </div>
               <Button variant="accent" iconLeft="sparkles" onClick={() => navigate('/subscription')}>
-                {t('dashboard.upgrade')}
+                {t('subscription.upgradeAction')}
               </Button>
             </Card>
           )}

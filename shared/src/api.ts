@@ -1,6 +1,7 @@
 // BFF HTTP contract types. Mirrors specs/.../contracts/bff-api.md.
 
 import type {
+  EngagementOrigin,
   Language,
   Place,
   Recommendation,
@@ -12,6 +13,37 @@ import type {
 export interface ChatHistoryTurn {
   role: 'user' | 'assistant';
   text: string;
+  /**
+   * The stops this assistant turn produced, so the model can see the list it
+   * showed (feature 015, US2).
+   *
+   * The reply that reaches the traveler is `plan.intro` plus rendered cards, and
+   * only the intro is streamed as text — so only the intro is what the client
+   * persists and sends back. The stops live in `Message.plan`, and until now they
+   * never travelled. That is why "quitá la opción 2" did nothing: the model was
+   * being asked to count a list it had never been shown. No wording fixes that.
+   *
+   * **Optional, and the optionality is load-bearing.** The mobile client ships
+   * inside an installed Android app. One that has not updated sends no stops, its
+   * assistant turns compose to the intro alone, and it behaves exactly as it does
+   * today — which is the degradation feature 012 established for
+   * `answersClarifyId` and 013 for `seen`.
+   *
+   * **Ids, not names.** The server resolves each id against the catalog it has
+   * already assembled for this turn, in the traveler's language. Accepting names
+   * would let a caller put arbitrary words into the history the model reads, with
+   * no way for the server to tell an honest name from an invented one — the same
+   * reason the catalog allow-list is assembled server-side (Constitution I).
+   */
+  stops?: ChatHistoryStop[];
+}
+
+/** One stop of a previous reply, as it travels back in history. */
+export interface ChatHistoryStop {
+  /** Resolved against the catalog server-side; an id that no longer exists is dropped. */
+  catalogId: string;
+  /** Contiguous from 1, matching what the traveler saw on screen. */
+  order: number;
 }
 
 /** Where a prompt came from — a typed message or a tapped suggestion (FR-009). */
@@ -92,6 +124,10 @@ export interface EnrichResponse {
 export interface EngagementRequest {
   listingId: string;
   type: EngagementType;
+  /** The surface this came from (feature 018, FR-039). Never a person. */
+  origin?: EngagementOrigin;
+  /** Only on `promotion_view` / `promotion_click`. */
+  dealId?: string;
 }
 export interface EngagementResponse {
   recorded: boolean;

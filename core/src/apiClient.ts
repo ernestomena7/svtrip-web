@@ -11,6 +11,14 @@ import type {
   Language,
   Recommendation,
   SpinResponse,
+  // Feature 018. Type-only, so nothing in `shared/` is pulled into the client
+  // bundle beyond what it already carries.
+  CommercialPlanCode,
+  LaunchCampaignConfig,
+  MerchantSubscription,
+  SubscriptionPlanConfig,
+  SubscriptionState,
+  BenchmarkResult,
 } from '@svtrip/shared';
 import { auth } from './firebase';
 
@@ -51,6 +59,30 @@ export async function getJson<T>(path: string): Promise<T> {
 export async function patchJson<T>(path: string, body: unknown): Promise<T> {
   const res = await fetch(`${BASE}${path}`, {
     method: 'PATCH',
+    headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({ error: res.statusText, code: 'error' }));
+    throw Object.assign(new Error(err.error ?? 'Request failed'), {
+      code: err.code,
+      status: res.status,
+    });
+  }
+  return res.json() as Promise<T>;
+}
+
+/**
+ * PUT, for a whole-document replacement.
+ *
+ * Added by feature 018: `/admin/launch-campaign` replaces the one campaign
+ * record rather than patching fields into it, because CLOSING the enrollment
+ * window means the absence of `launchAt` — and a PATCH cannot express the
+ * absence of a field.
+ */
+export async function putJson<T>(path: string, body: unknown): Promise<T> {
+  const res = await fetch(`${BASE}${path}`, {
+    method: 'PUT',
     headers: { 'Content-Type': 'application/json', ...(await authHeader()) },
     body: JSON.stringify(body),
   });
@@ -186,5 +218,81 @@ export async function spin(mood?: string): Promise<SpinResponse> {
   const res = await fetch(`${BASE}/spin${mood ? `?mood=${encodeURIComponent(mood)}` : ''}`, {
     headers: { ...(await authHeader()) },
   });
+  // The only call in this file that never looked at the status. A 429 or a
+  // 500 has a JSON body too, and parsing it as a SpinResponse hands the wheel
+  // an object with no place in it — which reads to the traveler as the wheel
+  // being broken rather than the request being refused.
+  if (!res.ok) throw new Error(`spin failed: ${res.status}`);
   return res.json() as Promise<SpinResponse>;
+}
+
+// ---------------------------------------------------------------------------
+// Merchant subscriptions (feature 018)
+// ---------------------------------------------------------------------------
+//
+// These go through the BFF rather than writing Firestore directly, which is a
+// CHANGE from how the old tier model worked. Two reasons, and the first is the
+// whole point of the feature: a plan now gates commercial placement and the
+// Ofertas surface, so a merchant setting their own is a privilege boundary
+// (FR-026) — and the rules now refuse that write. The second is that the
+// payment call a gateway will eventually make needs credentials that may only
+// live server-side (Constitution I, FR-037).
+
+export interface SubscriptionViewResponse {
+  subscription: MerchantSubscription | null;
+  state: SubscriptionState | null;
+  priceInEffectUsd: number | null;
+  fullPriceUsd: number | null;
+  nextChargeAt?: number;
+  coveredPlaceIds: string[];
+  managedPlaceIds: string[];
+}
+
+export interface PlansResponse {
+  plans: SubscriptionPlanConfig[];
+  campaign: LaunchCampaignConfig;
+}
+
+export function chooseSubscriptionPlan(
+  planCode: CommercialPlanCode,
+  coveredPlaceId?: string,
+): Promise<SubscriptionViewResponse> {
+  return postJson<SubscriptionViewResponse>('/subscriptions/choose', {
+    planCode,
+    ...(coveredPlaceId ? { coveredPlaceId } : {}),
+  });
+}
+
+export function changeSubscriptionPlan(
+  planCode: CommercialPlanCode,
+  coveredPlaceId?: string,
+): Promise<SubscriptionViewResponse> {
+  return postJson<SubscriptionViewResponse>('/subscriptions/change', {
+    planCode,
+    ...(coveredPlaceId ? { coveredPlaceId } : {}),
+  });
+}
+
+export function cancelSubscription(): Promise<SubscriptionViewResponse> {
+  return postJson<SubscriptionViewResponse>('/subscriptions/cancel', {});
+}
+
+export async function fetchMySubscription(): Promise<SubscriptionViewResponse> {
+  return getJson<SubscriptionViewResponse>('/subscriptions/me');
+}
+
+export async function fetchPlans(): Promise<PlansResponse> {
+  return getJson<PlansResponse>('/subscriptions/plans');
+}
+
+export interface BenchmarkResponse {
+  byListing: Array<{ listingId: string; name: string; result: BenchmarkResult }>;
+}
+
+/**
+ * The category benchmark. Server-side by necessity: it reads peers' metrics,
+ * which no client may (FR-013).
+ */
+export function fetchBenchmark(): Promise<BenchmarkResponse> {
+  return getJson<BenchmarkResponse>('/subscriptions/benchmark');
 }

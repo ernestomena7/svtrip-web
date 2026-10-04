@@ -19,6 +19,7 @@ import { useFavorites } from '@svtrip/core/repos/useFavorites';
 import { fetchPlaces, forYou, byMood } from '@svtrip/core/repos/discoverRepo';
 import { MOOD_ICON } from '@svtrip/core/moodIcons';
 import { ActivityCard } from '../components/ActivityCard';
+import { AddToTripDialog } from './AddToTripDialog';
 import { Chip, EmptyState, ErrorState, Button, Spinner } from '../components/ui';
 import { DesktopLayout } from '../shell/DesktopLayout';
 
@@ -31,6 +32,8 @@ export function DiscoverScreen() {
 
   const [places, setPlaces] = useState<Place[] | null>(null);
   const [error, setError] = useState(false);
+  /** The place whose add-to-Trip dialog is open. Held here so nothing navigates (FR-012). */
+  const [adding, setAdding] = useState<Place | null>(null);
   const [mood, setMood] = useState<Mood | null>(null);
   const [search, setSearch] = useState('');
 
@@ -134,12 +137,24 @@ export function DiscoverScreen() {
                 onToggleSave={() =>
                   void toggle(place.placeId, place.source === 'listing' ? 'listing' : 'place')
                 }
-                onClick={() => navigate(`/place/${place.placeId}`)}
+                onAddToTrip={() => setAdding(place)}
+                onClick={() =>
+                  navigate(`/place/${place.placeId}`, {
+                    state: { origin: search.trim() ? 'search' : 'discover' },
+                  })
+                }
               />
             ))}
           </div>
         )}
       </div>
+      {adding && (
+        <AddToTripDialog
+          catalogId={adding.placeId}
+          kind={adding.source === 'listing' ? 'listing' : 'place'}
+          onClose={() => setAdding(null)}
+        />
+      )}
     </DesktopLayout>
   );
 }

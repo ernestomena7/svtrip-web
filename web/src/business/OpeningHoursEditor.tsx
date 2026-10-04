@@ -33,7 +33,13 @@ export function OpeningHoursEditor({
           className="flex flex-wrap items-center gap-3 rounded-md bg-surface-2 px-3.5 py-2.5"
         >
           <span className="w-24 text-sm font-bold text-text">
-            {t(`days.${DAY_KEYS[hour.day]}`, DAY_KEYS[hour.day])}
+            {/* Guarded: `hour.day` comes from stored data, and an out-of-range
+                index made this `t('days.undefined')` — which i18next returns
+                unchanged, so the literal string "days.undefined" was painted
+                into the editor. */}
+            {DAY_KEYS[hour.day]
+              ? t(`days.${DAY_KEYS[hour.day]}`, DAY_KEYS[hour.day])
+              : String(hour.day)}
           </span>
 
           <button

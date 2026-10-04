@@ -39,6 +39,19 @@ export interface PublishableEntry {
   descriptionI18n?: LocalizedText;
   active?: boolean;
   contentVersion?: number;
+  /**
+   * Whether a live subscription covers this place (feature 018, FR-016).
+   *
+   * **Denormalized onto the listing, and deliberately opaque.** `listings` is
+   * `allow read: if signedIn()`, so every signed-in traveler can read every
+   * field — a `planCode` or a status enum here would break FR-015 no matter
+   * what any screen renders. A boolean says "not currently visible", which a
+   * traveler can already see, and says nothing about plans, prices or payment.
+   *
+   * Written only by the BFF's subscription service (FR-026/FR-027), which is
+   * the whole safety of denormalizing it.
+   */
+  covered?: boolean;
 }
 
 export type MissingRequirement = 'photo' | 'businessType' | 'name' | 'description';
@@ -107,4 +120,76 @@ export function publicVisibility(
   options: PublicationOptions = {},
 ): boolean {
   return entry.active !== false && isPublishable(entry, options);
+}
+
+/**
+ * Whether travelers may see this entry, once feature 018's subscription layer
+ * is taken into account.
+ *
+ * `publicVisibility` answers "is the content presentable and did the owner
+ * switch it on". This adds a third, INDEPENDENT question: is there a live
+ * subscription behind it (FR-016)?
+ *
+ * **The three reasons are cumulative, never substituted** (FR-034). A merchant
+ * who pays and is still unfinished stays hidden, and FR-024 requires being told
+ * every reason that applies — a merchant who pays and stays invisible will
+ * otherwise read it as the payment having failed and contact support about the
+ * wrong thing.
+ *
+ * **`covered !== false`, NOT `covered === true`.** This is the single most
+ * consequential line in feature 018. Measured 2026-10-02: all 33 live listings
+ * carry no `covered` field at all, so the strict form would hide the entire
+ * catalog on deploy — taking the AI Guide, which fails closed, with it. It is
+ * the same shape as `isLegacy()`'s `contentVersion === undefined` above, and it
+ * exists for the same reason: a field this product adds must not retroactively
+ * condemn every record written before it.
+ */
+export function travelerVisible(
+  entry: PublishableEntry,
+  options: PublicationOptions = {},
+): boolean {
+  return entry.covered !== false && publicVisibility(entry, options);
+}
+
+/**
+ * Whether a promotion belongs on the Ofertas surface (feature 018, FR-016).
+ *
+ * **Ofertas is the one discovery surface with no visibility filter at all
+ * today.** `fetchActiveDeals` reads `deals` and filters on the date window
+ * alone; it never consults the owning listing. So a suspended place's promotion
+ * survives by construction, and this is the only one of FR-016's four insertion
+ * points where the work is a JOIN rather than one more conjunct.
+ *
+ * Three independent questions, and collapsing any two of them loses something:
+ *
+ *  1. **Is the place visible at all** (`travelerVisible`) — content floor,
+ *     the owner's switch, and subscription coverage.
+ *  2. **May this owner publish to Ofertas** (`offersEligible`) — a Premium
+ *     entitlement, denormalized onto the listing by the BFF because a client
+ *     cannot read another merchant's plan. This is what makes US4 scenario 2
+ *     work: a Premium account dropping to Básico loses Ofertas and KEEPS the
+ *     promotion on its own profile. Driven by this flag rather than by
+ *     rewriting the merchant's own choice, so an upgrade restores it without
+ *     them having to re-mark anything.
+ *  3. **Did the merchant choose to publish it** (`inOfertas`) — Premium may
+ *     keep a promotion profile-only (US2 scenario 3), so eligible is not the
+ *     same as published.
+ *
+ * `!== false` on both stored flags, the same shape as `covered` and for the
+ * same reason: records written before this feature carry neither, and must not
+ * vanish on deploy.
+ *
+ * **Fails CLOSED on a missing listing.** A deal whose place cannot be resolved
+ * is a deal the product cannot vouch for, and Ofertas is a surface travelers
+ * are invited to act on.
+ */
+export function offerVisible(
+  deal: { inOfertas?: boolean },
+  listing: (PublishableEntry & { offersEligible?: boolean }) | undefined,
+  options: PublicationOptions = {},
+): boolean {
+  if (!listing) return false;
+  if (deal.inOfertas === false) return false;
+  if (listing.offersEligible === false) return false;
+  return travelerVisible(listing, options);
 }

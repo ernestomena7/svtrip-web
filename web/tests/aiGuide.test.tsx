@@ -55,6 +55,22 @@ vi.mock('@svtrip/core/repos/useManagedBusinesses', () => ({
 // The guide persists turns and replays history through this repo, which reaches
 // Firestore on import. Stubbed at the module boundary: what is under test is the
 // screen's reaction to the stream, not durable storage.
+vi.mock('@svtrip/core/repos/tripsRepo', () => ({
+  // Mocked for the same reason as the repos beside it: `core/firebase`
+  // initialises a real Firebase app at import time, so any unmocked repo in the
+  // import graph fails the suite at module load with `auth/invalid-api-key`.
+  // The guide reaches this one through the keep-as-a-Trip offer (feature 016).
+  tripForMessage: async () => null,
+  createTripFromPlan: vi.fn(),
+  createTrip: vi.fn(),
+  updateTrip: vi.fn(),
+  useTrips: () => ({ trips: [], loading: false }),
+  useTripStops: () => ({ stops: [], loading: false }),
+  addStop: vi.fn(),
+  deleteTrip: vi.fn(),
+  removeStop: vi.fn(),
+  scheduleStop: vi.fn(),
+}));
 vi.mock('@svtrip/core/repos/conversationRepo', () => ({
   persistTurn: async () => undefined,
   touchConversation: async () => undefined,

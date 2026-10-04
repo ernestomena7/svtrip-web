@@ -186,6 +186,71 @@ export function Card({
   );
 }
 
+/**
+ * Status pill, mirrored from `SVTrip_Design_System/components/core/Badge.jsx`.
+ *
+ * Feature 018 needed it for the six subscription states and found that NEITHER
+ * surface had mirrored it — which is why `SubscriptionScreen`'s "Recomendado"
+ * pill was hand-rolled as `absolute rounded-pill bg-gold-gradient px-3 py-0.5`.
+ * That is the parallel pattern Principle VI forbids, and it would have been
+ * copied six more times.
+ *
+ * ONE DEVIATION FROM THE DESIGN SYSTEM, recorded rather than silent: the DS
+ * Badge keys its tones off semantic colors (`--success-bg`, `--warning-bg`,
+ * `--danger-bg`, `--info-bg`) that this product's token mirror has never
+ * carried — `core/tailwind.preset.ts` defines bg/surface/surface-2/border/text/
+ * muted/primary/primary-fg/accent/navy and nothing else. Mirroring those tones
+ * faithfully would mean adding seven colors to the preset all three surfaces
+ * import, for a status pill.
+ *
+ * So the SHAPE is the DS's exactly — pill radius, 24px tall, 800 12px/1 body
+ * font, optional leading icon or dot — and the tones map onto the tokens the
+ * product already uses for state: `primary` for live (the idiom
+ * `PublicationChecklist` already uses for "ready"), the gold gradient for
+ * something time-limited, `navy` for something needing action, `muted` for
+ * something switched off. Four tones carry six states; the LABEL carries the
+ * precision, which is the honest division when there is no semantic palette.
+ *
+ * The gap is flagged in `specs/018-merchant-subscription-plans/design-review.md`
+ * so the design system can decide whether the product mirror should grow
+ * semantic colors.
+ */
+export type BadgeTone = 'live' | 'promo' | 'attention' | 'off';
+
+export function Badge({
+  children,
+  tone = 'off',
+  icon,
+  dot = false,
+  className,
+}: {
+  children: ReactNode;
+  tone?: BadgeTone;
+  icon?: IconName;
+  dot?: boolean;
+  className?: string;
+}) {
+  const styles: Record<BadgeTone, string> = {
+    live: 'bg-surface-2 text-primary',
+    promo: 'bg-gold-gradient text-navy shadow-gold',
+    attention: 'bg-navy text-white',
+    off: 'bg-surface-2 text-muted',
+  };
+  return (
+    <span
+      className={cx(
+        'inline-flex h-6 items-center gap-1.5 whitespace-nowrap rounded-pill px-2.5 text-xs font-extrabold',
+        styles[tone],
+        className,
+      )}
+    >
+      {dot && <span className="h-1.5 w-1.5 rounded-full bg-current" />}
+      {icon && <Icon name={icon} size={13} />}
+      {children}
+    </span>
+  );
+}
+
 export function Chip({
   children,
   active,

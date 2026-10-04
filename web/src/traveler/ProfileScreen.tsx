@@ -65,6 +65,7 @@ export function ProfileScreen() {
   const [invalid, setInvalid] = useState<ProfileFieldError[]>([]);
   const [savingFields, setSavingFields] = useState(false);
   const [savedOk, setSavedOk] = useState(false);
+  const [saveFailed, setSaveFailed] = useState(false);
 
   useEffect(() => {
     if (seeded || !profile) return;
@@ -90,9 +91,14 @@ export function ProfileScreen() {
     if (nowInvalid.length) return;
 
     setSavingFields(true);
+    setSaveFailed(false);
     try {
       await saveProfileFields(user.uid, fields);
       setSavedOk(true);
+    } catch {
+      // The absence of the "saved" badge is not a message. Someone who just
+      // corrected their name needs to be told it did not stick.
+      setSaveFailed(true);
     } finally {
       setSavingFields(false);
     }
@@ -209,6 +215,9 @@ export function ProfileScreen() {
           <ProfileFieldsForm values={values} onChange={setValues} invalid={invalid} missing={[]} />
 
           {savedOk && <p className="text-sm font-bold text-text">{t('account.saved')}</p>}
+          {saveFailed && (
+            <p className="text-sm font-bold text-primary">{t('common.saveFailed')}</p>
+          )}
           <Button disabled={savingFields} onClick={() => void saveFields()}>
             {t('account.save')}
           </Button>

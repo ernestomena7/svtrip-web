@@ -147,7 +147,12 @@ function hasTerm(haystack: string, term: string): boolean {
   const t = normalize(term).trim();
   if (!t) return false;
   const escaped = t.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-  return new RegExp(`(^|[^\\p{L}])${escaped}(s|es)?($|[^\\p{L}])`, 'u').test(haystack);
+  // English turns a final consonant + y into -ies, and the lexicon carries
+  // `city`, `party` and `family` — so "parties" and "cities" were not
+  // recognised as the signal their singular is. Spanish never needs this, and
+  // the alternation costs nothing when the term does not end in y.
+  const stem = /[^aeiou]y$/i.test(t) ? escaped.slice(0, -1) + '(y|ies)' : escaped + '(s|es)?';
+  return new RegExp(`(^|[^\\p{L}])${stem}($|[^\\p{L}])`, 'u').test(haystack);
 }
 
 function matchesAny(haystack: string, terms: readonly string[]): boolean {

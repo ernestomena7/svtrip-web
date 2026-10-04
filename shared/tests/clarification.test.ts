@@ -76,6 +76,14 @@ describe('does NOT ask — the message already carries a signal (FR-002)', () =>
     ['quiero cenar en algun lado', 'time'],
     ['fiesta en la playa', 'mood'],
     ['un plan cultural', 'mood'],
+    // Added when a review found this corpus at 15 while the header above claims
+    // "at least 20". The number is what makes SC-002 checkable, so the honest
+    // fix is more cases — not a smaller claim.
+    ['una playa tranquila para descansar', 'mood'],
+    ['surf con mi pareja', 'companion'],
+    ['algo divertido para el fin de semana', 'mood'],
+    ['un cafe por la mañana', 'time'],
+    ['playa al amanecer', 'time'],
   ];
 
   for (const [msg, why] of cases) {
@@ -193,5 +201,43 @@ describe('the guarantees the contract states', () => {
   it('never returns a place — it cannot produce a recommendation', () => {
     const d = decideClarification('quiero ver lugares en la playa', ES);
     expect(Object.keys(d).sort()).toEqual(['ask', 'dimension']);
+  });
+});
+
+// --- feature 015 follow-up: English plurals the matcher could not see --------
+
+describe('the y → ies plural', () => {
+  // The lexicon carries `city`, `party` and `family`. The matcher allowed
+  // `(s|es)?`, which covers "beaches" and "friends" and misses every one of
+  // these — so "parties" and "cities" were not recognised as the signal their
+  // singular is, and the guide asked a question it already had the answer to.
+  const asksEn = (msg: string) => decideClarification(msg, EN).ask;
+
+  it('reads the plural of a SIGNAL term ending in consonant + y', () => {
+    // `party` is a mood and `family` a companion: their plural now carries the
+    // same signal, so the guide plans instead of asking.
+    expect(asksEn('somewhere for parties this weekend')).toBe(false);
+    expect(asksEn('a beach for families')).toBe(false);
+  });
+
+  it('reads the plural of a TOPIC term ending in consonant + y', () => {
+    // `city` is a topic, not a signal. "colonial cities" names something the
+    // catalog covers and carries no mood, companion or time — so asking is the
+    // CORRECT outcome, and getting here at all is the fix working: before it,
+    // "cities" matched nothing, the message read as topicless, and the gate
+    // returned "do not ask" for the opposite reason.
+    expect(asksEn('colonial cities to walk around')).toBe(true);
+    expect(asksEn('colonial city to walk around')).toBe(true);
+  });
+
+  it('still reads the singular', () => {
+    expect(asksEn('a party on the beach')).toBe(false);
+    expect(asksEn('a beach with my family')).toBe(false);
+  });
+
+  it('does not match a word that merely starts the same way', () => {
+    // `city` must not fire on "citizen" — the word-boundary guarantee the
+    // matcher already made, which the new alternation must not weaken.
+    expect(asksEn('a beach')).toBe(true);
   });
 });

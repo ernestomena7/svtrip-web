@@ -33,7 +33,15 @@ const BOX = {
   tall: 'h-28 w-20',
 };
 
-export function MediaManager({ label, hint, urls, onChange, single, lockLast, aspect = 'square' }: Props) {
+export function MediaManager({
+  label,
+  hint,
+  urls,
+  onChange,
+  single,
+  lockLast,
+  aspect = 'square',
+}: Props) {
   const { t } = useTranslation();
   const { user } = useAuth();
   const input = useRef<HTMLInputElement>(null);
@@ -42,7 +50,14 @@ export function MediaManager({ label, hint, urls, onChange, single, lockLast, as
   const [serviceDown, setServiceDown] = useState(false);
 
   async function pick(file: File | undefined) {
-    if (!file || !user) return;
+    if (!file) return;
+    if (!user) {
+      // Silently returning here meant the owner chose a photo, watched
+      // nothing happen, and had no way to tell an expired session from a
+      // broken button.
+      setServiceDown(true);
+      return;
+    }
     setBusy(true);
     setError(null);
     setServiceDown(false);
@@ -130,27 +145,29 @@ export function MediaManager({ label, hint, urls, onChange, single, lockLast, as
           </div>
         ))}
 
-        {(!single || urls.length === 0) && (
-          <label
-            className={cx(
-              'flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted transition hover:border-primary hover:text-primary',
-              BOX[aspect],
-            )}
-          >
-            <Icon name={busy ? 'clock' : 'camera'} size={20} />
-            <span className="text-[11px] font-bold">
-              {busy ? t('services.uploading') : t('services.addPhoto')}
-            </span>
-            <input
-              ref={input}
-              type="file"
-              accept="image/jpeg,image/png,image/webp"
-              className="hidden"
-              disabled={busy}
-              onChange={(e) => void pick(e.target.files?.[0])}
-            />
-          </label>
-        )}
+        {/* Shown for a single-slot collection too: `pick` REPLACES when
+            `single` is set, so hiding this guarded nothing and turned a
+            replace into delete-then-upload — two steps, with the profile
+            briefly below the publication floor in between. */}
+        <label
+          className={cx(
+            'flex cursor-pointer flex-col items-center justify-center gap-1 rounded-md border border-dashed border-border text-muted transition hover:border-primary hover:text-primary',
+            BOX[aspect],
+          )}
+        >
+          <Icon name={busy ? 'clock' : 'camera'} size={20} />
+          <span className="text-[11px] font-bold">
+            {busy ? t('services.uploading') : t('services.addPhoto')}
+          </span>
+          <input
+            ref={input}
+            type="file"
+            accept="image/jpeg,image/png,image/webp"
+            className="hidden"
+            disabled={busy}
+            onChange={(e) => void pick(e.target.files?.[0])}
+          />
+        </label>
       </div>
 
       {error && <p className="text-xs font-bold text-primary">{error}</p>}

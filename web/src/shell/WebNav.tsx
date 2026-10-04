@@ -24,6 +24,7 @@ const WORDMARK = '/svtrip-wordmark.png';
 const TRAVELER = [
   { to: '/discover', key: 'nav.discover' },
   { to: '/guide', key: 'nav.guide' },
+  { to: '/trips', key: 'nav.trips' },
   { to: '/deals', key: 'nav.deals' },
   { to: '/saved', key: 'nav.saved' },
 ];

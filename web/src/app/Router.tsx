@@ -49,6 +49,12 @@ const AIGuideScreen = lazy(() =>
 const DealsScreen = lazy(() =>
   import('../traveler/DealsScreen').then((m) => ({ default: m.DealsScreen })),
 );
+const TripsScreen = lazy(() =>
+  import('../traveler/TripsScreen').then((m) => ({ default: m.TripsScreen })),
+);
+const TripDetailScreen = lazy(() =>
+  import('../traveler/TripDetailScreen').then((m) => ({ default: m.TripDetailScreen })),
+);
 const FavoritesScreen = lazy(() =>
   import('../traveler/FavoritesScreen').then((m) => ({ default: m.FavoritesScreen })),
 );
@@ -127,6 +133,10 @@ function SignedInRoutes() {
         <Route path="/discover" element={<DiscoverScreen />} />
         <Route path="/place/:id" element={<PlaceProfileScreen />} />
         <Route path="/guide" element={<AIGuideScreen />} />
+        {/* Traveler-only, like the nav link that reaches them. The
+            provider links are untouched (FR-046). */}
+        <Route path="/trips" element={<TripsScreen />} />
+        <Route path="/trips/:id" element={<TripDetailScreen />} />
         <Route path="/deals" element={<DealsScreen />} />
         <Route path="/saved" element={<FavoritesScreen />} />
         <Route path="/profile" element={<ProfileScreen />} />

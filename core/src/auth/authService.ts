@@ -36,8 +36,18 @@ export async function signInWithGoogle(): Promise<void> {
 
 export async function signOutUser(): Promise<void> {
   if (Capacitor.isNativePlatform()) {
-    const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
-    await FirebaseAuthentication.signOut();
+    // Best effort, and it must not be able to stop the line below.
+    //
+    // A throw here — the plugin missing, the native bridge unavailable, no
+    // network — used to skip `signOut(auth)` entirely, so the traveler tapped
+    // "sign out", saw an error or nothing at all, and stayed signed in. On a
+    // shared phone that is the whole point of the button failing to happen.
+    try {
+      const { FirebaseAuthentication } = await import('@capacitor-firebase/authentication');
+      await FirebaseAuthentication.signOut();
+    } catch {
+      // Falls through: the Firebase sign-out below is the one that matters.
+    }
   }
   // Clears the persisted credential synchronously and without the network, which
   // is what FR-013 asks for offline; the SDK reconciles when connectivity returns.

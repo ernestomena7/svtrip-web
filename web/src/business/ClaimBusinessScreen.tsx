@@ -30,6 +30,7 @@ export function ClaimBusinessScreen() {
   const [selected, setSelected] = useState<Place | null>(null);
   const [message, setMessage] = useState('');
   const [busy, setBusy] = useState(false);
+  const [claimError, setClaimError] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -55,11 +56,17 @@ export function ClaimBusinessScreen() {
   async function file() {
     if (!selected) return;
     setBusy(true);
+    setClaimError(false);
     try {
       await fileClaim(selected.placeId, message.trim() || undefined);
       setSelected(null);
       setMessage('');
       setQuery('');
+    } catch {
+      // Claiming is the one action that decides who speaks for a real
+      // business. A rejection that says nothing leaves the requester unsure
+      // whether to try again — and filing twice is its own problem.
+      setClaimError(true);
     } finally {
       setBusy(false);
     }
@@ -142,6 +149,9 @@ export function ClaimBusinessScreen() {
               <Button fullWidth disabled={busy} onClick={() => void file()}>
                 {busy ? t('common.loading') : t('claims.send')}
               </Button>
+              {claimError && (
+                <p className="text-sm font-bold text-primary">{t('common.saveFailed')}</p>
+              )}
               <Button variant="secondary" fullWidth onClick={() => setSelected(null)}>
                 {t('common.close')}
               </Button>
@@ -166,7 +176,11 @@ export function ClaimBusinessScreen() {
                       {t(`claims.status.${claim.status}`)}
                     </span>
                     {claim.status === 'pending' && (
-                      <Button size="sm" variant="ghost" onClick={() => void withdrawClaim(claim.claimId)}>
+                      <Button size="sm" variant="ghost" onClick={() =>
+                          void withdrawClaim(claim.claimId).catch(() =>
+                            setClaimError(true),
+                          )
+                        }>
                         {t('claims.withdraw')}
                       </Button>
                     )}

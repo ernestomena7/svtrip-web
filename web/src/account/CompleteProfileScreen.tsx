@@ -12,7 +12,7 @@
 // No password fields, ever (FR-011). A Google account has none of the product's
 // own, and this screen cannot know which kind it is looking at — nor should it
 // need to.
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { DEFAULT_RESIDENCE_COUNTRY, missingProfileFields, validateProfileFields } from '@svtrip/shared';
 import type { ProfileFieldError, RequiredProfileField } from '@svtrip/shared';
@@ -35,13 +35,33 @@ export function CompleteProfileScreen() {
   // Pre-fill from whatever Google supplied (FR-010). Google gives one full name,
   // so it is split on the first space — a reasonable guess the traveler can
   // correct, which is the whole point of leaving the fields editable.
+  // Hydrated once, from the profile, when it actually arrives.
+  //
+  // `useState` runs its initializer on the FIRST render, when `profile` is
+  // usually still null — so an account that already had a gender, an age, a
+  // country or a marital status saw those fields empty, and either retyped them
+  // or saved the defaults straight over the real values. Only firstName and
+  // lastName were patched afterwards; every other stored field was dropped.
+  const hydrated = useRef(false);
   useEffect(() => {
-    if (!profile) return;
+    if (!profile || hydrated.current) return;
+    hydrated.current = true;
     setValues((prev) => {
-      if (prev.firstName || prev.lastName) return prev;
-      const parts = (profile.displayName ?? '').trim().split(/\s+/);
-      if (parts.length < 2) return { ...prev, firstName: parts[0] ?? '' };
-      return { ...prev, firstName: parts[0], lastName: parts.slice(1).join(' ') };
+      const stored = fromProfile(profile, DEFAULT_RESIDENCE_COUNTRY);
+      // Anything already typed wins over the stored value: someone on this
+      // screen may be here precisely to correct what is stored.
+      const merged: ProfileFieldValues = { ...stored };
+      for (const key of Object.keys(prev) as (keyof ProfileFieldValues)[]) {
+        const typed = prev[key];
+        if (typed) merged[key] = typed as never;
+      }
+      // Google supplies one full name; split it as a guess they can correct.
+      if (!merged.firstName && !merged.lastName) {
+        const parts = (profile.displayName ?? '').trim().split(/\s+/);
+        merged.firstName = parts[0] ?? '';
+        if (parts.length > 1) merged.lastName = parts.slice(1).join(' ');
+      }
+      return merged;
     });
   }, [profile]);
 

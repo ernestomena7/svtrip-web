@@ -30,7 +30,16 @@ export interface PersistTurnInput {
 }
 
 /** Persist a completed user+assistant turn and update conversation metadata. */
-export async function persistTurn(input: PersistTurnInput): Promise<void> {
+/**
+ * Returns the ASSISTANT message's id (feature 016).
+ *
+ * Additive: every existing caller ignores the value and keeps working. The
+ * desktop guide needs it because its turns live in component state until a
+ * reload, and FR-041 ("the same reply cannot be kept twice") is answered by
+ * `sourceMessageId` — which has to be the id this function just generated, not
+ * a new one invented by the screen.
+ */
+export async function persistTurn(input: PersistTurnInput): Promise<string> {
   const { uid, conversationId, userText, assistantText, plan } = input;
   const now = Date.now();
   const batch = writeBatch(db);
@@ -68,6 +77,7 @@ export async function persistTurn(input: PersistTurnInput): Promise<void> {
   );
 
   await batch.commit();
+  return aiMsgRef.id;
 }
 
 export async function touchConversation(uid: string, conversationId: string): Promise<void> {

@@ -1,46 +1,64 @@
-// Subscription persistence (T092, FR-027/028). The selected tier + recomputed
-// entitlements are stored on providerProfiles/{uid}.subscription (owner-writable
-// per rules). Billing is simulated for v1: selecting a tier activates it
-// immediately. The rank-boost entitlement is denormalized onto the owner's
-// listings as a public `boosted` flag so Discover can rank them without a
-// traveler ever reading another provider's private subscription (T094).
-import { collection, doc, getDocs, onSnapshot, query, where, writeBatch } from 'firebase/firestore';
-import {
-  entitlementsForTier,
-  type Subscription,
-  type SubscriptionTier,
-} from '@svtrip/shared';
+// Subscription data access (feature 018).
+//
+// WHAT CHANGED, and it is the point of the feature rather than a refactor:
+// `selectTier` is GONE. It wrote `providerProfiles/{uid}.subscription` straight
+// from the browser and denormalized `boosted` onto every listing the account
+// owned — which is how 33 of 33 live listings ended up boosted (measured,
+// `specs/018-merchant-subscription-plans/baseline-live.txt`).
+//
+// Plan changes now go through the BFF (FR-026), and the Firestore rules refuse
+// the client write, so there is no second path to keep in step with the first.
+// What stays here is the READ, because the merchant's own screens want it live.
+import { doc, onSnapshot } from 'firebase/firestore';
+import type { LaunchCampaignConfig, MerchantSubscription, SubscriptionPlanConfig } from '@svtrip/shared';
 import { db } from '../firebase';
-import { clearDiscoverCache } from './discoverRepo';
+import { fetchPlans } from '../apiClient';
 
-/** Live subscription for a provider (undefined until first load; null when none). */
+/**
+ * Live subscription for one account (null when none).
+ *
+ * The error callback is kept from the previous version and the reason is worth
+ * not re-learning: without it a permission-denied or dropped listener is
+ * swallowed by the SDK and the caller waits on a snapshot that will never
+ * arrive — the provider dashboard spins forever. Reporting "no subscription" is
+ * the honest answer and the safe one, because with no subscription nothing is
+ * granted.
+ */
 export function subscribeToSubscription(
   uid: string,
-  cb: (sub: Subscription | null) => void,
+  cb: (sub: MerchantSubscription | null) => void,
 ): () => void {
-  return onSnapshot(doc(db, 'providerProfiles', uid), (snap) => {
-    cb((snap.data()?.subscription as Subscription | undefined) ?? null);
-  });
-}
-
-/** Activate a tier (simulated) and denormalize its rank-boost onto the owner's listings. */
-export async function selectTier(uid: string, tier: SubscriptionTier): Promise<void> {
-  const entitlements = entitlementsForTier(tier);
-  const subscription: Subscription = {
-    tier,
-    entitlements,
-    status: 'active',
-    selectedAt: Date.now(),
-  };
-
-  const listingsSnap = await getDocs(
-    query(collection(db, 'listings'), where('ownerUid', '==', uid)),
+  return onSnapshot(
+    doc(db, 'providerProfiles', uid),
+    (snap) => {
+      cb((snap.data()?.subscription as MerchantSubscription | undefined) ?? null);
+    },
+    () => cb(null),
   );
-
-  const batch = writeBatch(db);
-  batch.set(doc(db, 'providerProfiles', uid), { subscription }, { merge: true });
-  listingsSnap.forEach((l) => batch.update(l.ref, { boosted: entitlements.rankBoost }));
-
-  await batch.commit();
-  clearDiscoverCache();
 }
+
+export interface PlanCatalog {
+  plans: SubscriptionPlanConfig[];
+  campaign: LaunchCampaignConfig;
+}
+
+/**
+ * The price list and the campaign.
+ *
+ * Fetched from the BFF rather than read from Firestore even though the rules
+ * allow a signed-in client to read both: the fallback to the compiled defaults
+ * lives server-side, and before the team has ever opened the admin screen those
+ * documents do not exist. A chooser that renders an empty card because nobody
+ * has set a price yet would be a worse first impression than one that renders
+ * the shipped default.
+ */
+export function fetchPlanCatalog(): Promise<PlanCatalog> {
+  return fetchPlans();
+}
+
+export {
+  cancelSubscription,
+  changeSubscriptionPlan,
+  chooseSubscriptionPlan,
+  fetchMySubscription,
+} from '../apiClient';

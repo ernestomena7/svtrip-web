@@ -4,7 +4,7 @@
 // read avoids needing Firestore composite indexes for this MVP.
 import { collection, getDocs } from 'firebase/firestore';
 import type { Listing, Place, SvEvent } from '@svtrip/shared';
-import { publicVisibility } from '@svtrip/shared';
+import { travelerVisible } from '@svtrip/shared';
 import { db } from '../firebase';
 
 let placesCache: Place[] | null = null;
@@ -32,6 +32,7 @@ export function listingToPlace(l: Listing): Place {
     keywords: l.keywords?.length ? l.keywords : [l.name.toLowerCase()],
     source: 'listing',
     boosted: l.boosted === true,
+    covered: l.covered,
     // Carried through so the profile can show owner-only affordances and the
     // real review aggregate rather than the legacy `rating` field (feature 005).
     ownerUid: l.ownerUid,
@@ -75,7 +76,10 @@ export async function fetchPlaces(): Promise<Place[]> {
     // Unfinished entries are visible to their manager only (feature 006,
     // FR-012). `publicVisibility` exempts anything authored before that feature,
     // which is why the 18 photoless catalog entries stay in the catalog.
-    if (publicVisibility(listing)) byId.set(d.id, listingToPlace(listing));
+    // Feature 018 (FR-016). The SECOND of the catalog's readers — features
+    // 013 (`createdAt`) and 014 (`priceBand`) each lost a field to exactly
+    // this split, which is why FR-028 requires the predicate at every one.
+    if (travelerVisible(listing)) byId.set(d.id, listingToPlace(listing));
   }
   placesCache = [...byId.values()];
   return placesCache;
@@ -115,8 +119,21 @@ export async function fetchEvents(): Promise<SvEvent[]> {
   return eventsCache;
 }
 
+/**
+ * Best-rated first, by what travelers actually said.
+ *
+ * `rating` is the EDITORIAL score — `types.ts` says so beside the field, and
+ * "never render it in an average's slot". Ordering by it did something close
+ * to that: a curated 5 outranked a place with thirty real reviews averaging
+ * 4.8, which is the opposite of what "best rated" tells a traveler.
+ *
+ * Both fields are optional, so the old expression could also be
+ * `undefined - undefined` — NaN, which makes the sort order undefined rather
+ * than merely wrong.
+ */
 function byRatingDesc(a: Place, b: Place): number {
-  return b.rating - a.rating;
+  const score = (p: Place) => p.ratingAvg ?? p.rating ?? 0;
+  return score(b) - score(a);
 }
 
 /**

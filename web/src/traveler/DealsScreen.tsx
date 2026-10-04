@@ -8,6 +8,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { recordEngagement } from '@svtrip/core/repos/engagementClient';
 import type { Deal, Place } from '@svtrip/shared';
 import { resolveLocalized } from '@svtrip/shared';
 import { useUiStore } from '@svtrip/core/uiStore';
@@ -27,6 +28,23 @@ export function DealsScreen() {
   const navigate = useNavigate();
   const language = useUiStore((s) => s.language);
   const [deals, setDeals] = useState<Deal[] | null>(null);
+
+  // One `promotion_view` per promotion shown, once per load (feature 018, R7).
+  // Recorded when the list ARRIVES rather than per card entering the viewport:
+  // an intersection observer would also count a promotion that flew past in a
+  // scroll as "seen", and the number a merchant pays to read should not be more
+  // generous than what happened.
+  useEffect(() => {
+    if (!deals) return;
+    for (const deal of deals) {
+      if (deal.listingId) {
+        recordEngagement(deal.listingId, 'promotion_view', {
+          origin: 'deals',
+          dealId: deal.dealId,
+        });
+      }
+    }
+  }, [deals]);
   const [places, setPlaces] = useState<Place[]>([]);
   const [error, setError] = useState(false);
 
@@ -114,7 +132,17 @@ export function DealsScreen() {
                         variant="secondary"
                         size="sm"
                         className="mt-2"
-                        onClick={() => deal.listingId && navigate(`/place/${deal.listingId}`)}
+                        onClick={() => {
+                          if (!deal.listingId) return;
+                          // The click is the stronger signal and the one a click
+                          // rate is computed from, so it is recorded before
+                          // navigating away.
+                          recordEngagement(deal.listingId, 'promotion_click', {
+                            origin: 'deals',
+                            dealId: deal.dealId,
+                          });
+                          navigate(`/place/${deal.listingId}`, { state: { origin: 'deals' } });
+                        }}
                       >
                         {placeName}
                       </Button>

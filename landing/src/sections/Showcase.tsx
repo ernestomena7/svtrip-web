@@ -49,7 +49,12 @@ function Score({ score }: { score: ScoreSignal }) {
           <Icon name="star" size={14} filled />
         </span>
         {score.value.toFixed(1)}
-        <span className="font-bold text-muted">({score.count})</span>
+        {/* Only when there IS a count. An absent one rendered as an empty pair
+            of parens beside the rating — which reads as a broken number rather
+            than as a rating whose sample size is unknown. */}
+        {typeof score.count === 'number' && score.count > 0 && (
+          <span className="font-bold text-muted">({score.count})</span>
+        )}
       </span>
     );
   }

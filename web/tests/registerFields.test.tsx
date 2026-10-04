@@ -129,12 +129,17 @@ describe('registering with Google', () => {
     expect(screen.getByRole('button', { name: /Continuar con Google/ })).toBeDefined();
   });
 
-  it('asks for none of the six fields here', () => {
+  it('asks for none of the six fields here', async () => {
     // They are collected by the first-run completion step instead, which this
     // account passes through anyway and which pre-fills from what Google gave.
     // Demanding them here would mean asking twice.
     click(/Continuar con Google/);
-    expect(signInWithGoogle).toHaveBeenCalled();
+    // Awaited BEFORE the negative assertion. `click` only queues the handler:
+    // a save that happens one microtask later had not run yet when the old
+    // version asserted, so `not.toHaveBeenCalled()` passed whether the screen
+    // saved fields or not. A negative assertion is only worth what the thing
+    // it waits for is worth.
+    await waitFor(() => expect(signInWithGoogle).toHaveBeenCalled());
     expect(saveProfileFields).not.toHaveBeenCalled();
   });
 

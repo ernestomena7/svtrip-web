@@ -29,7 +29,13 @@ import type { IconName } from './Icon';
  * reach `<Icon name={undefined}>`, so every picker goes through this instead.
  */
 export function moodIcon(key: string): IconName {
-  return MOOD_ICON[key as Mood] ?? 'star';
+  // `hasOwnProperty`, not a plain lookup. An admin-created mood keyed
+  // `constructor` or `toString` would otherwise resolve to something off
+  // Object.prototype — a function, not an icon name — and reach
+  // `<Icon name={...}>` as a value the fallback was written to prevent.
+  return Object.prototype.hasOwnProperty.call(MOOD_ICON, key)
+    ? MOOD_ICON[key as Mood]
+    : 'star';
 }
 
 export const MOOD_ICON: Record<Mood, IconName> = {

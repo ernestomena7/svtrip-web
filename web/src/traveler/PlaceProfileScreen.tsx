@@ -14,13 +14,14 @@
 // lands, so a screen that trusted its first read would show "I just reviewed
 // this and nothing changed" (SC-009).
 import { useEffect, useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import type { Deal, Place } from '@svtrip/shared';
 import { DEFAULT_BUSINESS_TYPE, resolveLocalized, scoreSignalFor } from '@svtrip/shared';
 import { useUiStore } from '@svtrip/core/uiStore';
 import { useFavorites } from '@svtrip/core/repos/useFavorites';
 import { recordEngagement } from '@svtrip/core/repos/engagementClient';
+import type { EngagementOrigin } from '@svtrip/shared';
 import {
   fetchProfileDeals,
   fetchProfileTarget,
@@ -30,6 +31,7 @@ import {
 import { Icon } from '@svtrip/core/Icon';
 import { ScoreBadge } from '../components/ScoreBadge';
 import { Button, Card, ErrorState, Spinner } from '../components/ui';
+import { AddToTripDialog } from './AddToTripDialog';
 import { GalleryViewer } from './GalleryViewer';
 import { LocationPreviewMap } from './LocationPreviewMap';
 import { ReviewsSection } from './ReviewsSection';
@@ -39,13 +41,29 @@ export function PlaceProfileScreen() {
   const { t } = useTranslation();
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+/**
+ * Where this traveler came from (feature 018, FR-039).
+ *
+ * Read from the navigation that caused it, because this screen cannot know
+ * otherwise (research R6). `undefined` on a refresh or a pasted link, which
+ * falls to `direct` — and that is honest rather than a gap: a refresh IS a
+ * direct arrival.
+ *
+ * Deliberately NOT set by Trips or Favorites. Feature 016's FR-017 forbids a
+ * business learning it appears in someone's Trip, and an aggregate "12 visits
+ * came from Trips" tells them exactly that. Those arrivals land in the
+ * unattributed bucket instead.
+ */
+  const origin = (useLocation().state as { origin?: EngagementOrigin } | null)?.origin;
   const language = useUiStore((s) => s.language);
   const { isFavorite, toggle } = useFavorites();
 
   const [place, setPlace] = useState<Place | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
+  const [addingToTrip, setAddingToTrip] = useState(false);
   const [kind, setKind] = useState<ProfileTargetKind | null>(null);
   const [unfinished, setUnfinished] = useState(false);
+  const [uncovered, setUncovered] = useState(false);
   const [state, setState] = useState<'loading' | 'ready' | 'missing' | 'error'>('loading');
   const [viewerIndex, setViewerIndex] = useState<number | null>(null);
 
@@ -65,9 +83,18 @@ export function PlaceProfileScreen() {
         setPlace(target.place);
         setKind(target.kind);
         setUnfinished(target.unfinished === true);
+        setUncovered(target.uncovered === true);
         setState('ready');
-        if (target.kind === 'listing') recordEngagement(target.place.placeId, 'profile_view');
-        return fetchProfileDeals(id).then((d) => !cancelled && setDeals(d));
+        if (target.kind === 'listing')
+          recordEngagement(target.place.placeId, 'profile_view', { origin });
+        // Its own catch, so it cannot reach the one below. The profile is
+        // already loaded and on screen at this point; deals are an addition to
+        // it. Letting a failed deals fetch fall through replaced a page the
+        // traveler could read with an error page, over content that is not
+        // even required for the screen to make sense.
+        return fetchProfileDeals(id)
+          .then((d) => !cancelled && setDeals(d))
+          .catch(() => undefined);
       })
       .catch(() => !cancelled && setState('error'));
     return () => {
@@ -118,7 +145,7 @@ export function PlaceProfileScreen() {
   if (unfinished) {
     return (
       <DesktopLayout>
-        <ErrorState message={t('publication.notPublicYet')} />
+        <ErrorState message={t(uncovered ? 'place.unavailableNow' : 'publication.notPublicYet')} />
       </DesktopLayout>
     );
   }
@@ -130,7 +157,8 @@ export function PlaceProfileScreen() {
 
   function openDirections() {
     if (!place) return;
-    if (place.source === 'listing') recordEngagement(place.placeId, 'directions_click');
+    if (place.source === 'listing')
+      recordEngagement(place.placeId, 'directions_click', { origin });
     window.open(
       `https://www.google.com/maps/dir/?api=1&destination=${place.lat},${place.lng}`,
       '_blank',
@@ -234,6 +262,24 @@ export function PlaceProfileScreen() {
             >
               {saved ? t('discover.unsave') : t('discover.save')}
             </Button>
+            {/* Feature 016, FR-011. Full-width here: this column has room, which
+                is exactly what the mobile action row does not (T033). */}
+            <Button
+              fullWidth
+              variant="secondary"
+              iconLeft="plus"
+              onClick={() => setAddingToTrip(true)}
+            >
+              {t('trips.addToCta')}
+            </Button>
+
+            {addingToTrip && (
+              <AddToTripDialog
+                catalogId={place.placeId}
+                kind={place.source === 'listing' ? 'listing' : 'place'}
+                onClose={() => setAddingToTrip(false)}
+              />
+            )}
 
             {(place.phone || place.whatsapp) && (
               <div className="space-y-2 border-t border-border pt-4">

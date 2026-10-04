@@ -45,6 +45,22 @@ vi.mock('../src/shell/DesktopLayout', () => ({
 // CALL BACK, not just return an unsubscribe. A stub that never fires leaves the
 // history rail spinning, and its `role="status"` is indistinguishable from the
 // guide's own thinking indicator.
+vi.mock('@svtrip/core/repos/tripsRepo', () => ({
+  // Mocked for the same reason as the repos beside it: `core/firebase`
+  // initialises a real Firebase app at import time, so any unmocked repo in the
+  // import graph fails the suite at module load with `auth/invalid-api-key`.
+  // The guide reaches this one through the keep-as-a-Trip offer (feature 016).
+  tripForMessage: async () => null,
+  createTripFromPlan: vi.fn(),
+  createTrip: vi.fn(),
+  updateTrip: vi.fn(),
+  useTrips: () => ({ trips: [], loading: false }),
+  useTripStops: () => ({ stops: [], loading: false }),
+  addStop: vi.fn(),
+  deleteTrip: vi.fn(),
+  removeStop: vi.fn(),
+  scheduleStop: vi.fn(),
+}));
 vi.mock('@svtrip/core/repos/conversationRepo', () => ({
   persistTurn: async () => undefined,
   touchConversation: async () => undefined,

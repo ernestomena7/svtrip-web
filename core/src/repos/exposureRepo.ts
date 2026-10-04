@@ -105,6 +105,16 @@ export function useExposure(): { entries: ExposureEntry[]; loading: boolean } {
       setLoading(false);
       return;
     }
+    // Clear BEFORE subscribing, not only on sign-out.
+    //
+    // On a switch from one account to another this effect re-runs with the
+    // new uid while `entries` still holds the previous traveler's history —
+    // and with `loading` false, the screen presents it as the new one's. This
+    // is the record of what the guide has shown a specific person; it must
+    // never be on screen for anybody else, not even for the moment a
+    // snapshot takes to arrive.
+    setEntries([]);
+    setLoading(true);
     return onSnapshot(
       collection(db, 'users', user.uid, COLLECTION),
       (snap) => {

@@ -56,7 +56,17 @@ export class ErrorBoundary extends Component<Props, State> {
 
   render(): ReactNode {
     if (!this.state.failed) return this.props.children;
-    return this.props.fallback ?? null;
+    // `?? <CrashNotice />`, never `?? null`. A boundary that renders nothing
+    // turns a crash into a hole in the page — the visitor sees a section that
+    // simply is not there and has no reason to reload. That silent blank is
+    // the symptom this component was added to stop.
+    //
+    // `!== undefined`, not `??`. `??` treats an explicit `fallback={null}` as
+    // absent, and that prop is a real instruction — it is how a caller says
+    // "this region is better gone than explained". Collapsing the two would
+    // have put a crash notice inside layouts that deliberately asked for
+    // silence.
+    return this.props.fallback !== undefined ? this.props.fallback : <CrashNotice />;
   }
 }
 

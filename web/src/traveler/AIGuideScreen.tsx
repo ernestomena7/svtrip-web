@@ -30,6 +30,8 @@ import {
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { useUiStore } from '@svtrip/core/uiStore';
 import { Icon } from '@svtrip/core/Icon';
+import { createTripFromPlan, tripForMessage } from '@svtrip/core/repos/tripsRepo';
+import { TripForm } from './TripForm';
 import { Button, Card, EmptyState, TextInput, cx } from '../components/ui';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 import { ConversationHistory } from './ConversationHistory';
@@ -48,6 +50,14 @@ interface Turn {
    * question was asked.
    */
   plan?: GeneratedPlan;
+  /**
+   * The persisted assistant message id (feature 016, FR-041).
+   *
+   * Absent until `persistTurn` returns, and absent for a turn that failed to
+   * persist — in both cases the keep offer simply does not render, which is the
+   * honest behaviour: there is no stable id to refuse a second keep against.
+   */
+  messageId?: string;
 }
 
 /**
@@ -59,6 +69,88 @@ interface Turn {
  * where two copies of the same markup drift until the same plan looks like two
  * different things depending on where you read it.
  */
+/**
+ * Keep this plan as a Trip (feature 016, US3).
+ *
+ * ONLY for a reply that actually contains a plan (FR-036). The guard is
+ * `outcome`, not "are there stops": a clarifying question, a no-match and an
+ * out-of-scope redirect all carry an empty `stops`, and none of them is
+ * something to keep.
+ *
+ * Rendered in the THREAD and not in the parked panel on the right. The panel
+ * holds the current plan while the traveler types the next question, so a keep
+ * button there would not know which turn it was talking about — and FR-041
+ * turns entirely on knowing that.
+ */
+function KeepPlanOffer({
+  plan,
+  messageId,
+  uid,
+}: {
+  plan: GeneratedPlan;
+  messageId: string;
+  uid: string;
+}) {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [keeping, setKeeping] = useState(false);
+  const [keptTripId, setKeptTripId] = useState<string | null>(null);
+  const [alreadyKept, setAlreadyKept] = useState(false);
+
+  // Checked on the ASK, not on the save: the traveler learns it is already
+  // saved before filling in a name and a start date they would then lose.
+  async function openKeep() {
+    const existing = await tripForMessage(uid, messageId);
+    if (existing) {
+      setAlreadyKept(true);
+      return;
+    }
+    setKeeping(true);
+  }
+
+  if (keptTripId) {
+    return (
+      <button
+        type="button"
+        className="text-xs font-bold text-primary"
+        onClick={() => navigate(`/trips/${keptTripId}`)}
+      >
+        {t('trips.title')}
+      </button>
+    );
+  }
+
+  return (
+    <>
+      {alreadyKept ? (
+        // Refused rather than hidden: the traveler asked, and being told it is
+        // already saved answers them. A vanished control does not.
+        <p className="text-xs font-bold text-muted">{t('trips.keepAlready')}</p>
+      ) : (
+        <Button variant="secondary" iconLeft="plus" onClick={openKeep}>
+          {t('trips.keepOffer')}
+        </Button>
+      )}
+      {/* Accepting asks for a name and a start date, which a guide plan has
+          NEITHER of and a Trip requires both (FR-037). Declining creates
+          nothing and leaves the conversation untouched (FR-042). */}
+      {keeping && (
+        <TripForm
+          origin="guide"
+          sourceMessageId={messageId}
+          onClose={() => setKeeping(false)}
+          onSaved={() => setKeeping(false)}
+          onCreate={async (input) => {
+            const tripId = await createTripFromPlan(uid, input, plan, messageId);
+            setKeptTripId(tripId);
+            return tripId;
+          }}
+        />
+      )}
+    </>
+  );
+}
+
 function PlanStops({
   plan,
   nameFor,
@@ -152,7 +244,12 @@ export function AIGuideScreen() {
         // `plan` carried through, so reopening a past conversation shows the
         // stops it produced and not just the prose. persistTurn has been
         // storing it on the assistant message all along; nothing read it back.
-        .map((m) => ({ role: m.role as 'user' | 'assistant', text: m.text, plan: m.plan }));
+        .map((m) => ({
+          role: m.role as 'user' | 'assistant',
+          text: m.text,
+          plan: m.plan,
+          messageId: m.messageId,
+        }));
       // Only adopt the stored history when there is some; an empty result is a
       // brand-new conversation and must not wipe a turn already on screen.
       if (replayed.length > 0) setTurns(replayed);
@@ -192,12 +289,25 @@ export function AIGuideScreen() {
     setInput('');
     setLive('');
     setError(null);
+    // Cleared HERE, at send. It is read in `onDone` to record what was shown
+    // and to attach the plan to the assistant turn — so a reply that carries
+    // no plan of its own (a clarifying question, a no-match) inherited the
+    // previous turn's: the old stops got recorded as shown a second time, and
+    // the question rendered with a plan underneath it.
+    planRef.current = null;
     setBusy(true);
 
     let buffer = '';
     // Read once per send; a failed read means "seen nothing", which is exactly
     // how a brand-new traveler is served (FR-007).
-    void loadExposure(user?.uid ?? '').then((seen) =>
+    //
+    // The `catch` is what makes that sentence true. Without it a rejection
+    // skipped `streamChat` entirely, so neither `onError` nor `onDone` ever
+    // ran, `busy` stayed true and the thinking spinner never stopped — the
+    // failure mode FR-027 forbids.
+    void loadExposure(user?.uid ?? '')
+      .catch(() => [])
+      .then((seen) =>
       streamChat(
       {
         message: text,
@@ -264,7 +374,20 @@ export function AIGuideScreen() {
               userText: text,
               assistantText: buffer,
               plan: planRef.current,
-            }).catch(() => {
+            })
+              .then((assistantMessageId) => {
+                // Attached after the fact: the turn is on screen before the
+                // write lands, and the keep offer needs the id the write
+                // generated rather than one invented here.
+                setTurns((prev) =>
+                  prev.map((turn, i) =>
+                    i === prev.length - 1 && turn.role === 'assistant'
+                      ? { ...turn, messageId: assistantMessageId }
+                      : turn,
+                  ),
+                );
+              })
+              .catch(() => {
               /* The conversation still works; only its history is missing. */
             });
           }
@@ -341,8 +464,17 @@ export function AIGuideScreen() {
                       <PlanStops
                         plan={turn.plan}
                         nameFor={nameFor}
-                        onOpen={(id) => navigate(`/place/${id}`)}
+                        onOpen={(id) => navigate(`/place/${id}`, { state: { origin: 'guide' } })}
                       />
+                      {turn.plan.outcome === 'plan' && turn.messageId && user && (
+                        <div className="pt-3">
+                          <KeepPlanOffer
+                            plan={turn.plan}
+                            messageId={turn.messageId}
+                            uid={user.uid}
+                          />
+                        </div>
+                      )}
                     </div>
                   )}
                 </div>
@@ -416,7 +548,7 @@ export function AIGuideScreen() {
                 {t('guide.plan.stopCount', { count: plan.stops.length })}
               </h2>
               {plan.intro && <p className="text-sm leading-relaxed text-muted">{plan.intro}</p>}
-              <PlanStops plan={plan} nameFor={nameFor} onOpen={(id) => navigate(`/place/${id}`)} />
+              <PlanStops plan={plan} nameFor={nameFor} onOpen={(id) => navigate(`/place/${id}`, { state: { origin: 'guide' } })} />
               {plan.clarifyingQuestion && (
                 <p className="text-sm text-muted">{t(plan.clarifyingQuestion)}</p>
               )}
@@ -430,7 +562,7 @@ export function AIGuideScreen() {
                     // Acting on it records it as taken up, so it is never
                     // introduced as unseen again (FR-002).
                     if (user) recordTakenUp(user.uid, catalogId);
-                    navigate(`/place/${catalogId}`);
+                    navigate(`/place/${catalogId}`, { state: { origin: 'guide' } });
                   }}
                 />
               )}

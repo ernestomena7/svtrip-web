@@ -54,7 +54,10 @@ export function Avatar({ photoURL, name, size = 36, className }: AvatarProps) {
       // The name goes here rather than on the img: when the fallback icon is
       // showing there is no img to carry it, and a screen reader still needs to
       // know whose avatar this is.
-      role="img"
+      // Both, or neither. `role="img"` with no accessible name announces an
+      // image and then has nothing to say about it — worse than leaving the
+      // element unlabelled, which a screen reader simply skips.
+      role={name ? 'img' : undefined}
       aria-label={name || undefined}
     >
       {showImage ? (

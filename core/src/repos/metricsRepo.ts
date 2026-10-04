@@ -12,6 +12,16 @@ export interface DailyMetric {
   directionsClicks: number;
   /** Per-business breakdown; absent for days recorded before feature 006. */
   byListing?: Record<string, Record<string, number>>;
+  /**
+   * Per-SURFACE breakdown (feature 018, FR-039). A surface, never a person.
+   *
+   * Absent on every day recorded before this feature — which is reported as
+   * NOT ATTRIBUTABLE rather than as zero, the same way `byListing` already is.
+   * A zero says "nobody came from there" and the data does not say that.
+   */
+  byOrigin?: Record<string, Record<string, number>>;
+  /** Per-promotion breakdown (feature 018). Absent before this feature. */
+  byDeal?: Record<string, Record<string, number>>;
 }
 
 export interface ProviderMetrics {
@@ -39,6 +49,8 @@ export function subscribeToMetrics(
       .map((doc) => {
         const d = doc.data();
         const byListing = (d.byListing ?? {}) as Record<string, Record<string, number>>;
+        const byOrigin = (d.byOrigin ?? {}) as Record<string, Record<string, number>>;
+        const byDeal = (d.byDeal ?? {}) as Record<string, Record<string, number>>;
         return {
           date: String(d.date ?? doc.id),
           profileViews: Number(d.profileViews ?? 0),
@@ -49,6 +61,8 @@ export function subscribeToMetrics(
           // Dashboard says so rather than showing a per-business zero that looks
           // like nobody visited (FR-027).
           byListing,
+          byOrigin,
+          byDeal,
         };
       })
       .sort((a, b) => a.date.localeCompare(b.date));
@@ -102,3 +116,12 @@ export function metricsForListing(
 }
 
 export { ZERO as ZERO_METRICS };
+
+// The expanded metrics' AGGREGATION lives in `@svtrip/shared/providerMetrics`,
+// not here, and the reason is the third repeat of a lesson feature 017 wrote
+// down: this file imports `db` from `../firebase`, which initialises a real
+// Firebase app at import time, so anything in its graph cannot be unit-tested
+// without mocks. `originBreakdown` and `dealBreakdown` are pure functions over
+// the shape above; they belong in a module with nothing else in its graph.
+export { originBreakdown, dealBreakdown } from '@svtrip/shared';
+export type { OriginRow, OriginBreakdown, DealRow, DealBreakdown } from '@svtrip/shared';

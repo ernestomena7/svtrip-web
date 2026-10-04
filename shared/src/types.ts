@@ -3,6 +3,8 @@
 import type { PriceBand } from './pricing.js';
 import type { BusinessType } from './businessTypes.js';
 import type { LocalizedText } from './i18nContent.js';
+import type { CalendarDay, TimeOfDay } from './calendarDay.js';
+import type { PlanCode } from './subscriptionState.js';
 
 export type Persona = 'traveler' | 'provider';
 export type Language = 'en' | 'es';
@@ -280,6 +282,17 @@ export interface Place {
   /** Sponsored placement: the owning provider has a rank-boost entitlement (US8). */
   boosted?: boolean;
   /**
+   * Whether a live subscription covers this place (feature 018, FR-016).
+   *
+   * OPAQUE ON PURPOSE. `listings` is `allow read: if signedIn()`, so a
+   * `planCode` or a status enum here would break FR-015 whatever the UI does.
+   * `undefined` means "written before feature 018" and reads as VISIBLE —
+   * `covered !== false`, never `covered === true` (see `travelerVisible`).
+   *
+   * Written only by the BFF's subscription service (FR-026/FR-027).
+   */
+  covered?: boolean;
+  /**
    * Owning provider, present only when `source === 'listing'`. Curated catalog
    * destinations have no owner, which is why the profile hides owner-only
    * affordances for them (feature 005).
@@ -363,6 +376,26 @@ export interface Listing {
   /** Denormalized from the owner's subscription rank-boost entitlement (US8). */
   boosted?: boolean;
   /**
+   * Whether a live subscription covers this place (feature 018, FR-016).
+   *
+   * OPAQUE ON PURPOSE. `listings` is `allow read: if signedIn()`, so a
+   * `planCode` or a status enum here would break FR-015 whatever the UI does.
+   * `undefined` means "written before feature 018" and reads as VISIBLE —
+   * `covered !== false`, never `covered === true` (see `travelerVisible`).
+   *
+   * Written only by the BFF's subscription service (FR-026/FR-027).
+   */
+  covered?: boolean;
+  /**
+   * Whether this owner may publish promotions to Ofertas (feature 018).
+   *
+   * Server-written, like `covered`, and opaque for the same reason. It drives
+   * US4 scenario 2: a Premium account dropping to Básico loses Ofertas and
+   * keeps the promotion on its own profile — without the product rewriting the
+   * merchant's own `inOfertas` choice, so an upgrade restores it.
+   */
+  offersEligible?: boolean;
+  /**
    * Discover spotlight membership, carried over when the curated catalog was
    * handed to a provider account. **Not client-writable** (security rules pin
    * both), so a provider cannot place their own business in "Trending" or
@@ -438,6 +471,24 @@ export interface Deal {
   activeFrom: number;
   activeTo: number;
   image?: string;
+  /**
+   * Whether this promotion is published to the Ofertas surface (feature 018,
+   * FR-013). Premium only.
+   *
+   * A CHOICE, not a consequence of the plan: US2 scenario 3 says a Premium
+   * merchant "can mark it to appear in Ofertas", so a promotion can be
+   * profile-only even on Premium.
+   *
+   * Read as `!== false`, the same shape as `covered` and for the same reason: a
+   * promotion written before this feature has no such field and must not vanish
+   * from Ofertas on deploy.
+   *
+   * The ENTITLEMENT is the hard rule and this is only the merchant's
+   * preference. A stale `true` left over from a Premium account that dropped to
+   * Básico must not keep a promotion in Ofertas — that is US4 scenario 2, and
+   * it is enforced where Ofertas reads rather than here.
+   */
+  inOfertas?: boolean;
 }
 
 // --- Reviews (feature 005) --------------------------------------------------
@@ -542,12 +593,40 @@ export function claimIdFor(listingId: string, requesterUid: string): string {
   return `${listingId}_${requesterUid}`;
 }
 
-export type EngagementType = 'profile_view' | 'favorite_click' | 'directions_click';
+export type EngagementType =
+  | 'profile_view'
+  | 'favorite_click'
+  | 'directions_click'
+  // Feature 018. Per-promotion performance was described during clarification
+  // as "derivable from `byListing`". It is not, and research R7 corrects it:
+  // `dealId` was recorded NOWHERE in the engagement path, and `byListing`
+  // attributes a count to a BUSINESS, not to a promotion. So the promotion had
+  // to become an event of its own.
+  | 'promotion_view'
+  | 'promotion_click';
 
 export interface EngagementEvent {
   type: EngagementType;
   listingId: string;
   createdAt: number;
+  /**
+   * Which SURFACE the traveler came from (feature 018, FR-039).
+   *
+   * A surface, NEVER a person. Engagement is anonymous in this product by a
+   * standing decision — feature 013 established it and 016 reaffirmed it, where
+   * a business must not learn it appears in someone's Trip — and a paid metric
+   * is not a reason to reopen that.
+   *
+   * OPTIONAL, and that is load-bearing in the same way `ChatHistoryTurn.stops`
+   * was in feature 015: an installed app that has not updated sends nothing and
+   * degrades to exactly today's behaviour. Events written before this feature
+   * have no origin, which the dashboard reports as "not attributable" rather
+   * than as a misleading zero — the precedent `metricsDaily.byListing` set in
+   * feature 006.
+   */
+  origin?: EngagementOrigin;
+  /** Only on the two promotion events. Optional for the same reason. */
+  dealId?: string;
 }
 
 export interface MetricAggregate {
@@ -560,3 +639,154 @@ export interface MetricAggregate {
 
 /** Highly-rated threshold used by Spin the Wheel and "For You" (FR-015). */
 export const HIGHLY_RATED_THRESHOLD = 4.3;
+
+// ---------------------------------------------------------------------------
+// Trips (feature 016)
+//
+// A Trip is a named, dated collection of catalog places one traveler owns and
+// arranges. Two origins — built by hand, or kept from a guide plan — and
+// identical behaviour afterwards.
+//
+// Nothing here is added to `Place` or `Listing`: a stop POINTS at the catalog,
+// and the catalog does not know about Trips.
+// ---------------------------------------------------------------------------
+
+/** How a Trip began. Never changes, and never changes how the Trip can be edited. */
+export type TripOrigin = 'manual' | 'guide';
+
+export interface Trip {
+  tripId: string;
+  /** Non-empty (FR-002). What the traveler calls it. */
+  name: string;
+  /**
+   * A day, not an instant — see `CalendarDay`. The floor for every stop's
+   * date (FR-020), compared as a string so no timezone enters the comparison.
+   */
+  startDate: CalendarDay;
+  origin: TripOrigin;
+  /**
+   * Present only when `origin` is 'guide'. Which assistant turn this was kept
+   * from — what makes FR-041 ("the same reply cannot be kept twice") answerable
+   * by a lookup rather than by scanning every Trip's stops.
+   */
+  sourceMessageId?: string;
+  createdAt: number;
+  /** Moves when the Trip or any of its stops changes, so the list orders by recency. */
+  updatedAt: number;
+}
+
+export interface TripStop {
+  /**
+   * GENERATED, never the catalog id. FR-014 requires the same place twice in
+   * one Trip, and keying by catalog id makes that impossible by construction —
+   * which is exactly what it already does to favorites.
+   */
+  stopId: string;
+  /** A reference, never a copy: resolved at read time so a renamed business renames everywhere. */
+  catalogId: string;
+  /** Which part of the catalog to resolve against — the three favorites already distinguishes. */
+  kind: 'place' | 'listing' | 'event';
+  /** Absent means unscheduled. Never earlier than the Trip's `startDate` (FR-020). */
+  date?: CalendarDay;
+  /** Only valid alongside a `date` (FR-021). Clearing the date clears this (FR-023). */
+  time?: TimeOfDay;
+  /**
+   * Orders the stop within the UNSCHEDULED group (FR-028). Deliberately NOT
+   * cleared when a stop is scheduled: clearing its date returns it to where the
+   * traveler had put it rather than to an arbitrary place in an arrangement
+   * they made by hand.
+   */
+  position: number;
+  /**
+   * Present only for stops kept from a guide plan — the guide's words, rendered
+   * as such (FR-040). Optional rather than empty-string on purpose: absent means
+   * nobody gave a reason, and a hand-added stop must not render an empty quote.
+   */
+  reason?: string;
+  /** Tiebreaker when two stops share a date and time, and the default order before any drag. */
+  addedAt: number;
+}
+
+// ---------------------------------------------------------------------------
+// Merchant subscriptions (feature 018)
+// ---------------------------------------------------------------------------
+
+/**
+ * One subscription per ACCOUNT, covering the places that account manages.
+ *
+ * **This reverses the source document's FR-004**, which keys a subscription to
+ * a place. The product owner chose per-account billing for conversion speed
+ * over revenue per account, with the consequence raised first and accepted: a
+ * chain of ten locations pays $50 rather than $500 (spec D10). Side effect
+ * worth knowing — the model this replaces was ALREADY account-keyed, so the
+ * re-keying the spec first assumed is work that does not happen.
+ *
+ * **No `status` field.** The state is derived from these facts (FR-043),
+ * because the product has no scheduler to rewrite a stored one and a missed
+ * write fails silently in the worst direction: a suspended place left visible,
+ * or a paying merchant left hidden.
+ */
+export interface MerchantSubscription {
+  planCode: PlanCode;
+  /** When the plan was chosen — the H4 signal FR-003 exists for. */
+  chosenAt: number;
+  /** Whether a payment is currently in force. Set by the team today (FR-021). */
+  paymentActive: boolean;
+  /** End of the 90-day launch discount, when one applies (FR-005). */
+  campaignEndsAt?: number;
+  /** End of the 7-day cushion, once one has started (FR-008). */
+  graceEndsAt?: number;
+  /** End of the period already paid for (FR-019). */
+  currentPeriodEndsAt?: number;
+  /** Set when cancellation is REQUESTED; it takes effect at the period's end. */
+  cancelledAt?: number;
+  /** Básico only: the single place it covers (FR-050). */
+  coveredPlaceId?: string;
+  /** FR-021's audit trail. All three are written together or not at all. */
+  manualBy?: string;
+  manualNote?: string;
+  manualAt?: number;
+}
+
+/**
+ * A plan's live configuration, read from `subscriptionPlans/{code}`.
+ *
+ * Exists so FR-001 holds — prices change without a release — and is readable
+ * by any signed-in account because the merchant's chooser renders from it. It
+ * holds PRICES, never anybody's subscription, which is why that read does not
+ * touch FR-015.
+ */
+export interface SubscriptionPlanConfig {
+  code: PlanCode;
+  monthlyPriceUsd: number;
+  launchDiscountPercent: number;
+  nameI18n?: LocalizedText;
+  descriptionI18n?: LocalizedText;
+  updatedBy?: string;
+  updatedAt?: number;
+}
+
+/**
+ * The one campaign record, at `launchCampaign/current`.
+ *
+ * `launchAt` is **undefined until the team sets it**, and while it is undefined
+ * the enrollment window is CLOSED (FR-049) — so no merchant silently receives a
+ * 90-day discount before anyone opened the campaign. Failing closed here costs
+ * a manual step; failing open gives the campaign away.
+ */
+export interface LaunchCampaignConfig {
+  launchAt?: number;
+  enrollmentWindowMonths: number;
+  discountDays: number;
+  updatedBy?: string;
+  updatedAt?: number;
+}
+
+/** Where a traveler came from when an engagement event fired (FR-039). */
+export type EngagementOrigin =
+  | 'discover'
+  | 'search'
+  | 'guide'
+  | 'deals'
+  | 'landing'
+  | 'direct';

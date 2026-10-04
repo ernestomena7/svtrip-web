@@ -19,17 +19,30 @@ import { Button, Card, ErrorState, Spinner, TextInput, cx } from '../components/
 import { IconField, isSubmittableIcon } from './IconField';
 import { DesktopLayout } from '../shell/DesktopLayout';
 import { useSuperAdmin } from './useSuperAdmin';
+import { PlansPanel } from './PlansPanel';
 
-const TABS: { id: TaxonomyVocabulary; labelKey: string; builtIn: readonly string[] }[] = [
+/**
+ * Feature 018 added a fourth tab that is NOT a vocabulary.
+ *
+ * Research R5: `VocabularyPanel` renders key/label/active rows, and a plan has
+ * a price, a launch discount and an entitlement set. Forcing a plan into that
+ * shape would either break the component's contract or produce a plan that
+ * cannot express a price — so `plans` is a sibling panel and the tab state
+ * widened to admit it.
+ */
+type AdminTab = TaxonomyVocabulary | 'plans';
+
+const TABS: { id: AdminTab; labelKey: string; builtIn?: readonly string[] }[] = [
   { id: 'business-types', labelKey: 'admin.tabs.businessTypes', builtIn: BUSINESS_TYPES },
   { id: 'moods', labelKey: 'admin.tabs.moods', builtIn: MOODS },
   { id: 'services', labelKey: 'admin.tabs.services', builtIn: ALL_SERVICES },
+  { id: 'plans', labelKey: 'admin.tabs.plans' },
 ];
 
 export function TaxonomyScreen() {
   const { t } = useTranslation();
   const { isSuperAdmin, checking } = useSuperAdmin();
-  const [tab, setTab] = useState<TaxonomyVocabulary>('business-types');
+  const [tab, setTab] = useState<AdminTab>('business-types');
 
   if (checking) {
     return (
@@ -70,7 +83,15 @@ export function TaxonomyScreen() {
 
       {/* Keyed so switching tabs resets the editor's local state rather than
           carrying a half-typed entry across vocabularies. */}
-      <VocabularyPanel key={active.id} vocabulary={active.id} builtIn={active.builtIn} />
+      {active.id === 'plans' ? (
+        <PlansPanel />
+      ) : (
+        <VocabularyPanel
+          key={active.id}
+          vocabulary={active.id}
+          builtIn={active.builtIn ?? []}
+        />
+      )}
     </DesktopLayout>
   );
 }
@@ -194,7 +215,7 @@ function CreateEntryForm({
   onCreated: () => void;
   onError: (message: string) => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { entries } = useTaxonomy('business-types');
   const [key, setKey] = useState('');
   const [es, setEs] = useState('');
@@ -215,6 +236,10 @@ function CreateEntryForm({
     // saves the admin a round trip.
     isSubmittableIcon(icon) &&
     (!isService || universal || types.length > 0);
+
+  /** The authored label for an admin-created type, or undefined for a built-in. */
+  const customTypeLabel = (key: string): string | undefined =>
+    entries.find((e) => e.key === key)?.labelI18n?.[i18n.language === 'en' ? 'en' : 'es'];
 
   const typeChoices = useMemo(() => {
     const extra = entries.filter((e) => e.active && !BUSINESS_TYPES.includes(e.key as never));
@@ -317,7 +342,10 @@ function CreateEntryForm({
                         : 'border-border bg-surface text-text hover:bg-surface-2',
                     )}
                   >
-                    {t(`businessTypes.${type}`, type)}
+                    {/* A built-in type has a translation key; one an admin
+                        created has an authored label instead, and looking it up
+                        by key printed the raw slug into the picker. */}
+                    {customTypeLabel(type) ?? t(`businessTypes.${type}`, type)}
                   </button>
                 );
               })}

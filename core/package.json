@@ -37,6 +37,7 @@
     "./repos/subscriptionRepo": "./src/repos/subscriptionRepo.ts",
     "./repos/useEntitlements": "./src/repos/useEntitlements.ts",
     "./repos/exposureRepo": "./src/repos/exposureRepo.ts",
+    "./repos/tripsRepo": "./src/repos/tripsRepo.ts",
     "./repos/useFavorites": "./src/repos/useFavorites.ts",
     "./repos/useManagedBusinesses": "./src/repos/useManagedBusinesses.ts",
     "./uiStore": "./src/uiStore.ts",

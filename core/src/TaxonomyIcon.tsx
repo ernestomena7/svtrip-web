@@ -49,8 +49,15 @@ export function TaxonomyIcon({ codepoint, size = 24, className, style, label }: 
 
   // Codepoints are stored as hex without a prefix (`f565`). Anything else is a
   // corrupt value, and rendering nothing beats rendering a replacement box.
+  //
+  // `Number.isFinite` alone is not the check. `String.fromCodePoint` THROWS a
+  // RangeError outside 0..0x10FFFF, and `parseInt('FFFFFFF', 16)` is a
+  // perfectly finite 268435455 — so a long hex string in the admin icon field
+  // would take down the render of every screen showing that entry, not just
+  // the glyph. The field is authored by a super admin with no validation on
+  // the way in (feature 014), which makes this reachable by a typo.
   const point = Number.parseInt(codepoint, 16);
-  if (!Number.isFinite(point)) return null;
+  if (!Number.isInteger(point) || point < 1 || point > 0x10ffff) return null;
 
   return (
     <span

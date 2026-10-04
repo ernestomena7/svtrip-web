@@ -20,19 +20,37 @@ import { resolveEntryIcon, type ResolvedIcon } from '../moodIcons';
 
 const cache = new Map<TaxonomyVocabulary, TaxonomyEntry[]>();
 
+/**
+ * How many times each vocabulary has been invalidated.
+ *
+ * A fetch reads this before it starts and again before it writes. If the number
+ * moved in between, an admin saved a change while the request was in flight, and
+ * the result in hand is already out of date — so it is returned to its caller and
+ * NOT cached. Without this, the slower of two overlapping reads wins, and the
+ * picker shows the vocabulary as it was before the save that just triggered the
+ * reload. That is invisible: the entries look plausible, they are just old.
+ */
+const generation = new Map<TaxonomyVocabulary, number>();
+
 /** Drop the cache so the next read sees a just-saved admin change. */
 export function invalidateTaxonomy(vocabulary?: TaxonomyVocabulary): void {
-  if (vocabulary) cache.delete(vocabulary);
-  else cache.clear();
+  if (vocabulary) {
+    cache.delete(vocabulary);
+    generation.set(vocabulary, (generation.get(vocabulary) ?? 0) + 1);
+  } else {
+    cache.clear();
+    for (const key of generation.keys()) generation.set(key, (generation.get(key) ?? 0) + 1);
+  }
 }
 
 export async function fetchTaxonomy(vocabulary: TaxonomyVocabulary): Promise<TaxonomyEntry[]> {
   const cached = cache.get(vocabulary);
   if (cached) return cached;
+  const startedAt = generation.get(vocabulary) ?? 0;
   try {
     const snap = await getDocs(collection(db, TAXONOMY_COLLECTION[vocabulary]));
     const entries = snap.docs.map((d) => ({ ...(d.data() as TaxonomyEntry), key: d.id }));
-    cache.set(vocabulary, entries);
+    if ((generation.get(vocabulary) ?? 0) === startedAt) cache.set(vocabulary, entries);
     return entries;
   } catch {
     // A vocabulary that cannot be read must not empty the picker it feeds: the

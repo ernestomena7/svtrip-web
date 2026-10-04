@@ -28,3 +28,26 @@ export * from './promotion.js';
 export * from './distance.js';
 export * from './search.js';
 export * from './pricing.js';
+export * from './calendarDay.js';
+// The Trip ordering rule (feature 016). Here rather than in core/ for the
+// reason that defines this workspace — but note the test is not "does the BFF
+// run it?" this time: no server code calls it and none should. It is here
+// because TWO CLIENT SURFACES must agree, and shared/ is the only workspace
+// both import that cannot drag React into a consumer.
+export * from './tripOrder.js';
+// When a stop may be scheduled (feature 016). Beside `tripOrder` and for the
+// same reason: both surfaces render the refusal, and two implementations of
+// "is this date too early" drift the moment one starts parsing.
+export * from './tripSchedule.js';
+// Merchant subscription plans (feature 018). All three are here rather than in
+// core/ because the BFF runs them: `catalogService.getPlaces()` has to exclude
+// a suspended place from the AI Guide's allow-list. `subscriptionState` carries
+// no clock of its own, which is what lets a test walk 90 days in a
+// millisecond. `benchmark.js` joins them for US2's category comparison.
+export * from './subscriptionState.js';
+export * from './subscriptionCoverage.js';
+export * from './benchmark.js';
+// The expanded metrics' aggregation (feature 018). Here rather than in core/
+// for feature 016's reason: BOTH client surfaces must agree, and a module in
+// core/ cannot be unit-tested because `core/firebase` initialises at import.
+export * from './providerMetrics.js';

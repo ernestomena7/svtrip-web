@@ -103,3 +103,30 @@ describe('ErrorBoundary', () => {
     expect(screen.getByText('todo bien')).toBeDefined();
   });
 });
+
+// --- feature 015 follow-up: the default was silence ---------------------------
+
+describe('a boundary with no fallback still says something', () => {
+  // `render()` returned `this.props.fallback ?? null`, so every boundary mounted
+  // without an explicit fallback turned a crash into a HOLE: the section simply
+  // was not there, the visitor had no reason to reload, and the page looked
+  // designed that way. That silent blank is the symptom this component was added
+  // to stop, reproduced by its own default.
+  //
+  // `fallback={null}` stays meaningful and is tested above — it is how a caller
+  // says "this section may disappear quietly", which some genuinely may.
+  it('renders the crash notice when no fallback is given', () => {
+    renderQuietly(
+      <div>
+        <p>el resto de la página</p>
+        <ErrorBoundary>
+          <Explodes />
+        </ErrorBoundary>
+      </div>,
+    );
+    // The sibling still survives — the property that must not regress.
+    expect(screen.getByText('el resto de la página')).toBeDefined();
+    // And the failure is now visible rather than a gap.
+    expect(screen.getByText('Esta sección no cargó')).toBeDefined();
+  });
+});

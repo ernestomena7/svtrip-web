@@ -26,6 +26,8 @@ interface ActivityCardProps {
   score?: ScoreSignal;
   saved?: boolean;
   onToggleSave?: () => void;
+  /** Put this place into a Trip (feature 016, FR-010). Optional: no handler, no button. */
+  onAddToTrip?: () => void;
   onClick?: () => void;
   className?: string;
 }
@@ -37,6 +39,7 @@ export function ActivityCard({
   score,
   saved = false,
   onToggleSave,
+  onAddToTrip,
   onClick,
   className,
 }: ActivityCardProps) {
@@ -51,6 +54,10 @@ export function ActivityCard({
     <article
       onClick={onClick}
       onKeyDown={(e) => {
+        // Only when the CARD itself has focus. The save button inside it
+        // bubbles its Enter up to here, so without this guard saving a place
+        // also opened it.
+        if (e.target !== e.currentTarget) return;
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
           e.preventDefault();
           onClick();
@@ -67,18 +74,39 @@ export function ActivityCard({
     >
       <div className="relative h-[168px] w-full bg-sunset">
         {image && <img src={image} alt="" loading="lazy" className="h-full w-full object-cover" />}
-        {onToggleSave && (
-          <button
-            type="button"
-            onClick={handleSave}
-            aria-pressed={saved}
-            aria-label={saved ? t('discover.unsave', 'Quitar de guardados') : t('discover.save', 'Guardar')}
-            className="absolute right-2.5 top-2.5 flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-navy backdrop-blur transition hover:bg-white"
-          >
-            <span className={saved ? 'text-primary' : undefined}>
-              <Icon name="heart" size={17} filled={saved} />
-            </span>
-          </button>
+        {(onToggleSave || onAddToTrip) && (
+          // Stacked, with the heart keeping the corner it has always held so
+          // nothing a traveler already knows moves.
+          <div className="absolute right-2.5 top-2.5 flex flex-col gap-2">
+            {onToggleSave && (
+              <button
+                type="button"
+                onClick={handleSave}
+                aria-pressed={saved}
+                aria-label={saved ? t('discover.unsave', 'Quitar de guardados') : t('discover.save', 'Guardar')}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-navy backdrop-blur transition hover:bg-white"
+              >
+                <span className={saved ? 'text-primary' : undefined}>
+                  <Icon name="heart" size={17} filled={saved} />
+                </span>
+              </button>
+            )}
+            {onAddToTrip && (
+              <button
+                type="button"
+                onClick={(e) => {
+                  // Without this the card's own click also fires and adding a
+                  // place to a Trip opens it.
+                  e.stopPropagation();
+                  onAddToTrip();
+                }}
+                aria-label={t('trips.addTo')}
+                className="flex h-9 w-9 items-center justify-center rounded-full bg-white/85 text-navy backdrop-blur transition hover:bg-white"
+              >
+                <Icon name="plus" size={17} />
+              </button>
+            )}
+          </div>
         )}
       </div>
 

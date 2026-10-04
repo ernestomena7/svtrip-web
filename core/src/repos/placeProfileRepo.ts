@@ -6,8 +6,9 @@
 import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import type { Deal, Listing, Place } from '@svtrip/shared';
 import { db } from '../firebase';
+import { publicVisibility } from '@svtrip/shared';
 import { fetchPlaces, listingToPlace, patchCachedScore } from './discoverRepo';
-import { fetchActiveDeals } from './dealsRepo';
+import { fetchDealsForPlace } from './dealsRepo';
 
 export type ProfileTargetKind = 'place' | 'listing';
 
@@ -18,6 +19,19 @@ export interface ProfileTarget {
   ownerUid?: string;
   /** Exists but is not publicly visible — only its manager may see the profile. */
   unfinished?: boolean;
+  /**
+   * Not publicly visible because no live subscription covers it (feature 018).
+   *
+   * SEPARATE from `unfinished`, and the separation is the point: a suspended
+   * business WAS published, so telling a traveler "not published yet" would be
+   * false about a real place. Two different facts get two different messages,
+   * and neither of them lies.
+   *
+   * The traveler is never told WHY (FR-015 — no subscription state reaches
+   * them), only that it is unavailable. The manager is told everything
+   * (FR-024).
+   */
+  uncovered?: boolean;
 }
 
 /**
@@ -41,13 +55,30 @@ export async function fetchProfileTarget(id: string): Promise<ProfileTarget | nu
   const snap = await getDoc(doc(db, 'listings', id));
   if (!snap.exists()) return null;
   const listing = { ...(snap.data() as Listing), listingId: id };
-  return { place: listingToPlace(listing), kind: 'listing', unfinished: true };
+  // WHICH reason, not just that there is one. `publicVisibility` answers the
+  // content-and-switch half; whatever is left is coverage. A place can be both,
+  // and FR-034 makes them cumulative — so `uncovered` is reported alongside
+  // rather than instead of.
+  const presentable = publicVisibility(listing);
+  return {
+    place: listingToPlace(listing),
+    kind: 'listing',
+    unfinished: !presentable,
+    uncovered: listing.covered === false,
+  };
 }
 
-/** The business's currently active promotions (FR-009). */
+/**
+ * The business's currently active promotions (FR-009).
+ *
+ * `fetchDealsForPlace`, NOT `fetchActiveDeals` — and the distinction is a
+ * defect feature 018 introduced here and the visual gate caught. `fetchActiveDeals`
+ * answers "what belongs on Ofertas", which since 018 excludes a merchant who
+ * dropped to Básico. Reusing it made their promotions vanish from their OWN
+ * profile too, which US4 scenario 2 explicitly forbids.
+ */
 export async function fetchProfileDeals(targetId: string): Promise<Deal[]> {
-  const deals = await fetchActiveDeals();
-  return deals.filter((d) => d.listingId === targetId);
+  return fetchDealsForPlace(targetId);
 }
 
 export interface TargetScore {
