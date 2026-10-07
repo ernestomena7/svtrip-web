@@ -14,9 +14,10 @@ import { BUSINESS_TYPES, MOODS, ALL_SERVICES } from '@svtrip/shared';
 import { useUiStore } from '@svtrip/core/uiStore';
 import { patchJson, postJson } from '@svtrip/core/apiClient';
 import { useTaxonomy } from '@svtrip/core/taxonomy/useTaxonomy';
-import { resolveTaxonomyLabel } from '@svtrip/core/taxonomy/resolveTaxonomyLabel';
 import { Button, Card, ErrorState, Spinner, TextInput, cx } from '../components/ui';
 import { IconField, isSubmittableIcon } from './IconField';
+import { TaxonomyRow } from './TaxonomyRow';
+import { ScopePicker } from './ScopePicker';
 import { DesktopLayout } from '../shell/DesktopLayout';
 import { useSuperAdmin } from './useSuperAdmin';
 import { PlansPanel } from './PlansPanel';
@@ -108,6 +109,7 @@ function VocabularyPanel({
   const { entries, loading, reload } = useTaxonomy(vocabulary);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [editingKey, setEditingKey] = useState<string | null>(null);
 
   const byKey = useMemo(() => new Map(entries.map((e) => [e.key, e])), [entries]);
 
@@ -162,43 +164,32 @@ function VocabularyPanel({
           </div>
         ) : (
           <ul className="mt-4 divide-y divide-border">
-            {rows.map((key) => {
-              const entry = byKey.get(key);
-              const on = isActive(key);
-              return (
-                <li key={key} className="flex items-center gap-3 py-3">
-                  <span className="min-w-0 flex-1">
-                    <span
-                      className={cx(
-                        'block font-display font-extrabold',
-                        on ? 'text-text' : 'text-muted line-through',
-                      )}
-                    >
-                      {resolveTaxonomyLabel(vocabulary, key, entry, t, language)}
-                    </span>
-                    <span className="block text-xs text-muted">
-                      {key}
-                      {!builtIn.includes(key) && ` · ${t('admin.custom')}`}
-                      {/* FR-012: lightweight provenance, so a surprising change
-                          has a name and a date attached to it. */}
-                      {entry?.lastChangedAt
-                        ? ` · ${t('admin.changedAt', {
-                            date: new Date(entry.lastChangedAt).toLocaleDateString(language),
-                          })}`
-                        : ''}
-                    </span>
-                  </span>
-                  <Button
-                    size="sm"
-                    variant={on ? 'secondary' : 'primary'}
-                    disabled={busy === key}
-                    onClick={() => void toggle(key)}
-                  >
-                    {on ? t('admin.deactivate') : t('admin.reactivate')}
-                  </Button>
-                </li>
-              );
-            })}
+            {rows.map((key) => (
+              <TaxonomyRow
+                key={key}
+                vocabulary={vocabulary}
+                entryKey={key}
+                entry={byKey.get(key)}
+                isBuiltIn={builtIn.includes(key)}
+                active={isActive(key)}
+                language={language}
+                busy={busy === key}
+                editing={editingKey === key}
+                onToggle={() => void toggle(key)}
+                // FR-011b: the SCREEN owns which row is open, because no single
+                // row can know that another one is. Opening one closes the other
+                // by construction rather than by anybody remembering to.
+                onEditOpen={() => {
+                  setError(null);
+                  setEditingKey(key);
+                }}
+                onEditClose={() => setEditingKey(null)}
+                onSaved={() => {
+                  setEditingKey(null);
+                  reload();
+                }}
+              />
+            ))}
           </ul>
         )}
       </Card>
@@ -215,8 +206,7 @@ function CreateEntryForm({
   onCreated: () => void;
   onError: (message: string) => void;
 }) {
-  const { t, i18n } = useTranslation();
-  const { entries } = useTaxonomy('business-types');
+  const { t } = useTranslation();
   const [key, setKey] = useState('');
   const [es, setEs] = useState('');
   const [en, setEn] = useState('');
@@ -236,15 +226,6 @@ function CreateEntryForm({
     // saves the admin a round trip.
     isSubmittableIcon(icon) &&
     (!isService || universal || types.length > 0);
-
-  /** The authored label for an admin-created type, or undefined for a built-in. */
-  const customTypeLabel = (key: string): string | undefined =>
-    entries.find((e) => e.key === key)?.labelI18n?.[i18n.language === 'en' ? 'en' : 'es'];
-
-  const typeChoices = useMemo(() => {
-    const extra = entries.filter((e) => e.active && !BUSINESS_TYPES.includes(e.key as never));
-    return [...BUSINESS_TYPES, ...extra.map((e) => e.key)];
-  }, [entries]);
 
   async function submit() {
     setBusy(true);
@@ -303,55 +284,12 @@ function CreateEntryForm({
       <IconField value={icon} onChange={setIcon} />
 
       {isService && (
-        <div className="space-y-2">
-          <span className="block text-xs font-bold text-muted">{t('admin.scope')}</span>
-          <div className="inline-flex rounded-pill bg-surface-2 p-1">
-            {[true, false].map((v) => (
-              <button
-                key={String(v)}
-                type="button"
-                onClick={() => setUniversal(v)}
-                aria-pressed={universal === v}
-                className={cx(
-                  'rounded-pill px-4 py-2 text-sm font-bold transition',
-                  universal === v ? 'bg-surface text-text shadow-sm' : 'text-muted',
-                )}
-              >
-                {v ? t('admin.scopeUniversal') : t('admin.scopeSpecific')}
-              </button>
-            ))}
-          </div>
-          {!universal && (
-            <div className="flex flex-wrap gap-2 pt-1">
-              {typeChoices.map((type) => {
-                const on = types.includes(type);
-                return (
-                  <button
-                    key={type}
-                    type="button"
-                    onClick={() =>
-                      setTypes((prev) =>
-                        on ? prev.filter((x) => x !== type) : [...prev, type],
-                      )
-                    }
-                    aria-pressed={on}
-                    className={cx(
-                      'rounded-pill border px-3 py-1.5 text-sm font-bold transition',
-                      on
-                        ? 'border-transparent bg-sunset text-white shadow-red'
-                        : 'border-border bg-surface text-text hover:bg-surface-2',
-                    )}
-                  >
-                    {/* A built-in type has a translation key; one an admin
-                        created has an authored label instead, and looking it up
-                        by key printed the raw slug into the picker. */}
-                    {customTypeLabel(type) ?? t(`businessTypes.${type}`, type)}
-                  </button>
-                );
-              })}
-            </div>
-          )}
-        </div>
+        <ScopePicker
+          universal={universal}
+          types={types}
+          onUniversalChange={setUniversal}
+          onTypesChange={setTypes}
+        />
       )}
 
       <Button disabled={!canSave || busy} onClick={() => void submit()}>

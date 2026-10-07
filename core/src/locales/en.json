@@ -528,7 +528,8 @@
     "saveFailed": "Could not save. Check your connection and try again.",
     "deleteFailed": "Could not delete. Try again.",
     "save": "Save",
-    "unsave": "Remove from saved"
+    "unsave": "Remove from saved",
+    "cancel": "Cancel"
   },
   "businessTypes": {
     "restaurant-cafe": "Restaurant or café",
@@ -677,7 +678,7 @@
   },
   "admin": {
     "title": "Taxonomies",
-    "subtitle": "Add, rename or deactivate the business types, interests and services the rest of the product offers as choices.",
+    "subtitle": "Add, edit or deactivate the business types, interests and services the rest of the product offers as choices.",
     "tabs": {
       "businessTypes": "Business types",
       "moods": "Interests",
@@ -718,7 +719,11 @@
       "extend15": "Extend 15 days",
       "notePrompt": "Why? It is recorded with your name.",
       "lastManual": "Last manual change by {{by}}: {{note}}"
-    }
+    },
+    "edit": "Edit",
+    "editNotice": "Once edited, this entry stops following the product’s translations: both languages stay as you write them here.",
+    "labelRequired": "Enter the name in both languages.",
+    "scopeNeedsType": "Pick at least one business type."
   },
   "account": {
     "firstName": "First name",
