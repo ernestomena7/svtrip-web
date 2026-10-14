@@ -443,7 +443,9 @@
     "openTime": "Hora de apertura",
     "closeTime": "Hora de cierre",
     "dealInOfertas": "Mostrar en Ofertas",
-    "dealInOfertasHint": "Además de tu perfil, aparece en la sección donde los viajeros buscan promociones."
+    "dealInOfertasHint": "Además de tu perfil, aparece en la sección donde los viajeros buscan promociones.",
+    "noHoursYet": "Todavia no cargaste tus horarios de atencion.",
+    "addHours": "Cargar horarios"
   },
   "days": {
     "sun": "Dom",

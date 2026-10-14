@@ -33,7 +33,7 @@ import { ScoreBadge } from '../components/ScoreBadge';
 import { Button, Card, ErrorState, Spinner } from '../components/ui';
 import { AddToTripDialog } from './AddToTripDialog';
 import { ReservationDialog } from './ReservationDialog';
-import { offersReservations } from '@svtrip/shared';
+import { displayHours, offersReservations } from '@svtrip/shared';
 import { GalleryViewer } from './GalleryViewer';
 import { LocationPreviewMap } from './LocationPreviewMap';
 import { ReviewsSection } from './ReviewsSection';
@@ -222,6 +222,33 @@ export function PlaceProfileScreen() {
                   </button>
                 ))}
               </div>
+            </section>
+          )}
+
+          {/* Feature 020, and the same finding as the phone: the field has been
+              fillable since feature 006 and no traveler screen ever rendered it.
+              Nothing renders when there are none, rather than seven "cerrado"
+              rows about a business that never told us. */}
+          {displayHours(place.openingHours).length > 0 && (
+            <section>
+              <h2 className="font-display text-lg font-extrabold text-text">
+                {t('services.openingHours')}
+              </h2>
+              <Card className="mt-4 space-y-1 p-5">
+                {displayHours(place.openingHours).map((row) => (
+                  <div
+                    key={row.day}
+                    className={
+                      row.isToday
+                        ? 'flex items-center justify-between text-sm font-bold text-text'
+                        : 'flex items-center justify-between text-sm text-muted'
+                    }
+                  >
+                    <span>{t(`days.${row.dayKey}`)}</span>
+                    <span>{row.closed ? t('services.closed') : `${row.open} – ${row.close}`}</span>
+                  </div>
+                ))}
+              </Card>
             </section>
           )}
 

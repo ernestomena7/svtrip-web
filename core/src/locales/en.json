@@ -443,7 +443,9 @@
     "openTime": "Opening time",
     "closeTime": "Closing time",
     "dealInOfertas": "Show in Ofertas",
-    "dealInOfertasHint": "Besides your own profile, it appears in the section where travelers look for promotions."
+    "dealInOfertasHint": "Besides your own profile, it appears in the section where travelers look for promotions.",
+    "noHoursYet": "You have not set your opening hours yet.",
+    "addHours": "Add opening hours"
   },
   "days": {
     "sun": "Sun",

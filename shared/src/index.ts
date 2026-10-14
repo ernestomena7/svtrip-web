@@ -59,3 +59,4 @@ export * from './providerMetrics.js';
 // over an array's elements.
 export * from './reservationState.js';
 export * from './openingHours.js';
+export * from './openingHoursDisplay.js';
