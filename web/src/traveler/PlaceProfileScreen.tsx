@@ -32,6 +32,8 @@ import { Icon } from '@svtrip/core/Icon';
 import { ScoreBadge } from '../components/ScoreBadge';
 import { Button, Card, ErrorState, Spinner } from '../components/ui';
 import { AddToTripDialog } from './AddToTripDialog';
+import { ReservationDialog } from './ReservationDialog';
+import { offersReservations } from '@svtrip/shared';
 import { GalleryViewer } from './GalleryViewer';
 import { LocationPreviewMap } from './LocationPreviewMap';
 import { ReviewsSection } from './ReviewsSection';
@@ -61,6 +63,10 @@ export function PlaceProfileScreen() {
   const [place, setPlace] = useState<Place | null>(null);
   const [deals, setDeals] = useState<Deal[]>([]);
   const [addingToTrip, setAddingToTrip] = useState(false);
+  // Feature 020. The form itself lands in US2; at US1 this button exists and is
+  // correctly absent or present, which is the whole of that story's claim —
+  // tasks.md calls US1 "a demo rather than a release" for exactly this reason.
+  const [reserving, setReserving] = useState(false);
   const [kind, setKind] = useState<ProfileTargetKind | null>(null);
   const [unfinished, setUnfinished] = useState(false);
   const [uncovered, setUncovered] = useState(false);
@@ -249,7 +255,30 @@ export function PlaceProfileScreen() {
                 column: it answers "where is this and can I get there", the same
                 question as the directions button directly under it. */}
             <LocationPreviewMap lat={place.lat} lng={place.lng} />
-            <Button fullWidth iconLeft="navigation" onClick={openDirections}>
+            {/* Feature 020, FR-003. ABSENT when the place does not take
+                reservations, never present-and-disabled: a control that exists
+                only to refuse you advertises something the visitor cannot have.
+                Same line feature 010 drew for the taxonomy link.
+
+                `=== true`, never `!== false`. All 33 live listings carry no such
+                field, so the lenient form would put this button on every place
+                in the catalog, none of which has opening hours. It is the mirror
+                of `covered !== false`, which is right for the opposite reason.
+
+                PRIMARY action when it is there: the spec says so, and it sits
+                above "Como llegar" because a traveler who can book is here to
+                book. */}
+            {offersReservations(place) && (
+              <Button fullWidth iconLeft="calendar" onClick={() => setReserving(true)}>
+                {t('reservations.cta')}
+              </Button>
+            )}
+            <Button
+              fullWidth
+              variant={offersReservations(place) ? 'secondary' : 'primary'}
+              iconLeft="navigation"
+              onClick={openDirections}
+            >
               {t('profile.directions')}
             </Button>
             <Button
@@ -272,6 +301,10 @@ export function PlaceProfileScreen() {
             >
               {t('trips.addToCta')}
             </Button>
+
+            {reserving && (
+              <ReservationDialog place={place} onClose={() => setReserving(false)} />
+            )}
 
             {addingToTrip && (
               <AddToTripDialog

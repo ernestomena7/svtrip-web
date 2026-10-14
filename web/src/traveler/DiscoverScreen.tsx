@@ -20,6 +20,7 @@ import { fetchPlaces, forYou, byMood } from '@svtrip/core/repos/discoverRepo';
 import { MOOD_ICON } from '@svtrip/core/moodIcons';
 import { ActivityCard } from '../components/ActivityCard';
 import { AddToTripDialog } from './AddToTripDialog';
+import { NextReservationCard } from './NextReservationCard';
 import { Chip, EmptyState, ErrorState, Button, Spinner } from '../components/ui';
 import { DesktopLayout } from '../shell/DesktopLayout';
 
@@ -81,6 +82,12 @@ export function DiscoverScreen() {
           {t('discover.forYou')}
         </h1>
       </section>
+
+      {/* Feature 020, FR-016: the NEAREST upcoming reservation, and nothing at
+          all when there are none — not an empty card, not a placeholder. Right
+          under the hero because it is about something already decided, which
+          outranks browsing. */}
+      <NextReservationCard />
 
       {/* Category rail — the kit's horizontal scroller, kept horizontal on
           desktop too because the mood set is short and browsing it sideways is

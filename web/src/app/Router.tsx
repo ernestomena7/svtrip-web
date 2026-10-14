@@ -53,6 +53,14 @@ const DealsScreen = lazy(() =>
 const TripsScreen = lazy(() =>
   import('../traveler/TripsScreen').then((m) => ({ default: m.TripsScreen })),
 );
+const ReservationsInbox = lazy(() =>
+  import('../business/ReservationsInbox').then((m) => ({ default: m.ReservationsInbox })),
+);
+const MyReservationsScreen = lazy(() =>
+  import('../traveler/MyReservationsScreen').then((m) => ({
+    default: m.MyReservationsScreen,
+  })),
+);
 const TripDetailScreen = lazy(() =>
   import('../traveler/TripDetailScreen').then((m) => ({ default: m.TripDetailScreen })),
 );
@@ -143,6 +151,7 @@ function SignedInRoutes() {
         />
         {/* Traveler-only, like the nav link that reaches them. The
             provider links are untouched (FR-046). */}
+        <Route path="/reservations" element={<MyReservationsScreen />} />
         <Route path="/trips" element={<TripsScreen />} />
         <Route path="/trips/:id" element={<TripDetailScreen />} />
         <Route path="/deals" element={<DealsScreen />} />
@@ -151,6 +160,7 @@ function SignedInRoutes() {
 
         <Route path="/dashboard" element={<DashboardScreen />} />
         <Route path="/businesses" element={<MyBusinessesScreen />} />
+        <Route path="/reservation-requests" element={<ReservationsInbox />} />
         <Route path="/subscription" element={<SubscriptionScreen />} />
         <Route path="/claim" element={<ClaimBusinessScreen />} />
 

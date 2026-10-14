@@ -45,6 +45,7 @@ import { BusinessTypePicker } from './BusinessTypePicker';
 import { ContactFields } from './ContactFields';
 import { MediaManager } from './MediaManager';
 import { OpeningHoursEditor, defaultOpeningHours } from './OpeningHoursEditor';
+import { ReservationsToggle } from './ReservationsToggle';
 import { PublicationChecklist } from './PublicationChecklist';
 import { LocationPicker } from './LocationPicker';
 import { PRICE_BANDS, priceBandLabelKey, type PriceBand } from '@svtrip/shared';
@@ -68,6 +69,11 @@ export function ListingForm({
   const [lat, setLat] = useState(existing ? String(existing.lat) : '');
   const [lng, setLng] = useState(existing ? String(existing.lng) : '');
   const [hours, setHours] = useState(existing?.openingHours ?? defaultOpeningHours());
+  // Absent means OFF (FR-001). Held here so the switch and the hours editor
+  // above it agree without a reload.
+  const [reservationsEnabled, setReservationsEnabled] = useState(
+    existing?.reservationsEnabled === true,
+  );
   const [moods, setMoods] = useState<string[]>(existing?.moods ?? []);
   const [priceBand, setPriceBand] = useState<PriceBand | undefined>(existing?.priceBand);
   const [photos, setPhotos] = useState<string[]>(existing?.photos ?? []);
@@ -311,6 +317,21 @@ export function ListingForm({
           <p className="text-sm font-bold text-muted">{t('services.openingHours')}</p>
           <OpeningHoursEditor hours={hours} onChange={setHours} />
         </div>
+
+        {/* Feature 020, US1. Directly under the hours editor on purpose: FR-002's
+            refusal points AT that editor, so the control and the thing it
+            depends on are in one place rather than one screen apart. The editor
+            already existed on both surfaces (research R8); what was missing was
+            only this switch. */}
+        {existing?.listingId && (
+          <ReservationsToggle
+            listingId={existing.listingId}
+            enabled={reservationsEnabled}
+            openingHours={hours}
+            onChanged={setReservationsEnabled}
+          />
+        )}
+
       </div>
 
       {/* The rail: status and the save action, in view the whole way down. */}

@@ -6,6 +6,7 @@
 // "we cannot attribute this history yet" — not "nobody visited you".
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { ReservationRequestsCard } from './ReservationsInbox';
 import { useTranslation } from 'react-i18next';
 import type { Deal } from '@svtrip/shared';
 import { resolveLocalized } from '@svtrip/shared';
@@ -92,6 +93,14 @@ export function DashboardScreen() {
 
       {error && <ErrorState message={t('common.somethingWrong')} />}
       {!error && loading && <Spinner label={t('common.loading')} />}
+
+      {/* Feature 020, FR-017: the pending count, where the merchant already
+          goes. Outside the loading guard on purpose — it has its own live
+          subscription and its own loading state, so it must not wait on the
+          metrics query to appear. */}
+      <div className="mt-8">
+        <ReservationRequestsCard onOpen={() => navigate('/reservation-requests')} />
+      </div>
 
       {!error && !loading && (
         <div className="mt-8 space-y-8">

@@ -33,6 +33,7 @@
     "./repos/photoUpload": "./src/repos/photoUpload.ts",
     "./repos/placeProfileRepo": "./src/repos/placeProfileRepo.ts",
     "./repos/providerDealsRepo": "./src/repos/providerDealsRepo.ts",
+    "./repos/reservationsRepo": "./src/repos/reservationsRepo.ts",
     "./repos/reviewsRepo": "./src/repos/reviewsRepo.ts",
     "./repos/subscriptionRepo": "./src/repos/subscriptionRepo.ts",
     "./repos/useEntitlements": "./src/repos/useEntitlements.ts",

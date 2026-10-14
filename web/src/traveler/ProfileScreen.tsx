@@ -309,6 +309,18 @@ export function ProfileScreen() {
             advertises a screen the visitor has no business knowing about. The
             route itself is guarded too, and the BFF refuses every write
             regardless — this is the convenience, not the boundary. */}
+        {/* FR-014: ALWAYS here, whether or not the traveler has any. An entry
+            point that appears only once it is useful cannot be found by somebody
+            looking for it. */}
+        <Button
+          variant="secondary"
+          className="justify-self-start"
+          iconLeft="calendar"
+          onClick={() => navigate('/reservations')}
+        >
+          {t('reservations.myTitle')}
+        </Button>
+
         {isSuperAdmin && (
           <Button
             variant="secondary"

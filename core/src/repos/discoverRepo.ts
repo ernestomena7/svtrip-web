@@ -56,6 +56,12 @@ export function listingToPlace(l: Listing): Place {
     createdAt: l.createdAt,
     // Feature 014. Copied in BOTH mappers deliberately; see `Place.priceBand`.
     priceBand: l.priceBand,
+    // Feature 020, and the THIRD time this repo records the same trap. Both of
+    // these must be copied in BOTH mappers: without `reservationsEnabled` the
+    // "Reservar" button never appears, and without `openingHours` the slot
+    // picker has nothing to validate a moment against.
+    reservationsEnabled: l.reservationsEnabled === true,
+    openingHours: l.openingHours,
   };
 }
 

@@ -52,3 +52,10 @@ export * from './benchmark.js';
 // for feature 016's reason: BOTH client surfaces must agree, and a module in
 // core/ cannot be unit-tested because `core/firebase` initialises at import.
 export * from './providerMetrics.js';
+// Reservations (feature 020). Both here rather than in core/ for the standing
+// reason: the BFF runs them. It resolves the state to guard confirm/reject/cancel
+// and to compose push copy, and it enforces `hasUsableHours` — the half of
+// FR-002 that Firestore rules cannot express, because rules have no predicate
+// over an array's elements.
+export * from './reservationState.js';
+export * from './openingHours.js';

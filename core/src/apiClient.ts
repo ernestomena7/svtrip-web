@@ -19,6 +19,8 @@ import type {
   SubscriptionPlanConfig,
   SubscriptionState,
   BenchmarkResult,
+  // Feature 020. Type-only, same reason.
+  Reservation,
 } from '@svtrip/shared';
 import { auth } from './firebase';
 
@@ -295,4 +297,65 @@ export interface BenchmarkResponse {
  */
 export function fetchBenchmark(): Promise<BenchmarkResponse> {
   return getJson<BenchmarkResponse>('/subscriptions/benchmark');
+}
+
+// --- Reservations (feature 020) ---------------------------------------------
+//
+// WRITES ONLY. Both sides read `reservations` straight from Firestore, scoped by
+// the security rule, which is what keeps the merchant's inbox and the traveler's
+// list live — FR-012's "appears immediately" without polling. A read endpoint
+// here would be a second path to the same data with its own scoping to get
+// wrong.
+
+export interface CreateReservationRequest {
+  listingId: string;
+  /** Local `YYYY-MM-DDTHH:mm`. */
+  at: string;
+  people: number;
+  note?: string;
+  contactName: string;
+  contactEmail: string;
+  contactPhone?: string;
+}
+
+export function createReservation(req: CreateReservationRequest): Promise<{ reservationId: string }> {
+  return postJson('/reservations', req);
+}
+
+export function confirmReservation(reservationId: string): Promise<{ reservation: Reservation }> {
+  return postJson(`/reservations/${reservationId}/confirm`, {});
+}
+
+/**
+ * Both fields optional, and a call with NEITHER must go through (FR-020).
+ *
+ * The cheap mistake is requiring a reason "so the traveler knows why", which
+ * turns a two-tap answer into a form — and SC-002 counts taps.
+ */
+export function rejectReservation(
+  reservationId: string,
+  opts: { reason?: string; message?: string } = {},
+): Promise<{ reservation: Reservation }> {
+  return postJson(`/reservations/${reservationId}/reject`, opts);
+}
+
+export function cancelReservation(reservationId: string): Promise<{ reservation: Reservation }> {
+  return postJson(`/reservations/${reservationId}/cancel`, {});
+}
+
+/**
+ * The merchant's switch (FR-002).
+ *
+ * Turning it on throws with `code: 'hours_unusable'` when the place has no
+ * usable opening hours, and the screen is expected to say so and offer the hours
+ * editor — not show a generic failure. That distinction is the whole of FR-002's
+ * second half, and feature 010 is the cautionary tale: it shipped fully built
+ * and returned an empty picker, because a bare `permission-denied` looks like
+ * nothing being wrong.
+ */
+export function setReservationsEnabled(
+  listingId: string,
+  enabled: boolean,
+): Promise<{ enabled: boolean }> {
+  return patchJson(`/listings/${listingId}/reservations-enabled`, { enabled });
 }

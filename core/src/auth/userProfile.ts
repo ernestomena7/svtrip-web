@@ -127,6 +127,36 @@ export async function saveProfileFields(
   );
 }
 
+/**
+ * Remember the traveler's phone from the reservation form (feature 020, FR-008).
+ *
+ * **This has its own writer instead of one more entry in `saveProfileFields`'
+ * `Pick<>`, and the reason is a measurement.** That function stamps
+ * `profileVersion` on every call, which is correct where it lives — it means
+ * "this account has been through the profile flow". Writing a phone through it
+ * would mean the same thing about an account that has been through no such
+ * thing, and `profileVersion`'s ABSENCE is exactly what exempts an older account
+ * from the mandatory profile form (feature 011, FR-018).
+ *
+ * Measured on the live project 2026-10-13: **62 of 71 accounts carry no stamp,
+ * and all 62 are also incomplete.** That is the precise combination that makes
+ * the stamp fatal — the account stops being grandfathered while still missing
+ * five fields, so the gate in `App.tsx` / `Router.tsx` catches it and the next
+ * render is a form it cannot leave. 87% of this product's travelers would be
+ * locked out of the app by making a reservation.
+ *
+ * So: no stamp, no derived `displayName`, nothing but the phone and a timestamp.
+ * `core/tests/travelerPhone.test.ts` asserts the consequence rather than the
+ * mechanism, because "the phone was written" passes either way.
+ */
+export async function saveTravelerPhone(uid: string, phone: string): Promise<void> {
+  await setDoc(
+    profileRef(uid),
+    { phone: phone.trim(), updatedAt: serverTimestamp() },
+    { merge: true },
+  );
+}
+
 export async function setPersona(uid: string, persona: 'traveler' | 'provider'): Promise<void> {
   await setDoc(profileRef(uid), { persona, updatedAt: serverTimestamp() }, { merge: true });
 }

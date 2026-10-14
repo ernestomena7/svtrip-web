@@ -67,6 +67,21 @@ export interface UserProfile {
   /** ISO 3166-1 alpha-2. The CODE, never the localized name (feature 011). */
   countryCode?: string;
   maritalStatus?: 'single' | 'married';
+  /**
+   * The traveler's own phone, filled from the reservation form (feature 020,
+   * FR-008). OPTIONAL and deliberately absent from `missingProfileFields()`:
+   * FR-009 keeps it optional, and listing it there would gate every post-011
+   * account on a field the signup flow never asks for.
+   *
+   * It MUST be written by `saveTravelerPhone()`, never by `saveProfileFields()`.
+   * That function stamps `profileVersion` on every call, and on 2026-10-13
+   * **62 of 71 live accounts were grandfathered AND incomplete** — the exact
+   * combination that makes the stamp fatal, because the account stops being
+   * grandfathered while still missing five fields, and the next render is a
+   * mandatory form it cannot get past. A traveler's reward for making their
+   * first reservation would be being locked out of the app.
+   */
+  phone?: string;
   /** Absent = the account predates feature 011 = grandfathered, never gated. */
   profileVersion?: number;
   createdAt: number;
@@ -282,6 +297,24 @@ export interface Place {
   /** Sponsored placement: the owning provider has a rank-boost entitlement (US8). */
   boosted?: boolean;
   /**
+   * Whether this place takes reservations (feature 020, FR-003).
+   *
+   * Read `=== true`. Absence means OFF — the OPPOSITE default from `covered`
+   * just below, which is why neither can be written from habit.
+   */
+  reservationsEnabled?: boolean;
+  /**
+   * The place's opening hours, carried so the traveler's reservation form can
+   * refuse a slot outside them (FR-011) without a second read.
+   *
+   * **Copied in BOTH `listingToPlace` mappers** — three edits per field, not
+   * one. Feature 013 lost `createdAt` to exactly this shape (present on all 33
+   * listings, reaching 0 of 36 catalog entries, with nothing failing to say so)
+   * and feature 014 recorded the same trap for `priceBand`. Seed destinations
+   * have none and never will: a beach does not open.
+   */
+  openingHours?: OpeningHour[];
+  /**
    * Whether a live subscription covers this place (feature 018, FR-016).
    *
    * OPAQUE ON PURPOSE. `listings` is `allow read: if signedIn()`, so a
@@ -369,6 +402,20 @@ export interface Listing {
   lat: number;
   lng: number;
   openingHours: OpeningHour[];
+  /**
+   * Whether this place takes reservations (feature 020, FR-001).
+   *
+   * **Every reader MUST use `=== true`.** Absence means OFF: all 33 live
+   * listings carry no such field, and FR-001 says a business starts off. This is
+   * the MIRROR of 018's `covered !== false`, not a copy of it — there, absence
+   * means a legacy listing that should stay visible, so the lenient form is
+   * right. Here the lenient form would turn reservations on for 33 places with
+   * no opening hours at all.
+   *
+   * Two features now depend on an absent-field default and they default in
+   * OPPOSITE directions, which is why neither can be written from habit.
+   */
+  reservationsEnabled?: boolean;
   moods: string[];
   categories: string[];
   rating: number;
@@ -790,3 +837,84 @@ export type EngagementOrigin =
   | 'deals'
   | 'landing'
   | 'direct';
+
+// --- Reservations (feature 020) ---------------------------------------------
+//
+// A traveler's REQUEST that a merchant answers — never a held table or room
+// (FR-034). The product's first entity with two ordinary parties: every other
+// collection is one party's own subtree, the catalog, or config.
+
+/**
+ * What is STORED. Four values, not the spec's six.
+ *
+ * Expirada and Completada are DERIVED from `at` against `now`, because this
+ * product has no cron, no scheduled function and no job — measured at feature
+ * 018. A stored status needs something to rewrite it and there is nothing.
+ * English like every other stored value in this database.
+ */
+export type RecordedReservationState = 'pending' | 'confirmed' | 'rejected' | 'cancelled';
+
+/**
+ * What the product SPEAKS — the six names FR-027 gives, in the language of the
+ * annex that names them. Deliberately a different alphabet from
+ * `RecordedReservationState` so that passing one where the other belongs does
+ * not typecheck; a Firestore document would accept it silently.
+ */
+export type ReservationState =
+  | 'pendiente'
+  | 'confirmada'
+  | 'rechazada'
+  | 'cancelada'
+  | 'expirada'
+  | 'completada';
+
+/** Which side of a reservation is looking at it (FR-029). */
+export type ReservationViewer = 'traveler' | 'merchant';
+
+export interface Reservation {
+  reservationId: string;
+  listingId: string;
+  /** Read key 1. Immutable. */
+  travelerUid: string;
+  /**
+   * Read key 2. DENORMALIZED from `listings.ownerUid` so the security rule needs
+   * no cross-document `get()` — there is not one anywhere in `firestore.rules`
+   * today. The cost of the copy is that a HANDOVER must re-stamp it:
+   * `claimService.decideClaim()` moves `ownerUid`, and a reservation left behind
+   * is readable by the PREVIOUS manager and invisible to the new one.
+   */
+  merchantUid: string;
+  /**
+   * The requested moment, local `YYYY-MM-DDTHH:mm`.
+   *
+   * A string, not a `Timestamp`: a reservation is "Friday at 8pm at this place",
+   * El Salvador has one timezone and no DST, and this sorts correctly as a
+   * string so FR-018's `orderBy('at')` needs no parsing on the sort path.
+   * Feature 016 measured the alternative's failure: `new Date('2026-10-12T')`
+   * is `NaN`.
+   */
+  at: string;
+  /** Whole number, 1..50 (FR-006). */
+  people: number;
+  note?: string;
+  /**
+   * The contact details AS GIVEN at the time of asking, copied rather than read
+   * live from the profile. A traveler who later edits their name must not
+   * silently rewrite a request a merchant already answered, and one who deletes
+   * their phone must not remove the merchant's only way to reach them about a
+   * confirmed booking.
+   */
+  contactName: string;
+  contactEmail: string;
+  /** Optional (FR-009). Visible to these two uids only (FR-026). */
+  contactPhone?: string;
+  recorded: RecordedReservationState;
+  /** An i18n KEY from a closed set, never rendered text (feature 012's rule). */
+  rejectionReason?: string;
+  /** The merchant's own words, stored verbatim, reaching the traveler (FR-020). */
+  rejectionMessage?: string;
+  createdAt: number;
+  updatedAt: number;
+  /** Set when `recorded` leaves `pending`. */
+  decidedAt?: number;
+}

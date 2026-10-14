@@ -12,7 +12,7 @@ import {
   where,
 } from 'firebase/firestore';
 import type { BusinessType, Listing, LocalizedText, OpeningHour } from '@svtrip/shared';
-import { CONTENT_VERSION } from '@svtrip/shared';
+import { CONTENT_VERSION, hasUsableHours } from '@svtrip/shared';
 import { db } from '../firebase';
 import { clearDiscoverCache } from './discoverRepo';
 
@@ -72,8 +72,30 @@ export async function updateListing(
   listingId: string,
   patch: Partial<ListingInput>,
 ): Promise<void> {
+  // FR-002a (feature 020): a merchant who empties their opening hours keeps the
+  // save and loses the switch.
+  //
+  // **This lives HERE and not in the BFF, and the first version got that
+  // wrong.** `reservationService.saveOpeningHours()` was written to do it, and
+  // nothing ever called it: the listing form writes hours straight to Firestore
+  // through this function, which the rules allow because the merchant owns the
+  // document. A requirement implemented in a layer nothing reaches is a
+  // requirement that is not implemented.
+  //
+  // ONE write, not two. The hours and the flag go together or a crash between
+  // them leaves exactly the state this prevents — a place advertising
+  // reservations against hours that no longer exist. The two alternatives were
+  // both worse and are argued in contracts/reservations-api.md: refusing the
+  // save leaves a merchant unable to edit their own hours and surfaces a bare
+  // `permission-denied` (feature 010's defect), and leaving the flag on leaves a
+  // control reading ON while every request is refused (FR-034's problem in
+  // different clothes).
+  const clearsReservations =
+    patch.openingHours !== undefined && !hasUsableHours(patch.openingHours);
+
   await updateDoc(doc(listingsCol(), listingId), {
     ...patch,
+    ...(clearsReservations ? { reservationsEnabled: false } : {}),
     contentVersion: CONTENT_VERSION,
     updatedAt: Date.now(),
   });
