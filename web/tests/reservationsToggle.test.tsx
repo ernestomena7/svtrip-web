@@ -64,7 +64,7 @@ beforeEach(() => {
 describe('the default is OFF (FR-001, SC-007)', () => {
   it('reads OFF when `reservationsEnabled` is ABSENT', () => {
     render(
-      <ReservationsToggle listingId="l1" enabled={undefined} openingHours={OPEN} onChanged={vi.fn()} />,
+      <ReservationsToggle listingId="l1" enabled={undefined} openingHours={OPEN} onChanged={vi.fn()} onGoToHours={vi.fn()} />,
     );
     expect(screen.getByText(tr('reservations.merchant.toggleOff'))).toBeDefined();
     expect(screen.getByRole('button', { name: tr('reservations.merchant.toggle') })).toHaveProperty(
@@ -75,14 +75,14 @@ describe('the default is OFF (FR-001, SC-007)', () => {
 
   it('reads OFF when it is explicitly false', () => {
     render(
-      <ReservationsToggle listingId="l1" enabled={false} openingHours={OPEN} onChanged={vi.fn()} />,
+      <ReservationsToggle listingId="l1" enabled={false} openingHours={OPEN} onChanged={vi.fn()} onGoToHours={vi.fn()} />,
     );
     expect(screen.getByText(tr('reservations.merchant.toggleOff'))).toBeDefined();
   });
 
   it('reads ON only when it is explicitly true', () => {
     render(
-      <ReservationsToggle listingId="l1" enabled={true} openingHours={OPEN} onChanged={vi.fn()} />,
+      <ReservationsToggle listingId="l1" enabled={true} openingHours={OPEN} onChanged={vi.fn()} onGoToHours={vi.fn()} />,
     );
     expect(screen.getByText(tr('reservations.merchant.toggleOn'))).toBeDefined();
   });
@@ -107,7 +107,7 @@ describe('usable hours are required to turn it ON (FR-002, SC-008)', () => {
 
   it('does not let the merchant send a request that would be refused', () => {
     render(
-      <ReservationsToggle listingId="l1" enabled={undefined} openingHours={[]} onChanged={vi.fn()} />,
+      <ReservationsToggle listingId="l1" enabled={undefined} openingHours={[]} onChanged={vi.fn()} onGoToHours={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('button', { name: tr('reservations.merchant.toggle') }));
     expect(setEnabled).not.toHaveBeenCalled();
@@ -122,7 +122,7 @@ describe('usable hours are required to turn it ON (FR-002, SC-008)', () => {
         listingId="l1"
         enabled={undefined}
         openingHours={CLOSED_WEEK}
-        onChanged={vi.fn()}
+        onChanged={vi.fn()} onGoToHours={vi.fn()}
       />,
     );
     expect(screen.getByText(tr('reservations.merchant.needsHours'))).toBeDefined();
@@ -131,7 +131,7 @@ describe('usable hours are required to turn it ON (FR-002, SC-008)', () => {
   it('allows it with one real open day', async () => {
     const onChanged = vi.fn();
     render(
-      <ReservationsToggle listingId="l1" enabled={false} openingHours={OPEN} onChanged={onChanged} />,
+      <ReservationsToggle listingId="l1" enabled={false} openingHours={OPEN} onChanged={onChanged} onGoToHours={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('button', { name: tr('reservations.merchant.toggle') }));
     await waitFor(() => expect(setEnabled).toHaveBeenCalledWith('l1', true));
@@ -145,7 +145,7 @@ describe('turning it OFF is never blocked (FR-004)', () => {
     // feature off. 018's reason for an allow beside each deny.
     const onChanged = vi.fn();
     render(
-      <ReservationsToggle listingId="l1" enabled={true} openingHours={[]} onChanged={onChanged} />,
+      <ReservationsToggle listingId="l1" enabled={true} openingHours={[]} onChanged={onChanged} onGoToHours={vi.fn()} />,
     );
     const btn = screen.getByRole('button', { name: tr('reservations.merchant.toggle') });
     expect(btn).toHaveProperty('disabled', false);
@@ -155,7 +155,7 @@ describe('turning it OFF is never blocked (FR-004)', () => {
 
   it('does not show the needs-hours explanation while it is ON', () => {
     render(
-      <ReservationsToggle listingId="l1" enabled={true} openingHours={[]} onChanged={vi.fn()} />,
+      <ReservationsToggle listingId="l1" enabled={true} openingHours={[]} onChanged={vi.fn()} onGoToHours={vi.fn()} />,
     );
     expect(screen.queryByText(tr('reservations.merchant.needsHours'))).toBeNull();
   });
@@ -168,7 +168,7 @@ describe('a failed save says which failure it was', () => {
     // message rather than the generic one.
     setEnabled.mockRejectedValue(Object.assign(new Error('x'), { code: 'hours_unusable' }));
     render(
-      <ReservationsToggle listingId="l1" enabled={false} openingHours={OPEN} onChanged={vi.fn()} />,
+      <ReservationsToggle listingId="l1" enabled={false} openingHours={OPEN} onChanged={vi.fn()} onGoToHours={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('button', { name: tr('reservations.merchant.toggle') }));
     expect(await screen.findByText(tr('reservations.merchant.needsHours'))).toBeDefined();
@@ -178,7 +178,7 @@ describe('a failed save says which failure it was', () => {
     setEnabled.mockRejectedValue(Object.assign(new Error('x'), { code: 'internal' }));
     const onChanged = vi.fn();
     render(
-      <ReservationsToggle listingId="l1" enabled={false} openingHours={OPEN} onChanged={onChanged} />,
+      <ReservationsToggle listingId="l1" enabled={false} openingHours={OPEN} onChanged={onChanged} onGoToHours={vi.fn()} />,
     );
     fireEvent.click(screen.getByRole('button', { name: tr('reservations.merchant.toggle') }));
     expect(await screen.findByText(tr('reservations.merchant.toggleFailed'))).toBeDefined();
@@ -196,7 +196,7 @@ describe('the switch is NEVER filtered by businessType (research R2)', () => {
     // *Bamboards Surf Academy* are among them, sorted as `outdoor-activity`, and
     // they are more obviously businesses that take bookings than a café is.
     render(
-      <ReservationsToggle listingId="l1" enabled={undefined} openingHours={OPEN} onChanged={vi.fn()} />,
+      <ReservationsToggle listingId="l1" enabled={undefined} openingHours={OPEN} onChanged={vi.fn()} onGoToHours={vi.fn()} />,
     );
     expect(screen.getByRole('button', { name: tr('reservations.merchant.toggle') })).toHaveProperty(
       'disabled',

@@ -43,8 +43,20 @@ export function ReservationsToggle({
   enabled: boolean | undefined;
   openingHours: OpeningHour[] | undefined;
   onChanged: (enabled: boolean) => void;
-  /** FR-002's "a way to fill them" — the editor already exists on this screen. */
-  onGoToHours?: () => void;
+  /**
+   * FR-002's "a way to fill them" — the editor is already on this screen.
+   *
+   * **REQUIRED, and it was optional until a merchant hit the gap.** With it
+   * optional, neither `ListingForm` passed it, so the refusal rendered
+   * "necesitás cargar tus horarios" with **no way through** — and the editor was
+   * four fingers above, unmentioned. FR-002 asks for the reason AND the path;
+   * half of it reads like the whole of it.
+   *
+   * The component's own test could never have caught this: it passed the prop
+   * explicitly, so it proved the button works, not that anybody wires it. Making
+   * it required moves the check to the compiler, which does not forget.
+   */
+  onGoToHours: () => void;
 }) {
   const { t } = useTranslation();
   const [saving, setSaving] = useState(false);
@@ -97,7 +109,7 @@ export function ReservationsToggle({
       {!isOn && !canEnable && (
         <div className="space-y-2 rounded-lg bg-surface-2 p-3">
           <p className="text-xs text-muted">{t('reservations.merchant.needsHours')}</p>
-          {onGoToHours && (
+          {Boolean(onGoToHours) && (
             <Button variant="ghost" size="sm" onClick={onGoToHours} iconLeft="clock">
               {t('reservations.merchant.needsHoursCta')}
             </Button>

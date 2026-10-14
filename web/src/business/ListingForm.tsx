@@ -313,7 +313,7 @@ export function ListingForm({
           }}
         />
 
-        <div className="space-y-2">
+        <div className="space-y-2" id="opening-hours">
           <p className="text-sm font-bold text-muted">{t('services.openingHours')}</p>
           <OpeningHoursEditor hours={hours} onChange={setHours} />
         </div>
@@ -329,6 +329,11 @@ export function ListingForm({
             enabled={reservationsEnabled}
             openingHours={hours}
             onChanged={setReservationsEnabled}
+            onGoToHours={() =>
+              document
+                .getElementById('opening-hours')
+                ?.scrollIntoView({ behavior: 'smooth', block: 'center' })
+            }
           />
         )}
 
