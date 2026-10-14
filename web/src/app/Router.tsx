@@ -1,3 +1,4 @@
+import { AI_GUIDE_ENABLED } from '@svtrip/shared';
 // Routing and the signed-out boundary (feature 007, T067/T069/T070).
 //
 // `BrowserRouter` sits ABOVE the auth guard, deliberately. Feature 003 learned
@@ -132,7 +133,14 @@ function SignedInRoutes() {
 
         <Route path="/discover" element={<DiscoverScreen />} />
         <Route path="/place/:id" element={<PlaceProfileScreen />} />
-        <Route path="/guide" element={<AIGuideScreen />} />
+        {/* The route REDIRECTS rather than being removed while the guide is
+            out of the MVP. A removed route 404s, which tells a traveler with an
+            old bookmark that something broke; a redirect takes them somewhere
+            that works. See `shared/src/features.ts`. */}
+        <Route
+          path="/guide"
+          element={AI_GUIDE_ENABLED ? <AIGuideScreen /> : <Navigate to="/discover" replace />}
+        />
         {/* Traveler-only, like the nav link that reaches them. The
             provider links are untouched (FR-046). */}
         <Route path="/trips" element={<TripsScreen />} />

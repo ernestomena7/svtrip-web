@@ -1,3 +1,4 @@
+import { AI_GUIDE_ENABLED } from '@svtrip/shared';
 // Desktop navigation (feature 007, T061 — FR-010).
 //
 // From `SVTrip_Design_System/ui_kits/web/WebNav.jsx`: sticky, glass background
@@ -23,7 +24,9 @@ const WORDMARK = '/svtrip-wordmark.png';
 
 const TRAVELER = [
   { to: '/discover', key: 'nav.discover' },
-  { to: '/guide', key: 'nav.guide' },
+  // The guide's entry is FILTERED rather than deleted, so turning the flag back
+  // on restores it in place rather than needing the order rediscovered.
+  ...(AI_GUIDE_ENABLED ? [{ to: '/guide', key: 'nav.guide' }] : []),
   { to: '/trips', key: 'nav.trips' },
   { to: '/deals', key: 'nav.deals' },
   { to: '/saved', key: 'nav.saved' },

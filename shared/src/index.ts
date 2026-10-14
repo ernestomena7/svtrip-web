@@ -4,6 +4,7 @@ export * from './subscriptions.js';
 export * from './businessTypes.js';
 export * from './taxonomy.js';
 export * from './i18nContent.js';
+export * from './features.js';
 export * from './publication.js';
 export * from './profile.js';
 export * from './contact.js';
