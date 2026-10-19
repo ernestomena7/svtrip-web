@@ -1,5 +1,14 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
+
+// Feature 022 (SC-008): the desktop app has no native shell, so its version IS its package.json —
+// but read at BUILD time and injected, never typed into a component. A literal is correct until
+// somebody forgets, and then it is a confident lie about which build is running.
+const APP_VERSION: string = JSON.parse(
+  readFileSync(resolve(__dirname, 'package.json'), 'utf8'),
+).version;
 
 // Where the app is served from. `/` for a subdomain (app.svtrip.com), `/app/`
 // for a subdirectory (svtrip.com/app). Set at BUILD time because asset URLs are
@@ -12,6 +21,7 @@ const BASE_PATH = process.env.APP_BASE_PATH || '/';
 export default defineConfig({
   base: BASE_PATH,
   plugins: [react()],
+  define: { __APP_VERSION__: JSON.stringify(APP_VERSION) },
   // MapLibre's tile-parsing worker, carried over from the client verbatim.
   // Two distinct failures, both of which render a map with its background and
   // pin but NO roads, water or labels, and both entirely silent because a

@@ -60,3 +60,6 @@ export * from './providerMetrics.js';
 export * from './reservationState.js';
 export * from './openingHours.js';
 export * from './openingHoursDisplay.js';
+// Legal documents (feature 022). Bundled, never fetched.
+export * from './legal/index.js';
+export * from './version.js';

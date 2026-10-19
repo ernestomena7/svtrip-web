@@ -21,6 +21,7 @@ import {
 } from '@svtrip/shared';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { hasPasswordProvider, signOutUser } from '@svtrip/core/auth/authService';
+import { LegalLinks } from '../legal/LegalLinks';
 import { saveProfileFields, updatePreferences } from '@svtrip/core/auth/userProfile';
 import { clearExposure, useExposure } from '@svtrip/core/repos/exposureRepo';
 import { useUiStore } from '@svtrip/core/uiStore';
@@ -363,6 +364,9 @@ export function ProfileScreen() {
         >
           {t('auth.signOut')}
         </Button>
+
+        {/* Feature 022: below EVERYTHING, including sign-out. Discreet on purpose — see LegalLinks. */}
+        <LegalLinks />
       </div>
     </DesktopLayout>
   );

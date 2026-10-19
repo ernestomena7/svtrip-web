@@ -56,6 +56,9 @@ const TripsScreen = lazy(() =>
 const ReservationsInbox = lazy(() =>
   import('../business/ReservationsInbox').then((m) => ({ default: m.ReservationsInbox })),
 );
+const LegalScreen = lazy(() =>
+  import('../legal/LegalScreen').then((m) => ({ default: m.LegalScreen })),
+);
 const MyReservationsScreen = lazy(() =>
   import('../traveler/MyReservationsScreen').then((m) => ({
     default: m.MyReservationsScreen,
@@ -118,6 +121,18 @@ function SignedOutRoutes() {
       <Route path="/register" element={<RegisterScreen />} />
       <Route path="/forgot-password" element={<ForgotPasswordScreen />} />
       <Route path="/reset-password" element={<ResetPasswordScreen />} />
+      {/* Feature 022 (FR-013): THE PUBLIC ADDRESS. A privacy-policy URL that redirects to a login
+          screen is worse than a 404 for an app-store reviewer — it looks like the document is behind
+          an account, which is the one thing this URL exists to disprove.
+
+          DECLARATION ORDER DOES NOT MATTER HERE, and an earlier version of this comment (and of the
+          plan, the contract and the task list) said it did. React Router v6 ranks routes by
+          SPECIFICITY, not by the order they are written, so a literal path always beats the `*`
+          catch-all below — verified by sabotage: moving these two routes BELOW it turned zero tests
+          red. What DOES matter is that they exist in BOTH trees (see the signed-in one), which a
+          sabotage did turn red. */}
+      <Route path="/privacidad" element={<LegalScreen documentId="privacy" />} />
+      <Route path="/terminos" element={<LegalScreen documentId="terms" />} />
       {/* The public preview — the one signed-out surface with real content. */}
       <Route path="/" element={<PreviewScreen />} />
       <Route path="/discover" element={<PreviewScreen />} />
@@ -171,6 +186,12 @@ function SignedInRoutes() {
             admin got a screen, but an UNMOUNTED route 404s differently. */}
         <Route path="/admin/taxonomy" element={<TaxonomyScreen />} />
 
+        {/* Feature 022: ALSO resolve signed in. This tree has its own catch-all, which sends an
+            unknown path to the index — so adding the routes only to SignedOutRoutes would fix the
+            app-store case and break the in-app one: a traveler tapping the profile link would land
+            on the home screen. `/speckit-analyze` caught that the task list named only the first. */}
+        <Route path="/privacidad" element={<LegalScreen documentId="privacy" />} />
+        <Route path="/terminos" element={<LegalScreen documentId="terms" />} />
         <Route path="*" element={<Navigate to={index} replace />} />
       </Routes>
     </Suspense>

@@ -600,7 +600,9 @@
     },
     "footer": {
       "tagline": "Hecho en El Salvador · vos elegís",
-      "rights": "Todos los derechos reservados."
+      "rights": "Todos los derechos reservados.",
+      "privacy": "Política de privacidad",
+      "terms": "Términos de servicio"
     },
     "language": {
       "label": "Idioma",
@@ -934,5 +936,13 @@
       "turnOn": "Prender",
       "turnOff": "Apagar"
     }
+  },
+  "legal": {
+    "privacy": "Política de privacidad",
+    "terms": "Términos de servicio",
+    "version": "Versión",
+    "back": "Volver",
+    "updated": "Última actualización",
+    "loadFailed": "No pudimos mostrar este documento."
   }
 }

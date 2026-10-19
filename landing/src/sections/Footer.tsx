@@ -6,6 +6,7 @@
 // back up to fix it.
 import { useTranslation } from 'react-i18next';
 import { LanguageSwitch } from '../components/LanguageSwitch';
+import { APP_URL } from '../config';
 
 // Served from `public/`, referenced by URL rather than imported: `prerender.ts`
 // runs in Node, and Node cannot load a `.png` import — only the bundler can.
@@ -21,6 +22,19 @@ export function Footer() {
         <img src={WORDMARK} alt="SVTrip" className="h-10 w-auto self-start" />
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:gap-8">
           <span className="text-[13px] font-bold">{t('landing.footer.tagline')}</span>
+          {/* Feature 022 (FR-014). Link OUT to the web app's public routes rather than hosting copies:
+              one source of truth, and the hop crosses a deployment boundary the CTA already crosses.
+              `APP_URL` defaults to localhost, which is the defect feature 007 recorded for
+              `VITE_LANDING_URL` — a value read in one place and set in none. T045 reads the live
+              address back from outside precisely because nothing local can prove it is set. */}
+          <nav className="flex gap-4 text-[13px]">
+            <a href={`${APP_URL}/privacidad`} className="underline underline-offset-2 hover:text-white">
+              {t('landing.footer.privacy')}
+            </a>
+            <a href={`${APP_URL}/terminos`} className="underline underline-offset-2 hover:text-white">
+              {t('landing.footer.terms')}
+            </a>
+          </nav>
           <LanguageSwitch tone="dark" />
         </div>
       </div>

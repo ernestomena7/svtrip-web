@@ -600,7 +600,9 @@
     },
     "footer": {
       "tagline": "Made in El Salvador · you choose",
-      "rights": "All rights reserved."
+      "rights": "All rights reserved.",
+      "privacy": "Privacy policy",
+      "terms": "Terms of service"
     },
     "language": {
       "label": "Language",
@@ -934,5 +936,13 @@
       "turnOn": "Turn on",
       "turnOff": "Turn off"
     }
+  },
+  "legal": {
+    "privacy": "Privacy policy",
+    "terms": "Terms of service",
+    "version": "Version",
+    "back": "Back",
+    "updated": "Last updated",
+    "loadFailed": "We could not show this document."
   }
 }

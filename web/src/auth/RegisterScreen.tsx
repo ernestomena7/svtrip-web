@@ -177,6 +177,13 @@ export function RegisterScreen() {
         <Button type="submit" fullWidth size="lg" disabled={busy || !passwordOk}>
           {busy ? t('auth.loading') : t('auth.register.cta')}
         </Button>
+
+        {/* Feature 022 (FR-015): readable BEFORE an account exists. */}
+        <p className="text-center text-xs text-muted">
+          <Link to="/privacidad" className="underline underline-offset-2">{t('legal.privacy')}</Link>
+          {' · '}
+          <Link to="/terminos" className="underline underline-offset-2">{t('legal.terms')}</Link>
+        </p>
       </form>
     </AuthShell>
   );
