@@ -26,7 +26,7 @@ vi.mock('@svtrip/core/auth/authService', () => ({
   registerWithEmail: vi.fn(() => Promise.resolve()),
   signInWithGoogle: vi.fn(() => Promise.resolve()),
 }));
-vi.mock('@svtrip/core/firebase', () => ({ auth: { currentUser: null } }));
+vi.mock('@svtrip/core/supabase', () => ({ auth: { currentUser: null } }));
 vi.mock('@svtrip/core/repos/exposureRepo', () => ({
   useExposure: () => ({ entries: [], loading: false }),
   clearExposure: async () => undefined,

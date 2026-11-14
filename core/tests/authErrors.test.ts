@@ -5,7 +5,7 @@
 // is tested even though the rest of the UI is not heavily unit-tested
 // (Constitution III weighs security contracts above breadth).
 import { describe, it, expect } from 'vitest';
-import { mapAuthError, isPasswordLongEnough, MIN_PASSWORD_LENGTH } from '../src/auth/authErrors';
+import { mapAuthError, mapPasswordChangeError, isPasswordLongEnough, MIN_PASSWORD_LENGTH } from '../src/auth/authErrors';
 
 const err = (code: string) => Object.assign(new Error(code), { code });
 
@@ -71,6 +71,62 @@ describe('mapAuthError — fallback', () => {
     expect(mapAuthError(new Error('boom')).code).toBe('unknown');
     expect(mapAuthError(null).code).toBe('unknown');
     expect(mapAuthError({ code: 42 }).code).toBe('unknown');
+  });
+});
+
+// Feature 023 (T049): Supabase Auth's OWN codes, folded into the same outcomes the Firebase codes
+// mapped to above. This is the "extend its tests" half of the task — the mapping existed in the
+// code with no case pinning it, so a typo in one of these strings (e.g. `user_not_found` vs
+// Supabase's actual `user_not_found`) would have shipped silently as "unknown".
+describe('mapAuthError — Supabase Auth codes collapse into the SAME outcomes', () => {
+  it('still collapses wrong-credential shapes into one code — the enumeration rule, on the new provider', () => {
+    const wrongPassword = mapAuthError(err('invalid_credentials'));
+    const unknownEmail = mapAuthError(err('user_not_found'));
+    expect(wrongPassword).toEqual(unknownEmail);
+    expect(wrongPassword.code).toBe('invalid_credentials');
+  });
+
+  it('maps both of Supabase\'s "already registered" codes to the neutral registration failure', () => {
+    expect(mapAuthError(err('user_already_exists')).code).toBe('registration_failed');
+    expect(mapAuthError(err('email_exists')).code).toBe('registration_failed');
+  });
+
+  it('maps weak_password and email_address_invalid', () => {
+    expect(mapAuthError(err('weak_password')).code).toBe('weak_password');
+    expect(mapAuthError(err('email_address_invalid')).code).toBe('invalid_email');
+  });
+
+  it('maps reset-link failures: otp_expired, bad_code_verifier, flow_state_expired', () => {
+    expect(mapAuthError(err('otp_expired')).code).toBe('reset_link_expired');
+    expect(mapAuthError(err('bad_code_verifier')).code).toBe('reset_link_invalid');
+    expect(mapAuthError(err('flow_state_expired')).code).toBe('reset_link_expired');
+  });
+
+  it('maps both of Supabase\'s rate-limit codes', () => {
+    expect(mapAuthError(err('over_request_rate_limit')).code).toBe('rate_limited');
+    expect(mapAuthError(err('over_email_send_rate_limit')).code).toBe('rate_limited');
+  });
+
+  it('recognizes an AuthRetryableFetchError (no `code`) as a network failure, not unknown', () => {
+    const networkErr = Object.assign(new Error('fetch failed'), { name: 'AuthRetryableFetchError' });
+    expect(mapAuthError(networkErr).code).toBe('network');
+  });
+});
+
+describe('mapPasswordChangeError — feature 011, on Supabase codes', () => {
+  it('names invalid_credentials as the WRONG current password, not the sign-in oracle message', () => {
+    // The opposite of mapAuthError's rule, by design: the account is already proven, so naming the
+    // actual field is not an enumeration leak. Re-pointing this globally would reopen that oracle —
+    // the comment this guards against doing.
+    expect(mapPasswordChangeError(err('invalid_credentials')).code).toBe('wrong_current_password');
+  });
+
+  it('treats reauthentication_needed as requiring a fresh sign-in', () => {
+    expect(mapPasswordChangeError(err('reauthentication_needed')).code).toBe('requires_recent_login');
+  });
+
+  it('falls through to mapAuthError for anything else, e.g. weak_password', () => {
+    expect(mapPasswordChangeError(err('weak_password')).code).toBe('weak_password');
   });
 });
 

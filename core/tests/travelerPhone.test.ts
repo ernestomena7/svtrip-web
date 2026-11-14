@@ -1,125 +1,88 @@
-// T013 (feature 020, FR-008): remembering a traveler's phone WITHOUT locking
-// them out of the app.
+// `saveTravelerPhone` must not un-grandfather an account (feature 020, FR-008).
 //
-// THIS IS THE MOST CONSEQUENTIAL FOUR LINES IN THIS FEATURE, and the defect it
-// guards was found by measurement rather than by reading.
+// Measured 2026-10-13: 62 of 71 accounts carried no `profileVersion` AND were missing five fields
+// — the exact combination where stamping the version locks the account into the mandatory profile
+// form. A traveler's reward for their first reservation would be losing the app.
 //
-// FR-008 says a phone given in the reservation form is remembered on the
-// profile. The writer that already exists is `saveProfileFields()`, and
-// extending its `Pick<>` is a one-line change. It also stamps
-// `profileVersion: PROFILE_VERSION` on every call — feature 011's grandfathering
-// stamp, whose ABSENCE is what makes an older account exempt from the mandatory
-// profile form.
-//
-// So the one-line version un-grandfathers the account. And measured on the live
-// project 2026-10-13:
-//
-//     users: 71
-//     sin profileVersion (grandfathered): 62
-//       de esas, incompletas: 62
-//
-// Every grandfathered account is also incomplete, which is the precise
-// combination that makes the stamp fatal: the gate in `client/src/app/App.tsx`
-// and `web/src/app/Router.tsx` reads
-//
-//     !predatesProfileFields(profile) && !isProfileComplete(profile)
-//
-// so 62 of 71 travelers — 87% — would be dropped into `CompleteProfileScreen` on
-// their next render, unable to leave without filling five fields they were never
-// asked for. The reward for making your first reservation would be being locked
-// out.
-//
-// The assertions below are about THE CONSEQUENCE, not the mechanism. "The phone
-// was written" passes either way; "the account is still grandfathered" is what
-// actually matters, and the gate expression itself is pinned so a future writer
-// that stamps through some other path still reddens this.
+// CHANGED IN THE PORT (feature 023, FR-011). These cases used to read a captured Firestore `setDoc`
+// (its data and `merge: true`). They now read the ROW as stored in the table after the write,
+// converted back through the same `profileFromRow` the app uses — so the consequence is asserted on
+// what the gate will actually see, which is stronger than asserting on the write. "Merging rather
+// than replacing" becomes: the write is an UPDATE of named columns, and every other column survives.
+// The gate assertions themselves are unchanged.
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { predatesProfileFields, isProfileComplete } from '@svtrip/shared';
 import type { UserProfile } from '@svtrip/shared';
+import { createFakeSupabase } from './fakeSupabase';
 
-/** The last document written, and how. */
-let written: { data: Record<string, unknown>; merge: boolean } | null = null;
-let existing: Record<string, unknown> = {};
-
-vi.mock('firebase/firestore', () => ({
-  doc: (_db: unknown, _col: string, id: string) => ({ id }),
-  getDoc: async () => ({ exists: () => true, data: () => existing }),
-  setDoc: async (_ref: unknown, data: Record<string, unknown>, opts?: { merge?: boolean }) => {
-    written = { data, merge: Boolean(opts?.merge) };
-  },
-  onSnapshot: () => () => {},
-  serverTimestamp: () => 'SERVER_TS',
-}));
-vi.mock('../src/firebase', () => ({ db: {} }));
+const fake = createFakeSupabase();
+vi.mock('../src/supabase', () => ({ supabase: fake.client, auth: { currentUser: null } }));
 
 const { saveTravelerPhone } = await import('../src/auth/userProfile');
+const { profileFromRow } = await import('@svtrip/shared');
 
 /** An account that predates feature 011: no stamp, and missing all five fields. */
-function pre011(): Record<string, unknown> {
-  return { uid: 'alice', displayName: 'Alice', email: 'a@b.com', persona: 'traveler' };
-}
+const pre011Row = () => ({
+  id: 'alice',
+  display_name: 'Alice',
+  email: 'a@b.com',
+  persona: 'traveler',
+  onboarding_complete: true,
+  preferences: { language: 'es', vibes: ['beach'] },
+  created_at: new Date(0).toISOString(),
+  updated_at: new Date(0).toISOString(),
+});
 
 /** The gate, exactly as both surfaces evaluate it. */
-function wouldBeGated(profile: Record<string, unknown>): boolean {
-  const p = profile as unknown as UserProfile;
-  return !predatesProfileFields(p) && !isProfileComplete(p);
+function wouldBeGated(profile: UserProfile): boolean {
+  return !predatesProfileFields(profile) && !isProfileComplete(profile);
 }
 
+const stored = () => fake.tables.profiles.find((r) => r.id === 'alice')!;
+const lastWrite = () => fake.writesTo('profiles').at(-1)!;
+
 beforeEach(() => {
-  written = null;
-  existing = pre011();
+  fake.reset();
+  fake.seed('profiles', [pre011Row()]);
 });
 
 describe('saveTravelerPhone', () => {
-  it('writes the phone, merging rather than replacing', () => {
-    return saveTravelerPhone('alice', '+503 7777 7777').then(() => {
-      expect(written).not.toBeNull();
-      expect(written!.data.phone).toBe('+503 7777 7777');
-      expect(written!.merge).toBe(true);
-    });
+  it('writes the phone as an UPDATE of named columns — everything else survives', async () => {
+    await saveTravelerPhone('alice', '+503 7777 7777');
+    expect(lastWrite().op).toBe('update');
+    expect(stored().phone).toBe('+503 7777 7777');
+    expect(stored().preferences).toEqual({ language: 'es', vibes: ['beach'] });
+    expect(stored().persona).toBe('traveler');
   });
 
-  it('does NOT stamp profileVersion — the whole point of the function', () => {
-    return saveTravelerPhone('alice', '+503 7777 7777').then(() => {
-      expect(written!.data).not.toHaveProperty('profileVersion');
-    });
+  it('does NOT stamp profile_version — the whole point of the function', async () => {
+    await saveTravelerPhone('alice', '+503 7777 7777');
+    expect(lastWrite().values).not.toHaveProperty('profile_version');
+    expect(stored().profile_version).toBeUndefined();
   });
 
-  it('leaves a pre-011 account STILL GRANDFATHERED afterwards', () => {
-    // The consequence, asserted on the profile as it would read after the write
-    // rather than on the write itself.
-    return saveTravelerPhone('alice', '+503 7777 7777').then(() => {
-      const after = { ...existing, ...written!.data };
-      expect(predatesProfileFields(after as unknown as UserProfile)).toBe(true);
-    });
+  it('leaves a pre-011 account STILL GRANDFATHERED afterwards', async () => {
+    await saveTravelerPhone('alice', '+503 7777 7777');
+    expect(predatesProfileFields(profileFromRow(stored()))).toBe(true);
   });
 
-  it('does not push a pre-011 account into the mandatory profile form', () => {
-    // THE assertion. It is written against the full gate expression so that a
-    // future writer which stamps the account through some other path still
-    // reddens this test, rather than only the `profileVersion` check above.
-    return saveTravelerPhone('alice', '+503 7777 7777').then(() => {
-      const after = { ...existing, ...written!.data };
-      expect(wouldBeGated(after)).toBe(false);
-    });
+  it('does not push a pre-011 account into the mandatory profile form', async () => {
+    // THE assertion, against the full gate expression, on the stored row.
+    await saveTravelerPhone('alice', '+503 7777 7777');
+    expect(wouldBeGated(profileFromRow(stored()))).toBe(false);
   });
 
   it('and the gate DOES fire once such an account is stamped — so the test above is not vacuous', () => {
-    // Without this, "wouldBeGated is false" could be true because the gate never
-    // fires for anybody, and the test would pass while asserting nothing. This
-    // is the shape of the vacuous passes features 016 and 018 each found.
-    const stamped = { ...pre011(), profileVersion: 1 };
+    const stamped = profileFromRow({ ...pre011Row(), profile_version: 1 });
     expect(wouldBeGated(stamped)).toBe(true);
   });
 
-  it('does not touch displayName, which two server-side services read', () => {
-    // Feature 011's FR-017: `reviewService.ts` and `claimService.ts` both read
-    // `displayName` server-side. A writer that derived it from absent names
-    // would blank the author on reviews that are already published.
-    return saveTravelerPhone('alice', '+503 7777 7777').then(() => {
-      expect(written!.data).not.toHaveProperty('displayName');
-    });
+  it('does not touch display_name, which two server-side services read', async () => {
+    await saveTravelerPhone('alice', '+503 7777 7777');
+    expect(lastWrite().values).not.toHaveProperty('display_name');
+    expect(stored().display_name).toBe('Alice');
   });
+
 });
 
 describe('the phone is never a required field (FR-009, SC-010)', () => {

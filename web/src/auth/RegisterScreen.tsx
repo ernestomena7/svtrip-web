@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { Link, useNavigate } from 'react-router-dom';
 import { mapAuthError, isPasswordLongEnough, MIN_PASSWORD_LENGTH } from '@svtrip/core/auth/authErrors';
 import { registerWithEmail, signInWithGoogle } from '@svtrip/core/auth/authService';
-import { auth } from '@svtrip/core/firebase';
+import { auth } from '@svtrip/core/supabase';
 import { saveProfileFields } from '@svtrip/core/auth/userProfile';
 import {
   DEFAULT_RESIDENCE_COUNTRY,

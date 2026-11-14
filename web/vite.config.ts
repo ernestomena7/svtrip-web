@@ -46,7 +46,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks: {
-          firebase: ['firebase/app', 'firebase/auth', 'firebase/firestore', 'firebase/storage'],
+          supabase: ['@supabase/supabase-js'],
           motion: ['framer-motion'],
           vendor: ['react', 'react-dom', 'react-router-dom', 'i18next', 'react-i18next', 'zustand'],
         },

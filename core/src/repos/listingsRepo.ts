@@ -1,22 +1,13 @@
 // Provider listing CRUD (T074, FR-022/023). Listings live in the top-level
 // `listings` collection (owner-writable per security rules). We query by
 // ownerUid only and sort client-side so no composite index is required for MVP.
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  query,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
 import type { BusinessType, Listing, LocalizedText, OpeningHour } from '@svtrip/shared';
 import { CONTENT_VERSION, hasUsableHours } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
+import { fromRow, toRow } from '@svtrip/shared';
 import { clearDiscoverCache } from './discoverRepo';
 
-const listingsCol = () => collection(db, 'listings');
 
 export interface ListingInput {
   name: string;
@@ -56,16 +47,14 @@ export interface ListingInput {
  */
 export async function createListing(ownerUid: string, input: ListingInput): Promise<string> {
   const now = Date.now();
-  const ref = await addDoc(listingsCol(), {
-    ...input,
-    ownerUid,
-    rating: 0,
-    contentVersion: CONTENT_VERSION,
-    createdAt: now,
-    updatedAt: now,
-  });
+  const { data, error } = await supabase
+    .from('listings')
+    .insert(toRow('listings', { ...input, ownerUid, rating: 0, contentVersion: CONTENT_VERSION, createdAt: now, updatedAt: now }))
+    .select('id')
+    .single();
+  if (error) throw error;
   clearDiscoverCache();
-  return ref.id;
+  return data.id as string;
 }
 
 export async function updateListing(
@@ -93,17 +82,24 @@ export async function updateListing(
   const clearsReservations =
     patch.openingHours !== undefined && !hasUsableHours(patch.openingHours);
 
-  await updateDoc(doc(listingsCol(), listingId), {
-    ...patch,
-    ...(clearsReservations ? { reservationsEnabled: false } : {}),
-    contentVersion: CONTENT_VERSION,
-    updatedAt: Date.now(),
-  });
+  const { error } = await supabase
+    .from('listings')
+    .update(
+      toRow('listings', {
+        ...patch,
+        ...(clearsReservations ? { reservationsEnabled: false } : {}),
+        contentVersion: CONTENT_VERSION,
+        updatedAt: Date.now(),
+      }),
+    )
+    .eq('id', listingId);
+  if (error) throw error;
   clearDiscoverCache();
 }
 
 export async function deleteListing(listingId: string): Promise<void> {
-  await deleteDoc(doc(listingsCol(), listingId));
+  const { error } = await supabase.from('listings').delete().eq('id', listingId);
+  if (error) throw error;
   clearDiscoverCache();
 }
 
@@ -113,15 +109,17 @@ export function subscribeToMyListings(
   cb: (listings: Listing[]) => void,
   onError?: (e: Error) => void,
 ): () => void {
-  const q = query(listingsCol(), where('ownerUid', '==', ownerUid));
-  return onSnapshot(
-    q,
-    (snap) => {
-      const listings = snap.docs
-        .map((d) => ({ ...(d.data() as Listing), listingId: d.id }))
-        .sort((a, b) => b.updatedAt - a.updatedAt);
-      cb(listings);
+  return subscribeLive(
+    {
+      table: 'listings',
+      topic: userTopic(ownerUid),
+      cacheKey: `myListings:${ownerUid}`,
+      read: async () =>
+        rowsOf(await supabase.from('listings').select('*').eq('owner_uid', ownerUid))
+          .map((r) => fromRow<Listing>('listings', r))
+          .sort((a, b) => b.updatedAt - a.updatedAt),
     },
-    onError,
+    cb,
+    onError as (e: unknown) => void,
   );
 }

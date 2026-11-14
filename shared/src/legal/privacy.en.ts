@@ -17,7 +17,7 @@ export const privacyEn: LegalDocument = {
   id: 'privacy',
   language: 'en',
   title: 'Privacy policy',
-  updatedAt: '2026-10-19',
+  updatedAt: '2026-11-14',
   sections: [
     {
       id: 'data-collected',
@@ -28,7 +28,7 @@ export const privacyEn: LegalDocument = {
         'From what you do: the places you save as favorites; the Trips you build, with their dates and the places you plan to visit; your mood preferences; and a record of which places the guide has shown you, which exists so it does not repeat itself.',
         'If you run a business: your business and subscription details (the plan, its dates and whether payment is up to date), and the requests you make to manage a business, which include your name and an optional message you write.',
         'When someone reports a review, we keep who reported it and the reason if they wrote one. Only the SVTrip team can see that record, and no screen in the app shows it.',
-        'Today we do not keep any identifier for your device in order to send notifications, because the app does not send them yet.',
+        'If you turn on notifications on your phone, we keep, with your account, the identifier Google uses to deliver notifications to that phone. We use it only to tell you about your reservations. It is deleted when you sign out on that phone, and also when it stops working. If you do not turn notifications on, we keep nothing.',
         'Your account data, favorites, Trips and conversations are stored under your account and can only be read from it.',
       ],
     },
@@ -64,7 +64,9 @@ export const privacyEn: LegalDocument = {
       id: 'third-parties',
       heading: 'Who we share data with',
       body: [
-        'Firebase and Google Cloud store everything described in "What data we keep". It is our database, and there is no way to use the app without it.',
+        'Supabase stores everything described in "What data we keep", including businesses’ photos, on servers in the eastern United States. It is our database and our account system, and there is no way to use the app without it.',
+        'Our server runs on Google Cloud, also in the United States: the requests the app makes to it (for example, when you request a reservation or post a review) pass through it. If you sign in with your Google account, Google confirms who you are and gives us your name and email.',
+        'If you turn on notifications, each reservation notification is delivered through Firebase Cloud Messaging, Google’s notification service for Android. Google receives your phone’s identifier and the text of the notification: for example, the business name, the date of your reservation and, if the business wrote you a message when declining it, that message.',
         'The app’s typefaces are loaded from Google Fonts. That means your IP address reaches Google every time a page loads, before anything is drawn, including on the public page where no account exists yet. We state it because it is not something you can choose.',
         'Maps are loaded from OpenFreeMap, which receives your IP address and the approximate area you are viewing each time a map is shown.',
         'If a business searches for an address to place itself, the text of that search is sent to MapTiler through our server.',

@@ -11,13 +11,14 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import type { Mood, Place } from '@svtrip/shared';
+import type { Place } from '@svtrip/shared';
 import { MOODS, coverImage, resolveLocalized, scoreSignalFor } from '@svtrip/shared';
 import { useUiStore } from '@svtrip/core/uiStore';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
 import { useFavorites } from '@svtrip/core/repos/useFavorites';
 import { fetchPlaces, forYou, byMood } from '@svtrip/core/repos/discoverRepo';
-import { MOOD_ICON } from '@svtrip/core/moodIcons';
+import { moodIcon } from '@svtrip/core/moodIcons';
+import { useMergedTaxonomy } from '@svtrip/core/taxonomy/useTaxonomy';
 import { ActivityCard } from '../components/ActivityCard';
 import { AddToTripDialog } from './AddToTripDialog';
 import { NextReservationCard } from './NextReservationCard';
@@ -35,7 +36,7 @@ export function DiscoverScreen() {
   const [error, setError] = useState(false);
   /** The place whose add-to-Trip dialog is open. Held here so nothing navigates (FR-012). */
   const [adding, setAdding] = useState<Place | null>(null);
-  const [mood, setMood] = useState<Mood | null>(null);
+  const [mood, setMood] = useState<string | null>(null);
   const [search, setSearch] = useState('');
 
   useEffect(() => {
@@ -50,6 +51,7 @@ export function DiscoverScreen() {
   }, []);
 
   const vibes = profile?.preferences.vibes ?? [];
+  const { keys: moodKeys, label: moodLabel } = useMergedTaxonomy('moods', MOODS, mood ? [mood] : []);
 
   const list = useMemo(() => {
     if (!places) return [];
@@ -96,9 +98,12 @@ export function DiscoverScreen() {
         <Chip active={mood === null} onClick={() => setMood(null)}>
           {t('discover.allMoods')}
         </Chip>
-        {MOODS.map((m) => (
-          <Chip key={m} active={mood === m} onClick={() => setMood(m)} iconLeft={MOOD_ICON[m]}>
-            {t(`moods.${m}`)}
+        {/* The LIVE vocabulary, as on the phone: a mood a super admin created or renamed
+            (features 010, 019) appears here too. Iterating the static MOODS constant left
+            desktop silently missing every admin-created mood — feature 014 predicted it. */}
+        {moodKeys.map((m) => (
+          <Chip key={m} active={mood === m} onClick={() => setMood(m)} iconLeft={moodIcon(m)}>
+            {moodLabel(m)}
           </Chip>
         ))}
       </div>
@@ -138,7 +143,7 @@ export function DiscoverScreen() {
                 key={place.placeId}
                 image={coverImage(place)}
                 title={resolveLocalized(place.name, place.nameI18n, language)}
-                category={place.moods[0] ? t(`moods.${place.moods[0]}`) : undefined}
+                category={place.moods[0] ? moodLabel(place.moods[0]) : undefined}
                 score={scoreSignalFor(place)}
                 saved={isFavorite(place.placeId)}
                 onToggleSave={() =>

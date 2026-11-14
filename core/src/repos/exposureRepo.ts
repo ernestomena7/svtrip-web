@@ -15,20 +15,12 @@
 // two are not close, so nothing in this file is ever awaited on the path that
 // produces an answer.
 import { useEffect, useState } from 'react';
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  onSnapshot,
-  setDoc,
-  writeBatch,
-} from 'firebase/firestore';
 import type { ExposureEntry } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
+import { fromRow, toRow } from '@svtrip/shared';
 import { useAuth } from '../auth/AuthProvider';
 
-const COLLECTION = 'shown';
 
 /**
  * How many entries travel with a guide request.
@@ -40,9 +32,8 @@ const COLLECTION = 'shown';
  */
 export const SEEN_LIMIT = 60;
 
-function ref(uid: string, catalogId: string) {
-  return doc(db, 'users', uid, COLLECTION, catalogId);
-}
+const TABLE = 'shown';
+const entriesOf = (rows: Record<string, unknown>[]) => rows.map((r) => fromRow<ExposureEntry>(TABLE, r));
 
 /**
  * Record that an entry appeared in a reply.
@@ -54,36 +45,28 @@ function ref(uid: string, catalogId: string) {
 export function recordShown(uid: string, catalogIds: readonly string[]): void {
   if (!uid || !catalogIds.length) return;
   const now = Date.now();
-  const batch = writeBatch(db);
-  for (const catalogId of catalogIds) {
-    batch.set(
-      ref(uid, catalogId),
-      { catalogId, shownAt: now, shownCount: 1 },
-      { merge: true },
-    );
-  }
+  // One upsert, and it keeps the merge semantics above: it sets only the columns it names, so a
+  // `taken_up_at` already on the row survives.
+  const rows = catalogIds.map((catalogId) => ({ profile_id: uid, ...toRow(TABLE, { catalogId, shownAt: now, shownCount: 1 }) }));
   // Deliberately not awaited — see the note at the top of this file.
-  void batch.commit().catch(() => undefined);
+  void supabase.from(TABLE).upsert(rows, { onConflict: 'profile_id,catalog_id' }).then(() => undefined, () => undefined);
 }
 
 /** Record that the traveler opened, saved, or routed to an entry (FR-002). */
 export function recordTakenUp(uid: string, catalogId: string): void {
   if (!uid || !catalogId) return;
   const now = Date.now();
-  void setDoc(
-    ref(uid, catalogId),
-    { catalogId, takenUpAt: now, shownAt: now },
-    { merge: true },
-  ).catch(() => undefined);
+  void supabase
+    .from(TABLE)
+    .upsert({ profile_id: uid, ...toRow(TABLE, { catalogId, takenUpAt: now, shownAt: now }) }, { onConflict: 'profile_id,catalog_id' })
+    .then(() => undefined, () => undefined);
 }
 
 /** Read the record once, most recent first, bounded for the wire. */
 export async function loadExposure(uid: string, limit = SEEN_LIMIT): Promise<ExposureEntry[]> {
   if (!uid) return [];
   try {
-    const snap = await getDocs(collection(db, 'users', uid, COLLECTION));
-    return snap.docs
-      .map((d) => d.data() as ExposureEntry)
+    return entriesOf(rowsOf(await supabase.from(TABLE).select('*').eq('profile_id', uid)))
       .sort((a, b) => b.shownAt - a.shownAt)
       .slice(0, limit);
   } catch {
@@ -115,14 +98,14 @@ export function useExposure(): { entries: ExposureEntry[]; loading: boolean } {
     // snapshot takes to arrive.
     setEntries([]);
     setLoading(true);
-    return onSnapshot(
-      collection(db, 'users', user.uid, COLLECTION),
-      (snap) => {
-        setEntries(
-          snap.docs
-            .map((d) => d.data() as ExposureEntry)
-            .sort((a, b) => b.shownAt - a.shownAt),
-        );
+    return subscribeLive(
+      {
+        table: TABLE,
+        topic: userTopic(user.uid),
+        read: async () => entriesOf(rowsOf(await supabase.from(TABLE).select('*').eq('profile_id', user.uid))),
+      },
+      (list) => {
+        setEntries(list.sort((a, b) => b.shownAt - a.shownAt));
         setLoading(false);
       },
       () => setLoading(false),
@@ -140,6 +123,6 @@ export function useExposure(): { entries: ExposureEntry[]; loading: boolean } {
  */
 export async function clearExposure(uid: string): Promise<void> {
   if (!uid) return;
-  const snap = await getDocs(collection(db, 'users', uid, COLLECTION));
-  await Promise.all(snap.docs.map((d) => deleteDoc(d.ref)));
+  const { error } = await supabase.from(TABLE).delete().eq('profile_id', uid);
+  if (error) throw error;
 }

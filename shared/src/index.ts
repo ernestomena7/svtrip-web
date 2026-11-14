@@ -58,8 +58,13 @@ export * from './providerMetrics.js';
 // FR-002 that Firestore rules cannot express, because rules have no predicate
 // over an array's elements.
 export * from './reservationState.js';
+export * from './reservationPlace.js';
 export * from './openingHours.js';
 export * from './openingHoursDisplay.js';
 // Legal documents (feature 022). Bundled, never fetched.
 export * from './legal/index.js';
 export * from './version.js';
+
+// Feature 023: row ⇄ app-value conversion, shared by core/ and server/.
+export * from './db/rows.js';
+export * from './db/time.js';

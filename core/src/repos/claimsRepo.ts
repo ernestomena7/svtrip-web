@@ -4,9 +4,10 @@
 // live from Firestore, every write goes through the BFF. A claim's decision
 // moves `ownerUid` on a catalog entry, so no client may write one — the rules
 // deny it outright, and this module is the legitimate path around that.
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import type { BusinessClaim, ClaimStatus } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
+import { fromRow } from '@svtrip/shared';
 import { deleteJson, getJson, postJson } from '../apiClient';
 
 /**
@@ -20,17 +21,17 @@ export function subscribeToMyClaims(
   cb: (claims: BusinessClaim[]) => void,
   onError?: (e: Error) => void,
 ): () => void {
-  const q = query(collection(db, 'businessClaims'), where('requesterUid', '==', requesterUid));
-  return onSnapshot(
-    q,
-    (snap) => {
-      cb(
-        snap.docs
-          .map((d) => ({ ...(d.data() as BusinessClaim), claimId: d.id }))
+  return subscribeLive(
+    {
+      table: 'business_claims',
+      topic: userTopic(requesterUid),
+      read: async () =>
+        rowsOf(await supabase.from('business_claims').select('*').eq('requester_uid', requesterUid))
+          .map((r) => fromRow<BusinessClaim>('business_claims', r))
           .sort((a, b) => b.updatedAt - a.updatedAt),
-      );
     },
-    onError,
+    cb,
+    onError as (e: unknown) => void,
   );
 }
 

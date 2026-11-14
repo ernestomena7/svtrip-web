@@ -17,7 +17,7 @@
 //     because it relied on discipline — and a one-time re-measure is discipline. This makes the
 //     table a TEST: a collection added to `firestore.rules` with no row in the data map fails.
 import { describe, it, expect } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import { dirname, resolve } from 'node:path';
 import {
@@ -29,7 +29,13 @@ import { DATA_MAP, NOT_PERSONAL, extractCollections } from '../src/legal/dataMap
 import type { LegalDocument } from '../src/legal/types.js';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const RULES = readFileSync(resolve(here, '../../firestore/firestore.rules'), 'utf8');
+// Feature 023 (T061): the data lives in Postgres, so the detector reads every SQL migration, not
+// the retired firestore.rules. Changed per FR-011: the source moved; what each case asserts did not.
+const MIGRATIONS_DIR = resolve(here, '../../supabase/migrations');
+const RULES = readdirSync(MIGRATIONS_DIR)
+  .filter((f) => f.endsWith('.sql'))
+  .map((f) => readFileSync(resolve(MIGRATIONS_DIR, f), 'utf8'))
+  .join('\n');
 
 const IDS = ['privacy', 'terms'] as const;
 const LANGS = ['es', 'en'] as const;
@@ -127,7 +133,7 @@ describe('FR-018 — the gap detector: every collection in the rules is accounte
     // other case below passes trivially — the shape of vacuous pass 016, 018 and 020 each found.
     expect(found.length).toBeGreaterThanOrEqual(20);
     expect(found).toContain('reservations');
-    expect(found).toContain('reviewReports');
+    expect(found).toContain('review_reports');
   });
 
   it('every collection is either in the data map or in NOT_PERSONAL, with no gaps', () => {
@@ -173,21 +179,21 @@ describe('FR-018 — the gap detector: every collection in the rules is accounte
 });
 
 describe('extractCollections — the parser, tested on its own', () => {
-  it('finds roots and subcollections, and not the wildcard catch-all', () => {
-    const rules = `
-      match /databases/{database}/documents {
-        match /users/{uid} {
-          match /favorites/{placeId} { allow read: if true; }
-        }
-        match /reservations/{reservationId} { allow read: if true; }
-        match /{document=**} { allow read, write: if false; }
-      }`;
-    expect(extractCollections(rules).sort()).toEqual(['favorites', 'reservations', 'users']);
+  // Rewritten at feature 023 (T061) for SQL; same two obligations as the rules version.
+  it('finds every public table, with or without "if not exists", and nothing outside public', () => {
+    const sql = `
+      create table public.profiles (id uuid);
+      create table if not exists public.favorites (id uuid);
+      CREATE TABLE public.reservations (id uuid);
+      create table private.secrets (id uuid);
+      create index favorites_idx on public.favorites (id);`;
+    expect(extractCollections(sql).sort()).toEqual(['favorites', 'profiles', 'reservations']);
   });
 
-  it('ignores a match inside a comment', () => {
-    const rules = `// match /ghost/{id} { }\n match /real/{id} { }`;
-    expect(extractCollections(rules)).toEqual(['real']);
+  it('ignores a table inside a comment', () => {
+    const sql = `-- create table public.ghost (id uuid);
+ create table public.real (id uuid);`;
+    expect(extractCollections(sql)).toEqual(['real']);
   });
 });
 

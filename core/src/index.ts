@@ -20,17 +20,17 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // THIS BARREL IS INTENTIONALLY EMPTY. Import by subpath instead:
 //
-//     import { auth, db } from '@svtrip/core/firebase';
+//     import { auth, supabase } from '@svtrip/core/supabase';
 //     import { useAuth } from '@svtrip/core/auth/AuthProvider';
 //     import { fetchPlaces } from '@svtrip/core/repos/discoverRepo';
 //     import '@svtrip/core/styles/tokens.css';
 //
-// Not a style preference — a re-export barrel would break FR-041. `firebase.ts`
-// calls `initializeApp` at module scope, so any barrel that re-exports it
-// initializes Firebase for whoever touches the barrel. The landing page needs
-// i18n and tokens and nothing else; through a barrel it would pull in the whole
-// Firebase Web SDK to get them, and the native app would start carrying code
-// only the web interfaces use.
+// Not a style preference — a re-export barrel would break FR-041. `supabase.ts`
+// creates the client at module scope, so any barrel that re-exports it creates
+// one for whoever touches the barrel. The landing page needs i18n and tokens and
+// nothing else; through a barrel it would pull in the whole Supabase SDK to get
+// them, and the native app would start carrying code only the web interfaces use.
+// (Feature 023: `firebase.ts` became `supabase.ts`; the reason is unchanged.)
 //
 // Subpaths are resolved by the `"./*": "./src/*"` entry in package.json.
 // ─────────────────────────────────────────────────────────────────────────────

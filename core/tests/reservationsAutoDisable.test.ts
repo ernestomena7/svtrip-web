@@ -15,22 +15,22 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import type { OpeningHour } from '@svtrip/shared';
 
-let updated: Record<string, unknown> | null = null;
+// CHANGED IN THE PORT (feature 023, FR-011): the captured Firestore `updateDoc` payload is now the
+// UPDATE the repo sends to the `listings` table, read back with the app's field names. Every
+// assertion is the same claim about that single write.
+import { createFakeSupabase } from './fakeSupabase';
 
-vi.mock('firebase/firestore', () => ({
-  collection: () => ({}),
-  doc: (_col: unknown, id: string) => ({ id }),
-  updateDoc: async (_ref: unknown, data: Record<string, unknown>) => {
-    updated = data;
-  },
-  addDoc: async () => ({ id: 'new' }),
-  deleteDoc: async () => undefined,
-  onSnapshot: () => () => {},
-  query: () => ({}),
-  where: () => ({}),
-}));
-vi.mock('../src/firebase', () => ({ db: {} }));
+const fake = createFakeSupabase();
+vi.mock('../src/supabase', () => ({ supabase: fake.client, auth: { currentUser: null } }));
 vi.mock('../src/repos/discoverRepo', () => ({ clearDiscoverCache: () => {} }));
+const { fromRow } = await import('@svtrip/shared');
+
+/** The last UPDATE to `listings`, as app fields (camelCase), or null. */
+let updated: Record<string, unknown> | null = null;
+const lastUpdate = () => {
+  const w = fake.writesTo('listings').filter((x) => x.op === 'update').at(-1);
+  return w ? (fromRow('listings', w.values as Record<string, unknown>) as Record<string, unknown>) : null;
+};
 
 const { updateListing } = await import('../src/repos/listingsRepo');
 
@@ -43,21 +43,26 @@ const ALL_CLOSED: OpeningHour[] = [0, 1, 2, 3, 4, 5, 6].map((day) => ({
 }));
 
 beforeEach(() => {
+  fake.reset();
+  fake.seed('listings', [{ id: 'l1', name: 'x', description: 'y' }]);
   updated = null;
 });
 
 describe('updateListing and FR-002a', () => {
   it('clears `reservationsEnabled` when the hours are emptied', async () => {
     await updateListing('l1', { openingHours: [] });
+    updated = lastUpdate();
     expect(updated).not.toBeNull();
     expect(updated!.reservationsEnabled).toBe(false);
   });
 
   it('clears it when every day is marked CLOSED, not only when the array is empty', async () => {
-    // Seven closed days is the shape the Firestore rules cannot refuse — they
+    // Seven closed days is the shape the access rules cannot refuse — they
     // have no predicate over an array's elements, so `size() > 0` is all a rule
     // can say. This is the half that holds the line the rule cannot.
     await updateListing('l1', { openingHours: ALL_CLOSED });
+    await updateListing('l1', { openingHours: ALL_CLOSED });
+    updated = lastUpdate();
     expect(updated!.reservationsEnabled).toBe(false);
   });
 
@@ -65,6 +70,9 @@ describe('updateListing and FR-002a', () => {
     // Not "then another update". Split into two writes, a failure between them
     // leaves the place advertising reservations against hours that are gone.
     await updateListing('l1', { openingHours: [] });
+    updated = lastUpdate();
+    // ...and exactly one write was sent.
+    expect(fake.writesTo('listings')).toHaveLength(1);
     expect(updated).toMatchObject({ openingHours: [], reservationsEnabled: false });
   });
 
@@ -73,6 +81,7 @@ describe('updateListing and FR-002a', () => {
     // on every hours save would be a control that turns itself off for no reason
     // the merchant can see.
     await updateListing('l1', { openingHours: OPEN });
+    updated = lastUpdate();
     expect(updated).not.toHaveProperty('reservationsEnabled');
   });
 
@@ -80,6 +89,7 @@ describe('updateListing and FR-002a', () => {
     // A merchant changing their description must not lose reservations. This is
     // the case that makes the guard a precondition rather than a blanket.
     await updateListing('l1', { description: 'nueva' });
+    updated = lastUpdate();
     expect(updated).not.toHaveProperty('reservationsEnabled');
     expect(updated).toMatchObject({ description: 'nueva' });
   });

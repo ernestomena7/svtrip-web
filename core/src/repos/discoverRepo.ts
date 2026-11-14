@@ -2,10 +2,12 @@
 // derive For You, mood filtering, and spotlight sections client-side. The
 // catalog is small (curated seed + provider listings), so a single collection
 // read avoids needing Firestore composite indexes for this MVP.
-import { collection, getDocs } from 'firebase/firestore';
 import type { Listing, Place, SvEvent } from '@svtrip/shared';
 import { travelerVisible } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
+import { rowsOf } from '../db/live';
+import { fromRow } from '@svtrip/shared';
+import { readThrough } from '../db/offlineCache';
 
 let placesCache: Place[] | null = null;
 let eventsCache: SvEvent[] | null = null;
@@ -67,25 +69,18 @@ export function listingToPlace(l: Listing): Place {
 
 export async function fetchPlaces(): Promise<Place[]> {
   if (placesCache) return placesCache;
-  const [placesSnap, listingsSnap] = await Promise.all([
-    getDocs(collection(db, 'places')),
-    getDocs(collection(db, 'listings')),
-  ]);
-  // Keyed by id, with listings last, exactly like the server's catalog merge.
-  // A plain concat would double every entry whose id exists in both collections
-  // — which is one `npm run seed` away, now that the curated catalog lives in
-  // `listings` and seeding would recreate the same ids under `places`.
+  // Offline (FR-019): the last catalog this device loaded is served when the network read fails.
+  const { places, listings } = await readThrough('catalog', async () => {
+    const [p, l] = await Promise.all([supabase.from('places').select('*'), supabase.from('listings').select('*')]);
+    return {
+      places: rowsOf(p).map((r) => fromRow<Place>('places', r)),
+      listings: rowsOf(l).map((r) => fromRow<Listing>('listings', r)),
+    };
+  });
   const byId = new Map<string, Place>();
-  for (const d of placesSnap.docs) byId.set(d.id, { ...(d.data() as Place), placeId: d.id });
-  for (const d of listingsSnap.docs) {
-    const listing = { ...(d.data() as Listing), listingId: d.id };
-    // Unfinished entries are visible to their manager only (feature 006,
-    // FR-012). `publicVisibility` exempts anything authored before that feature,
-    // which is why the 18 photoless catalog entries stay in the catalog.
-    // Feature 018 (FR-016). The SECOND of the catalog's readers — features
-    // 013 (`createdAt`) and 014 (`priceBand`) each lost a field to exactly
-    // this split, which is why FR-028 requires the predicate at every one.
-    if (travelerVisible(listing)) byId.set(d.id, listingToPlace(listing));
+  for (const place of places) byId.set(place.placeId, place);
+  for (const listing of listings) {
+    if (travelerVisible(listing)) byId.set(listing.listingId, listingToPlace(listing));
   }
   placesCache = [...byId.values()];
   return placesCache;
@@ -120,8 +115,9 @@ export function patchCachedScore(
 
 export async function fetchEvents(): Promise<SvEvent[]> {
   if (eventsCache) return eventsCache;
-  const snap = await getDocs(collection(db, 'events'));
-  eventsCache = snap.docs.map((d) => ({ ...(d.data() as SvEvent), eventId: d.id }));
+  eventsCache = await readThrough('events', async () =>
+    rowsOf(await supabase.from('events').select('*')).map((r) => fromRow<SvEvent>('events', r)),
+  );
   return eventsCache;
 }
 

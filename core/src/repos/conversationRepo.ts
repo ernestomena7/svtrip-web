@@ -1,24 +1,10 @@
-// Durable chat memory in Firestore (US2, FR-010). Conversations and their
-// messages live under users/{uid} so security rules keep them private.
-import {
-  collection,
-  doc,
-  onSnapshot,
-  orderBy,
-  query,
-  serverTimestamp,
-  setDoc,
-  writeBatch,
-} from 'firebase/firestore';
+// Durable chat memory (US2, FR-010). Conversations and their messages are owner-only tables
+// (`conversations`, `messages`); the policies keep them private (feature 023 port of
+// users/{uid}/conversations/**).
 import type { Conversation, GeneratedPlan, Message } from '@svtrip/shared';
-import { db } from '../firebase';
-
-function convosCol(uid: string) {
-  return collection(db, 'users', uid, 'conversations');
-}
-function messagesCol(uid: string, cid: string) {
-  return collection(db, 'users', uid, 'conversations', cid, 'messages');
-}
+import { supabase } from '../supabase';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
+import { fromRow } from '@svtrip/shared';
 
 export interface PersistTurnInput {
   uid: string;
@@ -40,52 +26,25 @@ export interface PersistTurnInput {
  * a new one invented by the screen.
  */
 export async function persistTurn(input: PersistTurnInput): Promise<string> {
-  const { uid, conversationId, userText, assistantText, plan } = input;
-  const now = Date.now();
-  const batch = writeBatch(db);
-
-  const userMsgRef = doc(messagesCol(uid, conversationId));
-  batch.set(userMsgRef, {
-    messageId: userMsgRef.id,
-    role: 'user',
-    text: userText,
-    createdAt: now,
-    status: 'complete',
+  const { conversationId, userText, assistantText, plan } = input;
+  // ONE database function, as it was one Firestore batch: both messages and the conversation's
+  // metadata land together or not at all (supabase/migrations/*_functions_023.sql). The owner is
+  // the session's, never `input.uid` — kept in the input type so no caller changes.
+  const { data, error } = await supabase.rpc('persist_turn', {
+    p_conversation_id: conversationId,
+    p_user_text: userText,
+    p_assistant_text: assistantText,
+    p_plan: plan,
+    p_recommendation_count: plan.stops.length,
+    p_now_ms: Date.now(),
   });
-
-  const aiMsgRef = doc(messagesCol(uid, conversationId));
-  batch.set(aiMsgRef, {
-    messageId: aiMsgRef.id,
-    role: 'assistant',
-    text: assistantText,
-    createdAt: now + 1,
-    plan,
-    status: 'complete',
-  });
-
-  batch.set(
-    doc(convosCol(uid), conversationId),
-    {
-      conversationId,
-      title: userText.slice(0, 60),
-      lastMessagePreview: assistantText.slice(0, 80),
-      updatedAt: serverTimestamp(),
-      createdAt: serverTimestamp(),
-      recommendationCount: plan.stops.length,
-    },
-    { merge: true },
-  );
-
-  await batch.commit();
-  return aiMsgRef.id;
+  if (error) throw error;
+  return data as string;
 }
 
-export async function touchConversation(uid: string, conversationId: string): Promise<void> {
-  await setDoc(
-    doc(convosCol(uid), conversationId),
-    { conversationId, createdAt: serverTimestamp(), updatedAt: serverTimestamp() },
-    { merge: true },
-  );
+export async function touchConversation(_uid: string, conversationId: string): Promise<void> {
+  const { error } = await supabase.rpc('touch_conversation', { p_conversation_id: conversationId });
+  if (error) throw error;
 }
 
 /**
@@ -106,18 +65,18 @@ export function subscribeToConversations(
   cb: (conversations: Conversation[]) => void,
   onError?: () => void,
 ): () => void {
-  return onSnapshot(
-    convosCol(uid),
-    (snap) => {
-      const rows = snap.docs.map(
-        (d): Conversation => ({
-          ...(d.data() as Conversation),
-          createdAt: millis(d.get('createdAt')),
-          updatedAt: millis(d.get('updatedAt')),
+  return subscribeLive(
+    {
+      table: 'conversations',
+      topic: userTopic(uid),
+      cacheKey: `conversations:${uid}`,
+      read: async () =>
+        rowsOf(await supabase.from('conversations').select('*').eq('profile_id', uid)).map((r) => {
+          const c = fromRow<Conversation>('conversations', r);
+          return { ...c, createdAt: millis(c.createdAt), updatedAt: millis(c.updatedAt) };
         }),
-      );
-      cb(rows.sort((a, b) => b.updatedAt - a.updatedAt));
     },
+    (rows) => cb(rows.sort((a, b) => b.updatedAt - a.updatedAt)),
     () => onError?.(),
   );
 }
@@ -163,8 +122,15 @@ export function subscribeToMessages(
   cid: string,
   cb: (messages: Message[]) => void,
 ): () => void {
-  const q = query(messagesCol(uid, cid), orderBy('createdAt', 'asc'));
-  return onSnapshot(q, (snap) => {
-    cb(snap.docs.map((d) => d.data() as Message));
-  });
+  return subscribeLive(
+    {
+      table: 'messages',
+      topic: userTopic(uid),
+      cacheKey: `messages:${uid}:${cid}`,
+      read: async () =>
+        rowsOf(await supabase.from('messages').select('*').eq('conversation_id', cid).order('created_at', { ascending: true }))
+          .map((r) => fromRow<Message>('messages', r)),
+    },
+    cb,
+  );
 }

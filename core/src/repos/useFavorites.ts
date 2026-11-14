@@ -1,11 +1,11 @@
-// Favorites toggle (T059): writes `users/{uid}/favorites/{id}` and, for
-// provider-owned listings, emits a `favorite_click` engagement event so it is
-// attributed to the owning provider's Dashboard metrics (FR-026).
+// Favorites (US-favorites): live set of the traveler's saved ids, plus a toggle. Feature 023: the
+// `favorites` table (owner-only policy) in place of `users/{uid}/favorites`; same hook, same shape.
 import { useCallback, useEffect, useState } from 'react';
-import { collection, deleteDoc, doc, onSnapshot, serverTimestamp, setDoc } from 'firebase/firestore';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
 import { recordEngagement } from './engagementClient';
 import { useAuth } from '../auth/AuthProvider';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
+import { nowIso } from '@svtrip/shared';
 
 type FavoriteKind = 'place' | 'event' | 'listing';
 
@@ -18,20 +18,30 @@ export function useFavorites() {
       setIds(new Set());
       return;
     }
-    return onSnapshot(collection(db, 'users', user.uid, 'favorites'), (snap) => {
-      setIds(new Set(snap.docs.map((d) => d.id)));
-    });
+    return subscribeLive(
+      {
+        table: 'favorites',
+        topic: userTopic(user.uid),
+        cacheKey: `favorites:${user.uid}`,
+        read: async () => rowsOf(await supabase.from('favorites').select('place_id').eq('profile_id', user.uid)).map((r) => r.place_id as string),
+      },
+      (list) => setIds(new Set(list)),
+    );
   }, [user]);
 
   const toggle = useCallback(
     async (id: string, kind: FavoriteKind) => {
       if (!user) return;
-      const ref = doc(db, 'users', user.uid, 'favorites', id);
       if (ids.has(id)) {
-        await deleteDoc(ref);
+        const { error } = await supabase.from('favorites').delete().eq('profile_id', user.uid).eq('place_id', id);
+        if (error) throw error;
         return;
       }
-      await setDoc(ref, { placeId: id, type: kind, createdAt: serverTimestamp() });
+      const { error } = await supabase
+        .from('favorites')
+        .upsert({ profile_id: user.uid, place_id: id, type: kind, created_at: nowIso() }, { onConflict: 'profile_id,place_id' });
+      if (error) throw error;
+      // Engagement is attributed to provider listings only — the curated catalog has no owner.
       if (kind === 'listing') {
         recordEngagement(id, 'favorite_click');
       }

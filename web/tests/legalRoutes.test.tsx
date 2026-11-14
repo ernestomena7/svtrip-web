@@ -13,6 +13,7 @@
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { cleanup, render, screen } from '@testing-library/react';
 import type { UserProfile } from '@svtrip/shared';
+import { getLegalDocument } from '@svtrip/shared';
 
 // Everything ELSE is stubbed — this suite is about routing the legal documents.
 const stub = (label: string) => () => <div>{label}</div>;
@@ -136,6 +137,10 @@ describe('the content is the REAL document', () => {
 
   it('carries the last-updated date (FR-016)', async () => {
     renderAt('/privacidad');
-    expect(await screen.findByText(/2026-10-19/)).toBeTruthy();
+    // CHANGED 2026-10-23: this asserted the literal /2026-10-19/, so every honest policy update
+    // (push, feature 020 US4, moved the date) failed it while the page was correct. It now asserts
+    // what FR-016 asks — that the page shows the DOCUMENT's own date — read from the document.
+    const { updatedAt } = getLegalDocument('privacy', 'es')!;
+    expect(await screen.findByText(new RegExp(updatedAt))).toBeTruthy();
   });
 });

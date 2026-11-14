@@ -26,17 +26,27 @@ interface Row {
 let dealRows: Row[] = [];
 let listingRows: Row[] = [];
 
-vi.mock('../src/firebase', () => ({ db: {} }));
+// CHANGED IN THE PORT (feature 023, FR-011): the Firestore `getDocs` stub is replaced by the shared
+// Supabase fake. `listing()` and `deal()` still build APP-shaped values exactly as before; each read
+// converts them to table rows through the app's own `toRow`, so every case below is unchanged and the
+// row-to-app conversion runs under test as well.
+import { createFakeSupabase } from './fakeSupabase';
 
-vi.mock('firebase/firestore', () => ({
-  collection: (_db: unknown, name: string) => ({ name }),
-  getDocs: async (ref: { name: string }) => ({
-    docs: (ref.name === 'deals' ? dealRows : listingRows).map((r) => ({
-      id: r.id,
-      data: () => r.data,
-    })),
-  }),
+const fake = createFakeSupabase();
+let toRowRef: ((t: 'deals' | 'listings', v: Record<string, unknown>) => Record<string, unknown>) | null = null;
+vi.mock('../src/supabase', () => ({
+  auth: { currentUser: null },
+  supabase: {
+    from: (table: 'deals' | 'listings') => {
+      const source = table === 'deals' ? dealRows : listingRows;
+      const idField = table === 'deals' ? 'dealId' : 'listingId';
+      fake.seed(table, source.map((r) => toRowRef!(table, { ...r.data, [idField]: r.id })));
+      return fake.client.from(table);
+    },
+  },
 }));
+const { toRow } = await import('@svtrip/shared');
+toRowRef = toRow;
 
 const { fetchActiveDeals } = await import('../src/repos/dealsRepo');
 

@@ -10,10 +10,12 @@
 // picker feel slower than the constant it replaced.
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { collection, getDocs } from 'firebase/firestore';
 import type { TaxonomyEntry, TaxonomyVocabulary } from '@svtrip/shared';
-import { TAXONOMY_COLLECTION, mergeTaxonomyKeys, serviceAppliesTo } from '@svtrip/shared';
-import { db } from '../firebase';
+import { TAXONOMY_TABLE, mergeTaxonomyKeys, serviceAppliesTo } from '@svtrip/shared';
+import { supabase } from '../supabase';
+import { rowsOf } from '../db/live';
+import { fromRow } from '@svtrip/shared';
+
 import { useUiStore } from '../uiStore';
 import { taxonomyLabeller } from './resolveTaxonomyLabel';
 import { resolveEntryIcon, type ResolvedIcon } from '../moodIcons';
@@ -48,8 +50,8 @@ export async function fetchTaxonomy(vocabulary: TaxonomyVocabulary): Promise<Tax
   if (cached) return cached;
   const startedAt = generation.get(vocabulary) ?? 0;
   try {
-    const snap = await getDocs(collection(db, TAXONOMY_COLLECTION[vocabulary]));
-    const entries = snap.docs.map((d) => ({ ...(d.data() as TaxonomyEntry), key: d.id }));
+    const table = TAXONOMY_TABLE[vocabulary];
+    const entries = rowsOf(await supabase.from(table).select('*')).map((r) => fromRow<TaxonomyEntry>(table, r));
     if ((generation.get(vocabulary) ?? 0) === startedAt) cache.set(vocabulary, entries);
     return entries;
   } catch {

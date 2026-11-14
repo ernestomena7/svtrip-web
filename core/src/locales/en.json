@@ -935,6 +935,15 @@
       "hoursClearedDisabled": "You cleared your opening hours, so we turned reservations off. Fill them in again to start accepting them.",
       "turnOn": "Turn on",
       "turnOff": "Turn off"
+    },
+    "push": {
+      "title": "Turn on notifications",
+      "travelerReason": "We'll let you know as soon as the business confirms or answers your request.",
+      "merchantReason": "Hear right away when a reservation request arrives or someone cancels.",
+      "enable": "Turn on",
+      "notNow": "Not now",
+      "enabled": "Done — we'll let you know.",
+      "denied": "Notifications are off on your phone. You'll still see every change here, in the app."
     }
   },
   "legal": {

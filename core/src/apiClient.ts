@@ -22,7 +22,7 @@ import type {
   // Feature 020. Type-only, same reason.
   Reservation,
 } from '@svtrip/shared';
-import { auth } from './firebase';
+import { auth } from './supabase';
 
 const BASE = import.meta.env.VITE_BFF_BASE_URL ?? '/api';
 

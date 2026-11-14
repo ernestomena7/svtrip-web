@@ -7,10 +7,12 @@
 // date window, and never consulted the owning listing. So a suspended place's
 // promotion survived by construction — and so did a promotion from a merchant
 // who had dropped to Básico and lost Ofertas (US4 scenario 2).
-import { collection, getDocs } from 'firebase/firestore';
 import type { Deal, Listing } from '@svtrip/shared';
 import { offerVisible, travelerVisible } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
+import { rowsOf } from '../db/live';
+import { fromRow } from '@svtrip/shared';
+import { readThrough } from '../db/offlineCache';
 
 interface DealsAndListings {
   deals: Deal[];
@@ -34,18 +36,16 @@ async function fetchDealsInWindow(): Promise<DealsAndListings> {
   // traveler surface, so this is not a new cost on a cold cache — and the
   // alternative, a per-deal document read, would be one round trip per
   // promotion on a screen built to show several.
-  const [dealsSnap, listingsSnap] = await Promise.all([
-    getDocs(collection(db, 'deals')),
-    getDocs(collection(db, 'listings')),
-  ]);
-
-  const listings = new Map<string, Listing>(
-    listingsSnap.docs.map((d) => [d.id, { ...(d.data() as Listing), listingId: d.id }]),
-  );
-
+  const { allDeals, allListings } = await readThrough('dealsWindow', async () => {
+    const [d, l] = await Promise.all([supabase.from('deals').select('*'), supabase.from('listings').select('*')]);
+    return {
+      allDeals: rowsOf(d).map((r) => fromRow<Deal>('deals', r)),
+      allListings: rowsOf(l).map((r) => fromRow<Listing>('listings', r)),
+    };
+  });
+  const listings = new Map<string, Listing>(allListings.map((l) => [l.listingId, l]));
   const now = Date.now();
-  const deals = dealsSnap.docs
-    .map((d) => ({ ...(d.data() as Deal), dealId: d.id }))
+  const deals = allDeals
     .filter((deal) => deal.activeFrom <= now && now <= deal.activeTo)
     .sort((a, b) => a.activeTo - b.activeTo); // ending soonest first
 

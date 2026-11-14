@@ -29,6 +29,17 @@ export const TAXONOMY_COLLECTION: Record<TaxonomyVocabulary, string> = {
 };
 
 /**
+ * The same three vocabularies' TABLES (feature 023). Both the client's taxonomy hook and the BFF's
+ * taxonomy service read them, so the mapping lives once, here, beside the Firestore names it
+ * replaces (kept while Firestore is still the rollback).
+ */
+export const TAXONOMY_TABLE: Record<TaxonomyVocabulary, 'business_types' | 'moods' | 'additional_services'> = {
+  'business-types': 'business_types',
+  moods: 'moods',
+  services: 'additional_services',
+};
+
+/**
  * Which business types an additional service applies to (FR-007).
  *
  * Only meaningful for admin-CREATED services. A built-in one keeps its scope in

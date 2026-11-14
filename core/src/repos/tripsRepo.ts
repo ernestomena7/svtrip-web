@@ -1,6 +1,6 @@
 // Trips, and the stops inside them (feature 016).
 //
-// Written by the CLIENT, directly, under `isOwner(uid)` — the same way
+// Written by the CLIENT, directly, under the owner policy — the same way
 // `favorites`, `conversations` and `shown` are, because it is the same kind of
 // data: private to one traveler and uninteresting to anyone else.
 //
@@ -18,44 +18,24 @@
 //   - It never calls `recordEngagement`. A business must not learn it appears
 //     in someone's Trip — the spec puts that in Out of Scope, and the symmetry
 //     with favorites is a temptation, not an argument.
+//
+// Feature 023: the `trips` and `trip_stops` tables in place of
+// users/{uid}/trips/{tripId}/stops. Every function keeps its signature.
 import { useEffect, useMemo, useState } from 'react';
-import {
-  collection,
-  deleteDoc,
-  doc,
-  getDocs,
-  onSnapshot,
-  query,
-  setDoc,
-  updateDoc,
-  where,
-  writeBatch,
-  deleteField,
-} from 'firebase/firestore';
 import type { GeneratedPlan, Trip, TripStop, TripOrigin } from '@svtrip/shared';
 import { tripOrder } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
+import { fromRow, toRow } from '@svtrip/shared';
 
-const TRIPS = 'trips';
-const STOPS = 'stops';
-
-function tripsCol(uid: string) {
-  return collection(db, 'users', uid, TRIPS);
-}
-function tripRef(uid: string, tripId: string) {
-  return doc(db, 'users', uid, TRIPS, tripId);
-}
-function stopsCol(uid: string, tripId: string) {
-  return collection(db, 'users', uid, TRIPS, tripId, STOPS);
-}
-function stopRef(uid: string, tripId: string, stopId: string) {
-  return doc(db, 'users', uid, TRIPS, tripId, STOPS, stopId);
+function fail(error: { message: string } | null): void {
+  if (error) throw error;
 }
 
 /** Touch the Trip so the list can order by recency, per the data model. */
-async function touch(uid: string, tripId: string): Promise<void> {
-  await updateDoc(tripRef(uid, tripId), { updatedAt: Date.now() });
+async function touch(_uid: string, tripId: string): Promise<void> {
+  fail((await supabase.from('trips').update(toRow('trips', { updatedAt: Date.now() })).eq('id', tripId)).error);
 }
 
 // --- Trips -----------------------------------------------------------------
@@ -74,61 +54,59 @@ export interface NewTrip {
  * name, and a traveler renaming one must not move it.
  */
 export async function createTrip(uid: string, input: NewTrip): Promise<string> {
-  const ref = doc(tripsCol(uid));
   const now = Date.now();
-  const trip: Trip = {
-    tripId: ref.id,
+  const trip: Omit<Trip, 'tripId'> = {
     name: input.name.trim(),
     startDate: input.startDate,
     origin: input.origin ?? 'manual',
     createdAt: now,
     updatedAt: now,
   };
-  // `sourceMessageId` is written only when there is one. An `undefined` field
-  // is rejected by the SDK, and an empty string would make FR-041's "already
-  // kept?" lookup match every hand-made Trip at once.
+  // `sourceMessageId` is written only when there is one: an empty string would
+  // make FR-041's "already kept?" lookup match every hand-made Trip at once.
   if (input.sourceMessageId) trip.sourceMessageId = input.sourceMessageId;
-  await setDoc(ref, trip);
-  return ref.id;
+  const { data, error } = await supabase
+    .from('trips')
+    .insert({ profile_id: uid, ...toRow('trips', trip) })
+    .select('id')
+    .single();
+  fail(error);
+  return data!.id as string;
 }
 
 /** Rename a Trip, or move its start date (FR-004). */
 export async function updateTrip(
-  uid: string,
+  _uid: string,
   tripId: string,
   patch: { name?: string; startDate?: string },
 ): Promise<void> {
   const fields: Record<string, unknown> = { updatedAt: Date.now() };
   if (patch.name !== undefined) fields.name = patch.name.trim();
   if (patch.startDate !== undefined) fields.startDate = patch.startDate;
-  await updateDoc(tripRef(uid, tripId), fields);
+  fail((await supabase.from('trips').update(toRow('trips', fields)).eq('id', tripId)).error);
 }
 
 /**
  * Delete a Trip AND every stop inside it (T017).
  *
- * A subcollection does not go with its parent. Deleting only the Trip document
- * leaves its stops behind, unreachable through any screen and permanent — the
- * traveler sees the Trip disappear and the data stays. Firestore has no
- * recursive delete from a client, so the stops are read and removed first.
- *
- * Stops go first deliberately: if the batch fails half-way, a Trip with missing
- * stops is visible and fixable, while orphaned stops under a deleted Trip are
- * neither.
+ * On Firestore a subcollection did not go with its parent, so the stops were
+ * read and removed first, by hand, stops before the Trip so a half-failed batch
+ * left something visible and fixable. Feature 023: `trip_stops` references its
+ * Trip `on delete cascade`, so deleting the Trip removes every stop in the same
+ * statement — orphaned stops under a deleted Trip, the failure that ordering
+ * existed to avoid, can no longer happen at all.
  */
-export async function deleteTrip(uid: string, tripId: string): Promise<void> {
-  const snap = await getDocs(stopsCol(uid, tripId));
-  const batch = writeBatch(db);
-  for (const d of snap.docs) batch.delete(d.ref);
-  batch.delete(tripRef(uid, tripId));
-  await batch.commit();
+export async function deleteTrip(_uid: string, tripId: string): Promise<void> {
+  fail((await supabase.from('trips').delete().eq('id', tripId)).error);
 }
 
 /** Has this assistant turn already been kept? (FR-041) */
 export async function tripForMessage(uid: string, messageId: string): Promise<Trip | null> {
   if (!messageId) return null;
-  const snap = await getDocs(query(tripsCol(uid), where('sourceMessageId', '==', messageId)));
-  return snap.empty ? null : (snap.docs[0].data() as Trip);
+  const rows = rowsOf(
+    await supabase.from('trips').select('*').eq('profile_id', uid).eq('source_message_id', messageId).limit(1),
+  );
+  return rows.length ? fromRow<Trip>('trips', rows[0]) : null;
 }
 
 /**
@@ -168,11 +146,9 @@ export async function createTripFromPlan(
   });
 
   const now = Date.now();
-  const batch = writeBatch(db);
+  const rows: Record<string, unknown>[] = [];
   for (const stop of [...plan.stops].sort((a, b) => a.order - b.order)) {
-    const ref = doc(stopsCol(uid, tripId));
-    const doc_: TripStop = {
-      stopId: ref.id,
+    const doc_: Omit<TripStop, 'stopId'> = {
       catalogId: stop.catalogId,
       // The catalog decides what a stop IS; the plan only says which one. Guide
       // stops are catalog places, and `kind` narrows the resolve at read time.
@@ -186,9 +162,10 @@ export async function createTripFromPlan(
     // Absent rather than empty when the guide gave none: a hand-added stop must
     // not render an empty quotation.
     if (stop.reason) doc_.reason = stop.reason;
-    batch.set(ref, doc_);
+    rows.push({ trip_id: tripId, profile_id: uid, ...toRow('trip_stops', doc_) });
   }
-  await batch.commit();
+  // One multi-row insert: all of the plan's stops or none (FR-038, the mapping is total).
+  if (rows.length) fail((await supabase.from('trip_stops').insert(rows)).error);
   return tripId;
 }
 
@@ -209,19 +186,17 @@ export interface NewStop {
  * once. The product owner asked for the opposite after using it: a place filed
  * twice reads as a mistake, not as two visits.
  *
- * Enforced as a RULE rather than by keying the document on `catalogId`. Keying
+ * Enforced as a RULE rather than by keying the row on `catalogId`. Keying
  * would make duplicates structurally impossible — which is exactly what it does
  * to favorites — and that is a one-way door: the day someone wants the same
  * beach on Saturday and on Sunday, a generated `stopId` still allows it and a
  * keyed one never will. The check costs one query, only when a place is added.
  */
-export async function tripHasPlace(
-  uid: string,
-  tripId: string,
-  catalogId: string,
-): Promise<boolean> {
-  const snap = await getDocs(query(stopsCol(uid, tripId), where('catalogId', '==', catalogId)));
-  return !snap.empty;
+export async function tripHasPlace(_uid: string, tripId: string, catalogId: string): Promise<boolean> {
+  const rows = rowsOf(
+    await supabase.from('trip_stops').select('id').eq('trip_id', tripId).eq('catalog_id', catalogId).limit(1),
+  );
+  return rows.length > 0;
 }
 
 /**
@@ -233,14 +208,9 @@ export async function tripHasPlace(
  * ever read once is cheaper to compute than to keep in step.
  */
 export async function addStop(uid: string, tripId: string, input: NewStop): Promise<string> {
-  const existing = await getDocs(stopsCol(uid, tripId));
-  const maxPosition = existing.docs.reduce(
-    (max, d) => Math.max(max, (d.data() as TripStop).position ?? 0),
-    -1,
-  );
-  const ref = doc(stopsCol(uid, tripId));
-  const stop: TripStop = {
-    stopId: ref.id,
+  const existing = rowsOf(await supabase.from('trip_stops').select('position').eq('trip_id', tripId));
+  const maxPosition = existing.reduce((max, r) => Math.max(max, (r.position as number | null) ?? 0), -1);
+  const stop: Omit<TripStop, 'stopId'> = {
     catalogId: input.catalogId,
     kind: input.kind,
     position: maxPosition + 1,
@@ -251,9 +221,14 @@ export async function addStop(uid: string, tripId: string, input: NewStop): Prom
   // stored as an orphan the ordering would never read.
   if (input.date && input.time) stop.time = input.time;
   if (input.reason) stop.reason = input.reason;
-  await setDoc(ref, stop);
+  const { data, error } = await supabase
+    .from('trip_stops')
+    .insert({ trip_id: tripId, profile_id: uid, ...toRow('trip_stops', stop) })
+    .select('id')
+    .single();
+  fail(error);
   await touch(uid, tripId);
-  return ref.id;
+  return data!.id as string;
 }
 
 /**
@@ -274,21 +249,22 @@ export async function scheduleStop(
   stopId: string,
   when: { date?: string; time?: string },
 ): Promise<void> {
+  // `null` is the column's "absent" — what Firestore's deleteField() did.
   const fields: Record<string, unknown> = {};
   if (when.date) {
     fields.date = when.date;
-    fields.time = when.time ? when.time : deleteField();
+    fields.time = when.time ? when.time : null;
   } else {
-    fields.date = deleteField();
-    fields.time = deleteField();
+    fields.date = null;
+    fields.time = null;
   }
-  await updateDoc(stopRef(uid, tripId, stopId), fields);
+  fail((await supabase.from('trip_stops').update(fields).eq('trip_id', tripId).eq('id', stopId)).error);
   await touch(uid, tripId);
 }
 
 /** Remove one stop (FR-016). */
 export async function removeStop(uid: string, tripId: string, stopId: string): Promise<void> {
-  await deleteDoc(stopRef(uid, tripId, stopId));
+  fail((await supabase.from('trip_stops').delete().eq('trip_id', tripId).eq('id', stopId)).error);
   await touch(uid, tripId);
 }
 
@@ -319,7 +295,7 @@ export async function repositionStop(
   else if (!after) position = before.position + 1;
   else position = (before.position + after.position) / 2;
 
-  await updateDoc(stopRef(uid, tripId, stopId), { position });
+  fail((await supabase.from('trip_stops').update({ position }).eq('trip_id', tripId).eq('id', stopId)).error);
   await touch(uid, tripId);
 }
 
@@ -345,12 +321,16 @@ export function useTrips(): { trips: Trip[]; loading: boolean } {
     // going.
     setTrips([]);
     setLoading(true);
-    return onSnapshot(
-      tripsCol(user.uid),
-      (snap) => {
-        setTrips(
-          snap.docs.map((d) => d.data() as Trip).sort((a, b) => b.updatedAt - a.updatedAt),
-        );
+    return subscribeLive(
+      {
+        table: 'trips',
+        topic: userTopic(user.uid),
+        cacheKey: `trips:${user.uid}`,
+        read: async () =>
+          rowsOf(await supabase.from('trips').select('*').eq('profile_id', user.uid)).map((r) => fromRow<Trip>('trips', r)),
+      },
+      (list) => {
+        setTrips(list.sort((a, b) => b.updatedAt - a.updatedAt));
         setLoading(false);
       },
       () => setLoading(false),
@@ -383,10 +363,18 @@ export function useTripStops(tripId: string | undefined): {
     }
     setRaw([]);
     setLoading(true);
-    return onSnapshot(
-      stopsCol(user.uid, tripId),
-      (snap) => {
-        setRaw(snap.docs.map((d) => d.data() as TripStop));
+    return subscribeLive(
+      {
+        table: 'trip_stops',
+        topic: userTopic(user.uid),
+        cacheKey: `stops:${user.uid}:${tripId}`,
+        read: async () =>
+          rowsOf(await supabase.from('trip_stops').select('*').eq('trip_id', tripId)).map((r) =>
+            fromRow<TripStop>('trip_stops', r),
+          ),
+      },
+      (list) => {
+        setRaw(list);
         setLoading(false);
       },
       () => setLoading(false),

@@ -1,74 +1,53 @@
 // T016 (feature 016): the writes `tripsRepo` makes, and the two it must not.
 //
-// Firestore is mocked, so what is under test is the DECISIONS — which fields
-// are written, which are deleted, where a new stop lands, and what deleting a
-// Trip takes with it. Those are the parts a screen cannot check and a rules
-// test does not reach.
+// What is under test is the DECISIONS — which fields are written, which are cleared, where a new
+// stop lands, and what deleting a Trip takes with it. Those are the parts a screen cannot check and
+// an access-policy test does not reach.
+//
+// CHANGED IN THE PORT (feature 023, FR-011). The Firestore mocks (setDoc/updateDoc/writeBatch) are
+// replaced by the shared Supabase fake; assertions read the INSERT/UPDATE the repo sends, converted
+// back to app field names. Three mechanisms changed, each named where it is asserted:
+//   * a generated id now comes from the DATABASE (the insert carries none), not from `doc(col)`;
+//   * Firestore's `deleteField()` is a column set to `null`;
+//   * deleting a Trip is ONE delete — `trip_stops` cascades from `trips` in the schema, proven
+//     against the real database in supabase/tests/trips.rls.test.ts.
 import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { createFakeSupabase } from './fakeSupabase';
 
-vi.mock('../src/firebase', () => ({ db: {} }));
+const fake = createFakeSupabase();
+vi.mock('../src/supabase', () => ({ supabase: fake.client, auth: { currentUser: null } }));
 vi.mock('../src/auth/AuthProvider', () => ({ useAuth: () => ({ user: null }) }));
 
-const setDocMock = vi.fn(async () => undefined);
-const updateDocMock = vi.fn(async () => undefined);
-const deleteDocMock = vi.fn(async () => undefined);
-const getDocsMock = vi.fn(async () => ({ docs: [], empty: true }));
-const batchDelete = vi.fn();
-const batchCommit = vi.fn(async () => undefined);
-
-/** A sentinel the tests can recognise, standing in for Firestore's `deleteField()`. */
-const DELETE = Symbol('deleteField');
-
-let generatedId = 0;
-
-vi.mock('firebase/firestore', () => ({
-  collection: vi.fn((...path: unknown[]) => ({ path })),
-  doc: vi.fn((...args: unknown[]) => {
-    // `doc(col)` with no id is the generate-an-id form the repo uses for both
-    // Trips and stops; `doc(db, ...segments)` is the addressing form.
-    if (args.length === 1) return { id: `generated-${++generatedId}` };
-    return { id: String(args[args.length - 1]), path: args };
-  }),
-  setDoc: (...a: unknown[]) => setDocMock(...(a as [])),
-  updateDoc: (...a: unknown[]) => updateDocMock(...(a as [])),
-  deleteDoc: (...a: unknown[]) => deleteDocMock(...(a as [])),
-  getDocs: (...a: unknown[]) => getDocsMock(...(a as [])),
-  onSnapshot: vi.fn(),
-  query: vi.fn((...a: unknown[]) => ({ q: a })),
-  where: vi.fn((...a: unknown[]) => ({ w: a })),
-  writeBatch: vi.fn(() => ({ delete: batchDelete, commit: batchCommit })),
-  deleteField: vi.fn(() => DELETE),
-}));
-
 const repo = await import('../src/repos/tripsRepo');
+const { fromRow } = await import('@svtrip/shared');
 
 const UID = 'alice';
 const TRIP = 'trip-1';
 
-/** The document body handed to `setDoc`, from the most recent call. */
+/** What `deleteField()` used to be: the column cleared. */
+const DELETE = null;
+
+/** The app value of the most recent INSERT to trips or trip_stops. */
 function lastWritten(): Record<string, unknown> {
-  return setDocMock.mock.calls.at(-1)![1] as Record<string, unknown>;
+  const w = fake.writes.filter((x) => x.op === 'insert' && (x.table === 'trips' || x.table === 'trip_stops')).at(-1)!;
+  return fromRow(w.table as 'trips', w.values as Record<string, unknown>) as Record<string, unknown>;
 }
 /**
- * The field map handed to the FIRST `updateDoc`, which is the stop patch.
- *
- * Not the last: every mutation also calls `touch()`, whose `{ updatedAt }`
- * would otherwise be what every assertion here reads.
+ * The column map of the FIRST update to `trip_stops`, which is the stop patch. Not the last write:
+ * every mutation also calls `touch()` on the Trip, whose `{ updated_at }` would otherwise be what
+ * every assertion here reads.
  */
 function firstPatched(): Record<string, unknown> {
-  return updateDocMock.mock.calls[0]![1] as Record<string, unknown>;
+  return fake.writes.find((x) => x.op === 'update' && x.table === 'trip_stops')!.values as Record<string, unknown>;
 }
 
-function stopDocs(...stops: Array<{ stopId: string; position: number }>) {
-  return {
-    docs: stops.map((s) => ({ data: () => s, ref: { id: s.stopId } })),
-    empty: stops.length === 0,
-  };
+function seedStops(...stops: Array<{ stopId: string; position: number }>) {
+  fake.seed('trip_stops', stops.map((s) => ({ trip_id: TRIP, id: s.stopId, position: s.position })));
 }
 
 beforeEach(() => {
-  vi.clearAllMocks();
-  getDocsMock.mockResolvedValue({ docs: [], empty: true } as never);
+  fake.reset();
+  fake.seed('trips', [{ id: TRIP, profile_id: UID }]);
 });
 
 describe('creating a Trip', () => {
@@ -76,9 +55,8 @@ describe('creating a Trip', () => {
     await repo.createTrip(UID, { name: '  Costa  ', startDate: '2026-10-10' });
     const written = lastWritten();
     expect(written.origin).toBe('manual');
-    // Absent, not undefined and not empty: the SDK rejects `undefined`, and an
-    // empty string would make FR-041's "already kept?" lookup match every
-    // hand-made Trip at once.
+    // Absent, not empty: an empty string would make FR-041's "already kept?"
+    // lookup match every hand-made Trip at once.
     expect('sourceMessageId' in written).toBe(false);
   });
 
@@ -107,9 +85,7 @@ describe('creating a Trip', () => {
 
 describe('adding a stop', () => {
   it('appends to the END of the group, never into the arrangement (FR-032)', async () => {
-    getDocsMock.mockResolvedValue(
-      stopDocs({ stopId: 'a', position: 0 }, { stopId: 'b', position: 5 }) as never,
-    );
+    seedStops({ stopId: 'a', position: 0 }, { stopId: 'b', position: 5 });
     await repo.addStop(UID, TRIP, { catalogId: 'el-tunco', kind: 'place' });
     expect(lastWritten().position).toBe(6);
   });
@@ -147,10 +123,13 @@ describe('adding a stop', () => {
 
   it('generates the stop id and never uses the catalog id (FR-014)', async () => {
     // Keyed by place, the same place could not appear twice in one Trip —
-    // exactly what keying does to favorites.
-    await repo.addStop(UID, TRIP, { catalogId: 'el-tunco', kind: 'place' });
-    expect(lastWritten().stopId).not.toBe('el-tunco');
-    expect(String(lastWritten().stopId)).toMatch(/^generated-/);
+    // exactly what keying does to favorites. The DATABASE generates the id now:
+    // the insert carries none, and what comes back is not the catalog id.
+    const id = await repo.addStop(UID, TRIP, { catalogId: 'el-tunco', kind: 'place' });
+    const insert = fake.writes.filter((x) => x.table === 'trip_stops' && x.op === 'insert').at(-1)!;
+    expect('id' in (insert.values as object)).toBe(false);
+    expect(id).not.toBe('el-tunco');
+    expect(id).toMatch(/^gen-/);
   });
 });
 
@@ -176,15 +155,15 @@ describe('scheduling and clearing (FR-023)', () => {
 });
 
 describe('deleting a Trip (T017)', () => {
-  it('deletes every stop as well, not just the Trip document', async () => {
-    // A subcollection does not go with its parent. Orphaned stops under a
-    // deleted Trip are unreachable through any screen and permanent.
-    getDocsMock.mockResolvedValue(
-      stopDocs({ stopId: 'a', position: 0 }, { stopId: 'b', position: 1 }) as never,
-    );
+  it('is ONE delete of the Trip — its stops go with it by cascade, never left behind', async () => {
+    // On Firestore a subcollection did not go with its parent, so this test counted a stop delete per
+    // stop plus the Trip. Now the stops cascade from the Trip in the schema; what this pins is that
+    // the repo does not delete stops one by one (wasted writes) and does delete the Trip itself.
+    seedStops({ stopId: 'a', position: 0 }, { stopId: 'b', position: 1 });
     await repo.deleteTrip(UID, TRIP);
-    expect(batchDelete).toHaveBeenCalledTimes(3); // two stops plus the Trip
-    expect(batchCommit).toHaveBeenCalledTimes(1);
+    const deletes = fake.writes.filter((x) => x.op === 'delete');
+    expect(deletes).toHaveLength(1);
+    expect(deletes[0]).toMatchObject({ table: 'trips', filters: [['id', TRIP]] });
   });
 });
 
@@ -197,7 +176,7 @@ describe('repositioning (FR-030)', () => {
 
   it('lands between its new neighbours in ONE write, without renumbering', async () => {
     await repo.repositionStop(UID, TRIP, 'c', group, 1);
-    expect(updateDocMock).toHaveBeenCalledTimes(2); // the stop, then the Trip touch
+    expect(fake.writes.filter((x) => x.op === 'update')).toHaveLength(2); // the stop, then the Trip touch
     expect(lastUpdateOf('position')).toBe(0.5);
   });
 
@@ -212,10 +191,11 @@ describe('repositioning (FR-030)', () => {
   });
 });
 
-/** The value written for `field` by the first `updateDoc` of the last call pair. */
+/** The value written for `field` by the first update to a stop. */
 function lastUpdateOf(field: string): unknown {
-  for (const call of updateDocMock.mock.calls) {
-    const patch = call[1] as Record<string, unknown>;
+  for (const w of fake.writes) {
+    if (w.op !== 'update' || w.table !== 'trip_stops') continue;
+    const patch = w.values as Record<string, unknown>;
     if (field in patch) return patch[field];
   }
   return undefined;

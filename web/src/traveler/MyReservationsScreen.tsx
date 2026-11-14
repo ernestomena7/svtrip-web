@@ -23,6 +23,7 @@
 // Principle V, not polish. This is a live Firestore subscription, so the loading
 // moment is real — feature 018 captured `business-subscription` as a spinner in
 // its visual baseline for exactly this reason.
+import { reservationPlaceName } from '@svtrip/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
@@ -47,15 +48,27 @@ function ReservationRow({
   reservation: ResolvedReservation;
   onCancel?: () => void;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [date, time] = reservation.at.split('T');
+  const place = reservationPlaceName(reservation, i18n.language);
   return (
     <Card className="space-y-2 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-0.5">
-          <p className="font-bold">
-            {date} · {time}
-          </p>
+          {/* WHERE first: the place is what the person looks for (2026-10-23). Without a
+              readable name, the date stays the headline exactly as before. */}
+          {place ? (
+            <>
+              <p className="font-bold">{place}</p>
+              <p className="text-sm">
+                {date} · {time}
+              </p>
+            </>
+          ) : (
+            <p className="font-bold">
+              {date} · {time}
+            </p>
+          )}
           <p className="text-xs text-muted">
             {reservation.people === 1
               ? t('reservations.forOnePerson')

@@ -22,6 +22,7 @@
 // and the card stays where it was. 018's `ClaimQueueScreen` is the cautionary
 // tale in the other direction: a warning there did not merely display, it kept
 // the card in the queue.
+import { reservationPlaceName } from '@svtrip/shared';
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { reservationLabelKey } from '@svtrip/shared';
@@ -47,8 +48,9 @@ function RequestCard({
   onReject?: () => void;
   answering?: boolean;
 }) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [date, time] = reservation.at.split('T');
+  const place = reservationPlaceName(reservation, i18n.language);
   // FR-024/FR-026: the phone is on a document only these two uids can read, so
   // showing it here needs no projection — the access rule IS the protection.
   const waLink = reservation.contactPhone
@@ -59,9 +61,20 @@ function RequestCard({
     <Card className="space-y-3 p-4">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-0.5">
-          <p className="font-bold">
-            {date} · {time}
-          </p>
+          {/* WHERE first: the place is what the person looks for (2026-10-23). Without a
+              readable name, the date stays the headline exactly as before. */}
+          {place ? (
+            <>
+              <p className="font-bold">{place}</p>
+              <p className="text-sm">
+                {date} · {time}
+              </p>
+            </>
+          ) : (
+            <p className="font-bold">
+              {date} · {time}
+            </p>
+          )}
           <p className="text-xs text-muted">
             {reservation.people === 1
               ? t('reservations.forOnePerson')

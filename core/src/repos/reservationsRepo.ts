@@ -7,33 +7,49 @@
 // rule in `firestore.rules`, on the one path where getting it wrong means a
 // merchant reading another merchant's travelers.
 //
-// Reads DO come straight from Firestore, scoped by
-// `travelerUid == uid || merchantUid == uid`. That is what makes both lists live
+// Reads DO come straight from the database, scoped by the policy
+// `traveler_uid = uid or merchant_uid = uid`. That is what makes both lists live
 // — FR-012's "appears immediately" without polling, and US3 scenario 5's card
 // moving to Confirmadas on its own.
 //
-// **Both queries need a composite index** (`travelerUid ASC + at ASC` and
-// `merchantUid ASC + at ASC`, in `firestore/firestore.indexes.json`). A missing
-// one fails at none of this repo's gates — not build, not typecheck, not a unit
-// test, not the rules emulator — and then fails in production with
-// `FAILED_PRECONDITION`, as a list that never loads.
+// Feature 023: the two composite indexes this list needed on Firestore
+// (`travelerUid + at`, `merchantUid + at`) are `reservations_traveler_uid_idx` and
+// `reservations_merchant_uid_idx` in the schema migration. Postgres runs an
+// unindexed query anyway (slower), so the FAILED_PRECONDITION trap is gone — but
+// the indexes stay, for the same reason they existed.
 import { useEffect, useMemo, useState } from 'react';
-import { collection, onSnapshot, orderBy, query, where } from 'firebase/firestore';
-import type { Reservation, ReservationState, ReservationViewer } from '@svtrip/shared';
+import type { LocalizedText, Reservation, ReservationPlace, ReservationState, ReservationViewer } from '@svtrip/shared';
 import { isUpcoming, resolveReservationState } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
+import { fromRow } from '@svtrip/shared';
 
 /** A reservation with its state already resolved, so no screen re-derives it. */
-export interface ResolvedReservation extends Reservation {
+export interface ResolvedReservation extends Reservation, ReservationPlace {
   state: ReservationState;
 }
 
-function resolveAll(docs: Reservation[], now: Date): ResolvedReservation[] {
+// The place name is the listing's, joined at read time — not on the stored `Reservation` type, so
+// a renamed business shows its new name on every reservation instead of a copy frozen at request time.
+type ReservationRow = Record<string, unknown> & { listings?: { name: string | null; name_i18n: LocalizedText | null } | null };
+
+/** A row with its embedded listing name, as the app value. */
+export function withPlace(row: ReservationRow): Reservation & ReservationPlace {
+  const { listings, ...rest } = row;
+  const reservation = fromRow<Reservation>('reservations', rest);
+  return {
+    ...reservation,
+    ...(listings?.name ? { placeName: listings.name } : {}),
+    ...(listings?.name_i18n ? { placeNameI18n: listings.name_i18n } : {}),
+  };
+}
+
+function resolveAll(docs: (Reservation & ReservationPlace)[], now: Date): ResolvedReservation[] {
   return docs.map((r) => ({ ...r, state: resolveReservationState(r.recorded, r.at, now) }));
 }
 
 function useReservationQuery(field: 'travelerUid' | 'merchantUid', uid: string | undefined) {
-  const [reservations, setReservations] = useState<Reservation[]>([]);
+  const [reservations, setReservations] = useState<(Reservation & ReservationPlace)[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<Error | null>(null);
 
@@ -45,19 +61,31 @@ function useReservationQuery(field: 'travelerUid' | 'merchantUid', uid: string |
     }
     setLoading(true);
     setError(null);
-    const q = query(collection(db, 'reservations'), where(field, '==', uid), orderBy('at'));
-    const unsub = onSnapshot(
-      q,
-      (snap) => {
-        setReservations(snap.docs.map((d) => ({ ...(d.data() as Reservation), reservationId: d.id })));
+    const column = field === 'travelerUid' ? 'traveler_uid' : 'merchant_uid';
+    const unsub = subscribeLive(
+      {
+        table: 'reservations',
+        topic: userTopic(uid),
+        cacheKey: `reservations:${column}:${uid}`,
+        read: async () =>
+          // The place name rides along through the reservation -> listing foreign key (one query).
+          rowsOf(
+            await supabase
+              .from('reservations')
+              .select('*, listings(name, name_i18n)')
+              .eq(column, uid)
+              .order('at', { ascending: true }),
+          ).map((r) => withPlace(r as ReservationRow)),
+      },
+      (rows) => {
+        setReservations(rows);
         setLoading(false);
       },
       (err) => {
-        // Surfaced rather than swallowed. A missing composite index arrives here
-        // as `failed-precondition`, and feature 010 is the cautionary tale: a
+        // Surfaced rather than swallowed. Feature 010 is the cautionary tale: a
         // swallowed `permission-denied` made a fully built feature look like it
         // had nothing to show.
-        setError(err);
+        setError(err as Error);
         setLoading(false);
       },
     );

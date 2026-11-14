@@ -26,7 +26,7 @@ vi.mock('@svtrip/core/auth/userProfile', () => ({
   saveProfileFields: (uid: string, fields: Record<string, unknown>) =>
     saveProfileFields(uid, fields),
 }));
-vi.mock('@svtrip/core/firebase', () => ({ auth: { currentUser: { uid: 'new-uid' } } }));
+vi.mock('@svtrip/core/supabase', () => ({ auth: { currentUser: { uid: 'new-uid' } } }));
 
 const { RegisterScreen } = await import('../src/auth/RegisterScreen');
 

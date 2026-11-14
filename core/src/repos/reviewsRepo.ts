@@ -1,12 +1,13 @@
 // Review data access (T038, feature 005).
 //
-// Asymmetric on purpose: READS come straight from Firestore (public, real-time),
+// Asymmetric on purpose: READS come straight from the database (public, real-time),
 // WRITES go through the BFF so the score aggregate is recomputed in the same
 // operation and the ownership checks happen server-side (contracts §1).
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import type { Review } from '@svtrip/shared';
 import { reviewIdFor } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
+import { rowsOf, subscribeLive, placeTopic } from '../db/live';
+import { fromRow } from '@svtrip/shared';
 import { postJson, deleteJson } from '../apiClient';
 
 /**
@@ -20,16 +21,18 @@ export function subscribeToReviews(
   cb: (reviews: Review[]) => void,
   onError?: (e: Error) => void,
 ): () => void {
-  const q = query(collection(db, 'reviews'), where('targetId', '==', targetId));
-  return onSnapshot(
-    q,
-    (snap) => {
-      const reviews = snap.docs
-        .map((d) => ({ ...(d.data() as Review), reviewId: d.id }))
-        .sort((a, b) => b.updatedAt - a.updatedAt);
-      cb(reviews);
+  return subscribeLive(
+    {
+      table: 'reviews',
+      topic: placeTopic(targetId),
+      cacheKey: `reviews:${targetId}`,
+      read: async () =>
+        rowsOf(await supabase.from('reviews').select('*').eq('target_id', targetId))
+          .map((r) => fromRow<Review>('reviews', r))
+          .sort((a, b) => b.updatedAt - a.updatedAt),
     },
-    onError,
+    cb,
+    onError as (e: unknown) => void,
   );
 }
 

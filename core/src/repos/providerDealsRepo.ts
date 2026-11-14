@@ -1,25 +1,15 @@
-// Provider deal authoring (T081a, FR-016b). Deals live in the top-level `deals`
-// collection (owner-writable). Queried by ownerUid, sorted client-side.
-import {
-  addDoc,
-  collection,
-  deleteDoc,
-  doc,
-  onSnapshot,
-  query,
-  updateDoc,
-  where,
-} from 'firebase/firestore';
+// Provider deal authoring (T081a, FR-016b). Deals live in the `deals` table (owner-writable, the
+// owner pinned by policy and guard trigger). Queried by owner, sorted client-side.
 import type { Deal, DealCost, LocalizedText } from '@svtrip/shared';
-import { db } from '../firebase';
-
-const dealsCol = () => collection(db, 'deals');
+import { supabase } from '../supabase';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
+import { fromRow, toRow } from '@svtrip/shared';
+import { nowIso } from '@svtrip/shared';
 
 export interface DealInput {
   listingId: string;
   title: string;
   description: string;
-  /** Both languages, always written together (FR-024). */
   titleI18n?: LocalizedText;
   descriptionI18n?: LocalizedText;
   cost: DealCost;
@@ -29,33 +19,41 @@ export interface DealInput {
 }
 
 export async function createDeal(ownerUid: string, input: DealInput): Promise<string> {
-  const ref = await addDoc(dealsCol(), { ...input, ownerUid });
-  return ref.id;
+  const { data, error } = await supabase
+    .from('deals')
+    .insert({ ...toRow('deals', { ...input }), owner_uid: ownerUid, updated_at: nowIso() })
+    .select('id')
+    .single();
+  if (error) throw error;
+  return data.id as string;
 }
 
 export async function updateDeal(dealId: string, patch: Partial<DealInput>): Promise<void> {
-  await updateDoc(doc(dealsCol(), dealId), patch);
+  const { error } = await supabase.from('deals').update({ ...toRow('deals', patch), updated_at: nowIso() }).eq('id', dealId);
+  if (error) throw error;
 }
 
 export async function deleteDeal(dealId: string): Promise<void> {
-  await deleteDoc(doc(dealsCol(), dealId));
+  const { error } = await supabase.from('deals').delete().eq('id', dealId);
+  if (error) throw error;
 }
 
-/** Live subscription to the caller's own deals, ending-soonest first. */
 export function subscribeToMyDeals(
   ownerUid: string,
   cb: (deals: Deal[]) => void,
   onError?: (e: Error) => void,
 ): () => void {
-  const q = query(dealsCol(), where('ownerUid', '==', ownerUid));
-  return onSnapshot(
-    q,
-    (snap) => {
-      const deals = snap.docs
-        .map((d) => ({ ...(d.data() as Deal), dealId: d.id }))
-        .sort((a, b) => a.activeTo - b.activeTo);
-      cb(deals);
+  return subscribeLive(
+    {
+      table: 'deals',
+      topic: userTopic(ownerUid),
+      cacheKey: `myDeals:${ownerUid}`,
+      read: async () =>
+        rowsOf(await supabase.from('deals').select('*').eq('owner_uid', ownerUid))
+          .map((r) => fromRow<Deal>('deals', r))
+          .sort((a, b) => a.activeTo - b.activeTo),
     },
-    onError,
+    cb,
+    onError as (e: unknown) => void,
   );
 }

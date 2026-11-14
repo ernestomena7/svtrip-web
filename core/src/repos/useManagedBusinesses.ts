@@ -9,13 +9,13 @@
 // approves a handover, the new manager's switch must appear without them
 // signing out and back in.
 import { useEffect, useState } from 'react';
-import { collection, onSnapshot, query, where } from 'firebase/firestore';
 import type { Listing } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
 import { useAuth } from '../auth/AuthProvider';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
+import { fromRow } from '@svtrip/shared';
 
 export interface ManagedBusinesses {
-  /** `null` while unknown — callers must not render a switch during this window. */
   listings: Listing[] | null;
   managesAny: boolean;
 }
@@ -29,14 +29,15 @@ export function useManagedBusinesses(): ManagedBusinesses {
       setListings([]);
       return;
     }
-    const q = query(collection(db, 'listings'), where('ownerUid', '==', user.uid));
-    return onSnapshot(
-      q,
-      (snap) => {
-        setListings(snap.docs.map((d) => ({ ...(d.data() as Listing), listingId: d.id })));
+    return subscribeLive(
+      {
+        table: 'listings',
+        topic: userTopic(user.uid),
+        cacheKey: `managed:${user.uid}`,
+        read: async () =>
+          rowsOf(await supabase.from('listings').select('*').eq('owner_uid', user.uid)).map((r) => fromRow<Listing>('listings', r)),
       },
-      // A failed read is not evidence of managing something. Showing the switch
-      // on error would hand a traveler a provider surface they cannot use.
+      setListings,
       () => setListings([]),
     );
   }, [user]);

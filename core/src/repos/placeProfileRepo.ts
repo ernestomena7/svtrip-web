@@ -3,9 +3,10 @@
 // A profile can be either a provider-owned listing or a curated catalog
 // destination — the spec decided both open the same screen (FR-004) — so this
 // resolves an id against whichever it turns out to be, and reports which.
-import { doc, getDoc, onSnapshot } from 'firebase/firestore';
 import type { Deal, Listing, Place } from '@svtrip/shared';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
+import { subscribeLive, placeTopic } from '../db/live';
+import { fromRow } from '@svtrip/shared';
 import { publicVisibility } from '@svtrip/shared';
 import { fetchPlaces, listingToPlace, patchCachedScore } from './discoverRepo';
 import { fetchDealsForPlace } from './dealsRepo';
@@ -52,9 +53,10 @@ export async function fetchProfileTarget(id: string): Promise<ProfileTarget | nu
   // unfinished (feature 006) — a promotion or a saved AI Guide plan can link
   // straight here. Its manager must still be able to open it; everyone else gets
   // an explained message rather than "no longer available", which would be a lie.
-  const snap = await getDoc(doc(db, 'listings', id));
-  if (!snap.exists()) return null;
-  const listing = { ...(snap.data() as Listing), listingId: id };
+  const { data, error } = await supabase.from('listings').select('*').eq('id', id).maybeSingle();
+  if (error) throw error;
+  if (!data) return null;
+  const listing = fromRow<Listing>('listings', data);
   // WHICH reason, not just that there is one. `publicVisibility` answers the
   // content-and-switch half; whatever is left is coverage. A place can be both,
   // and FR-034 makes them cumulative — so `uncovered` is reported alongside
@@ -101,16 +103,22 @@ export function subscribeToTargetScore(
   kind: ProfileTargetKind,
   cb: (score: TargetScore) => void,
 ): () => void {
-  const ref = doc(db, kind === 'listing' ? 'listings' : 'places', targetId);
-  return onSnapshot(
-    ref,
-    (snap) => {
-      const data = snap.data() as TargetScore | undefined;
-      const score: TargetScore = { ratingAvg: data?.ratingAvg, ratingCount: data?.ratingCount };
+  const table = kind === 'listing' ? 'listings' : 'places';
+  return subscribeLive(
+    {
+      table,
+      topic: placeTopic(targetId),
+      read: async () => {
+        const { data, error } = await supabase.from(table).select('*').eq('id', targetId).maybeSingle();
+        if (error) throw error;
+        const row = data ? fromRow<TargetScore>(table, data) : undefined;
+        return { ratingAvg: row?.ratingAvg, ratingCount: row?.ratingCount };
+      },
+    },
+    (score) => {
       patchCachedScore(targetId, score);
       cb(score);
     },
-    // A dropped listener must not invent a score; the last known one stands.
     () => {},
   );
 }

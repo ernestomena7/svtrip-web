@@ -54,7 +54,27 @@ const MAP: Record<string, MappedAuthError> = {
 
   'auth/too-many-requests': { code: 'rate_limited', messageKey: 'auth.errors.rateLimited' },
   'auth/network-request-failed': { code: 'network', messageKey: 'auth.errors.network' },
+
+  // Supabase Auth's codes (feature 023), folded into the SAME outcomes. The enumeration rule holds:
+  // "email exists" maps to the generic registration failure exactly as `auth/email-already-in-use`
+  // did, and every wrong-credential shape collapses into one message.
+  invalid_credentials: { code: 'invalid_credentials', messageKey: 'auth.errors.invalidCredentials' },
+  user_not_found: { code: 'invalid_credentials', messageKey: 'auth.errors.invalidCredentials' },
+  user_already_exists: { code: 'registration_failed', messageKey: 'auth.errors.registrationFailed' },
+  email_exists: { code: 'registration_failed', messageKey: 'auth.errors.registrationFailed' },
+  weak_password: { code: 'weak_password', messageKey: 'auth.errors.weakPassword' },
+  email_address_invalid: { code: 'invalid_email', messageKey: 'auth.errors.invalidEmail' },
+  otp_expired: { code: 'reset_link_expired', messageKey: 'auth.errors.resetLinkExpired' },
+  bad_code_verifier: { code: 'reset_link_invalid', messageKey: 'auth.errors.resetLinkInvalid' },
+  flow_state_expired: { code: 'reset_link_expired', messageKey: 'auth.errors.resetLinkExpired' },
+  over_request_rate_limit: { code: 'rate_limited', messageKey: 'auth.errors.rateLimited' },
+  over_email_send_rate_limit: { code: 'rate_limited', messageKey: 'auth.errors.rateLimited' },
 };
+
+/** supabase-js reports a network failure as an AuthRetryableFetchError with no code. */
+function supabaseNetworkError(err: unknown): boolean {
+  return (err as { name?: unknown })?.name === 'AuthRetryableFetchError';
+}
 
 const UNKNOWN: MappedAuthError = { code: 'unknown', messageKey: 'common.somethingWrong' };
 
@@ -63,6 +83,7 @@ const UNKNOWN: MappedAuthError = { code: 'unknown', messageKey: 'common.somethin
  * message so raw provider text can never reach the UI.
  */
 export function mapAuthError(err: unknown): MappedAuthError {
+  if (supabaseNetworkError(err)) return { code: 'network', messageKey: 'auth.errors.network' };
   const raw = (err as { code?: unknown })?.code;
   if (typeof raw !== 'string') return UNKNOWN;
   return MAP[raw] ?? UNKNOWN;
@@ -90,7 +111,9 @@ export function mapPasswordChangeError(err: unknown): MappedAuthError {
     case 'auth/wrong-password':
     case 'auth/invalid-credential':
     case 'auth/invalid-login-credentials':
+    case 'invalid_credentials': // Supabase (feature 023): the current-password check is a sign-in
       return { code: 'wrong_current_password', messageKey: 'auth.errors.wrongCurrentPassword' };
+    case 'reauthentication_needed':
     case 'auth/requires-recent-login':
       // The reauthentication above should prevent this, but a session can still
       // age out between the two calls. Telling them to sign in again is the only

@@ -1,13 +1,18 @@
-// Firebase Storage photo upload (T075). Uploads under listings/{uid}/ so the
-// storage rules permit only the owner to write (Constitution II). Uploads are
-// best-effort: if Storage is not enabled/reachable, the caller can still save a
-// listing without photos (the ActivityCard falls back to the sunset gradient).
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage';
-import { storage } from '../firebase';
+// Photo upload (T075) — Supabase Storage, the `media` bucket (feature 023). Uploads under
+// listings/{uid}/ so the storage policies permit only the owner to write (Constitution II).
+// Uploads are best-effort: if Storage is unreachable, the caller can still save a listing without
+// photos (the ActivityCard falls back to the sunset gradient).
+import { supabase } from '../supabase';
+
+const BUCKET = 'media';
 
 export class PhotoUploadError extends Error {}
 
-/** Accepted formats and size cap (feature 006, FR-022). */
+/**
+ * Accepted formats and size cap (feature 006, FR-022). The `media` bucket enforces the SAME two
+ * limits server-side (storage_023.sql: file_size_limit, allowed_mime_types). Keep them in step: if
+ * they drift, the symptom is an upload the UI accepts and the server refuses.
+ */
 export const ACCEPTED_IMAGE_TYPES = ['image/jpeg', 'image/png', 'image/webp'];
 export const MAX_IMAGE_BYTES = 5 * 1024 * 1024;
 
@@ -32,12 +37,9 @@ export async function uploadListingPhoto(uid: string, file: File): Promise<strin
   assertUploadable(file);
   const safeName = `${Date.now()}-${file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_')}`;
   const path = `listings/${uid}/${safeName}`;
-  try {
-    const snap = await uploadBytes(ref(storage, path), file);
-    return await getDownloadURL(snap.ref);
-  } catch (err) {
-    throw new PhotoUploadError(
-      err instanceof Error ? err.message : 'Photo upload failed (is Firebase Storage enabled?)',
-    );
-  }
+  const store = supabase.storage.from(BUCKET);
+  const { error } = await store.upload(path, file, { contentType: file.type });
+  if (error) throw new PhotoUploadError(error.message || 'Photo upload failed');
+  // Public bucket, as the old one was: an <img src> carries no token.
+  return store.getPublicUrl(path).data.publicUrl;
 }

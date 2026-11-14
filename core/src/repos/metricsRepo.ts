@@ -2,8 +2,8 @@
 // from providerProfiles/{uid}/metricsDaily (owner-read, Admin-write per rules).
 // Totals are summed client-side across day docs so no composite index is needed;
 // the per-day series powers the Ultra-only advanced analytics view (T093).
-import { collection, onSnapshot } from 'firebase/firestore';
-import { db } from '../firebase';
+import { supabase } from '../supabase';
+import { rowsOf, subscribeLive, userTopic } from '../db/live';
 
 export interface DailyMetric {
   date: string; // yyyymmdd
@@ -44,15 +44,27 @@ export function subscribeToMetrics(
   cb: (m: ProviderMetrics) => void,
   onError?: (e: Error) => void,
 ): () => void {
-  return onSnapshot(collection(db, 'providerProfiles', uid, 'metricsDaily'), (snap) => {
-    const daily: DailyMetric[] = snap.docs
-      .map((doc) => {
-        const d = doc.data();
+  return subscribeLive(
+    {
+      table: 'metrics_daily',
+      topic: userTopic(uid),
+      cacheKey: `metrics:${uid}`,
+      read: async () => rowsOf(await supabase.from('metrics_daily').select('*').eq('provider_uid', uid)),
+    },
+    (rows) => {
+    const daily: DailyMetric[] = rows
+      .map((row) => {
+        // Column names → the field names this aggregation has always read (absent stays absent).
+        const d = {
+          date: row.date, profileViews: row.profile_views, favoriteClicks: row.favorite_clicks,
+          directionsClicks: row.directions_clicks, byListing: row.by_listing, byOrigin: row.by_origin, byDeal: row.by_deal,
+        } as Record<string, unknown>;
+        const docId = row.day as string;
         const byListing = (d.byListing ?? {}) as Record<string, Record<string, number>>;
         const byOrigin = (d.byOrigin ?? {}) as Record<string, Record<string, number>>;
         const byDeal = (d.byDeal ?? {}) as Record<string, Record<string, number>>;
         return {
-          date: String(d.date ?? doc.id),
+          date: String(d.date ?? docId),
           profileViews: Number(d.profileViews ?? 0),
           favoriteClicks: Number(d.favoriteClicks ?? 0),
           directionsClicks: Number(d.directionsClicks ?? 0),
@@ -77,7 +89,9 @@ export function subscribeToMetrics(
       { profileViews: 0, favoriteClicks: 0, directionsClicks: 0, daily },
     );
     cb(totals);
-  }, onError);
+    },
+    onError as (e: unknown) => void,
+  );
 }
 
 /**

@@ -14,14 +14,14 @@ import type { LegalDocument } from './types.js';
  *
  * **Nada aqui promete algo que el producto no hace (FR-010).** En particular: no se promete plazo de
  * respuesta para borrar datos (no hay proceso detras que lo respalde), no se dice que se guarde un
- * token de dispositivo (ninguno se guarda), y el guia se describe en presente — la feature 021 lo
+ * token de dispositivo sin decir cuándo se borra (feature 020 US4: al cerrar sesión, o cuando deja de funcionar), y el guia se describe en presente — la feature 021 lo
  * apago — sin dejar de avisar que las conversaciones pasadas se conservan.
  */
 export const privacyEs: LegalDocument = {
   id: 'privacy',
   language: 'es',
   title: 'Política de privacidad',
-  updatedAt: '2026-10-19',
+  updatedAt: '2026-11-14',
   sections: [
     {
       id: 'data-collected',
@@ -34,7 +34,7 @@ export const privacyEs: LegalDocument = {
         'De lo que hacés: los lugares que guardás como favoritos; los Trips que armás, con sus fechas y los lugares que pensás visitar; tus preferencias de moods; y un registro de qué lugares te mostró el guía, que sirve para que no te repita lo mismo.',
         'Si tenés un negocio: los datos de tu negocio y de tu suscripción (el plan, sus fechas y si el pago está al día), y las solicitudes que hacés para administrar un negocio, que incluyen tu nombre y un mensaje opcional que escribas.',
         'Cuando alguien denuncia una reseña, guardamos quién la denunció y el motivo si lo escribió. Ese registro lo ve únicamente el equipo de SVTrip y ninguna pantalla de la aplicación lo muestra.',
-        'Hoy no guardamos ningún identificador de tu dispositivo para enviar notificaciones, porque la aplicación todavía no las envía.',
+        'Si activás los avisos en el teléfono, guardamos junto a tu cuenta el identificador que Google usa para entregarle notificaciones a ese teléfono. Lo usamos solo para avisarte de tus reservas. Se borra cuando cerrás sesión en ese teléfono, y también cuando deja de funcionar. Si no activás los avisos, no guardamos nada.',
         'Tus datos de cuenta, favoritos, Trips y conversaciones están guardados bajo tu cuenta y solo se pueden leer desde ella.',
       ],
     },
@@ -78,7 +78,9 @@ export const privacyEs: LegalDocument = {
       source:
         'docs/privacy-data-inventory.md, sección 4 (orígenes externos extraídos del código de las cuatro superficies); landing/src/styles, web/src/styles y client/src/styles (@import de Google Fonts).',
       body: [
-        'Firebase y Google Cloud guardan todo lo que describe la sección "Qué datos guardamos". Es nuestra base de datos y no hay forma de usar la aplicación sin ella.',
+        'Supabase guarda todo lo que describe la sección "Qué datos guardamos", incluidas las fotos de los negocios, en servidores ubicados en el este de Estados Unidos. Es nuestra base de datos y nuestro sistema de cuentas, y no hay forma de usar la aplicación sin ella.',
+        'Nuestro servidor funciona en Google Cloud, también en Estados Unidos: las solicitudes que la aplicación le hace (por ejemplo, al pedir una reserva o publicar una reseña) pasan por ahí. Si entrás con tu cuenta de Google, Google confirma tu identidad y nos entrega tu nombre y tu correo.',
+        'Si activás los avisos, cada notificación de una reserva se entrega a través de Firebase Cloud Messaging, el servicio de Google para notificaciones en Android. Google recibe el identificador de tu teléfono y el texto del aviso: por ejemplo, el nombre del negocio, la fecha de tu reserva y, si el negocio te escribió un mensaje al rechazarla, ese mensaje.',
         'Las fuentes tipográficas de la aplicación se cargan desde Google Fonts. Eso significa que tu dirección IP llega a Google cada vez que se carga una página, antes de que se dibuje nada, y también en la página pública donde todavía no existe una cuenta. Lo declaramos porque no es algo que puedas elegir.',
         'Los mapas se cargan desde OpenFreeMap, que recibe tu dirección IP y la zona aproximada que estás viendo cada vez que se muestra un mapa.',
         'Si un negocio busca una dirección para ubicarse, el texto de esa búsqueda se envía a MapTiler a través de nuestro servidor.',

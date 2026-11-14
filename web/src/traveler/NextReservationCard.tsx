@@ -19,6 +19,7 @@
 // with nothing else in its graph.
 //
 // So this file imports the READ repo and nothing that writes. Keep it that way.
+import { reservationPlaceName } from '@svtrip/shared';
 import { useTranslation } from 'react-i18next';
 import { useNavigate } from 'react-router-dom';
 import { reservationLabelKey } from '@svtrip/shared';
@@ -34,7 +35,7 @@ function StateLabel({ state }: { state: ReservationState }) {
 }
 
 export function NextReservationCard() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
   const { upcoming } = useMyReservations(user?.uid);
@@ -46,6 +47,7 @@ export function NextReservationCard() {
   if (!next) return null;
 
   const [date, time] = next.at.split('T');
+  const place = reservationPlaceName(next, i18n.language);
   // A real <button>, not a Card with an onClick. 016's rule: a control only a
   // pointer can reach is, for some travelers, no control at all — and `Card` is
   // a plain div, so giving it a click handler would make this unreachable by
@@ -59,9 +61,20 @@ export function NextReservationCard() {
     >
       <Card className="space-y-1 p-4">
         <p className="eyebrow text-primary">{t('reservations.upcomingCard')}</p>
-        <p className="font-bold">
-          {date} · {time}
-        </p>
+        {/* WHERE first: the place is what the person looks for (2026-10-23). Without a
+            readable name, the date stays the headline exactly as before. */}
+        {place ? (
+          <>
+            <p className="font-bold">{place}</p>
+            <p className="text-sm">
+              {date} · {time}
+            </p>
+          </>
+        ) : (
+          <p className="font-bold">
+            {date} · {time}
+          </p>
+        )}
         <StateLabel state={next.state} />
       </Card>
     </button>

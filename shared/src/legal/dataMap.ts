@@ -33,7 +33,7 @@ export interface DataMapEntry {
 }
 
 export const DATA_MAP: Record<string, DataMapEntry> = {
-  users: {
+  profiles: {
     section: 'data-collected',
     holds: 'Account: email, name, age, gender, country, optional marital status, phone, preferences.',
   },
@@ -48,20 +48,20 @@ export const DATA_MAP: Record<string, DataMapEntry> = {
     holds: 'Which catalog entries the guide has put in front of a traveler, and when.',
   },
   trips: { section: 'data-collected', holds: "A traveler's named, dated plans." },
-  stops: { section: 'data-collected', holds: 'The places inside a Trip, with optional date and time.' },
+  trip_stops: { section: 'data-collected', holds: 'The places inside a Trip, with optional date and time.' },
   devices: {
     section: 'data-collected',
-    holds: 'Push tokens. RULES ONLY — nothing stores one until feature 020 US4 ships.',
+    holds: 'Push tokens, one per account per phone installation (feature 020 US4). Written only after the person taps "Activar avisos"; deleted on sign-out and when FCM reports the token dead.',
   },
   reservations: {
     section: 'reservations-shared',
     holds: "A reservation request. The merchant READS the traveler's name, email and phone.",
   },
-  businessClaims: {
+  business_claims: {
     section: 'data-collected',
     holds: "A request to manage a business: the requester's name and an optional free-text message.",
   },
-  reviewReports: {
+  review_reports: {
     section: 'data-collected',
     holds: 'Who reported which review. Server-only; no client can read it.',
   },
@@ -69,22 +69,30 @@ export const DATA_MAP: Record<string, DataMapEntry> = {
     section: 'reviews-public',
     holds: "Public reviews. Writing one publishes the author's name.",
   },
-  providerProfiles: {
+  provider_profiles: {
     section: 'data-collected',
     holds: "A merchant's subscription: plan code, dates and a payment-active flag.",
   },
-  // `engagementEvents` and `metricsDaily` are DELIBERATELY anonymous — they hold a listing and the
+  // `engagement_events` and `metrics_daily` are DELIBERATELY anonymous — they hold a listing and the
   // type of interaction and NO traveler identifier. They are in this map, not NOT_PERSONAL, because
   // the policy makes a positive promise about them (`anonymous-analytics`), and a promise has to be
   // tracked or it quietly stops being true.
-  engagementEvents: {
+  engagement_events: {
     section: 'anonymous-analytics',
     holds: 'One record per traveler interaction, with NO traveler identifier.',
   },
-  metricsDaily: { section: 'anonymous-analytics', holds: 'Daily totals per business.' },
+  metrics_daily: { section: 'anonymous-analytics', holds: 'Daily totals per business.' },
   listings: {
     section: 'data-collected',
     holds: 'A business listing. Carries ownerUid, readable by every signed-in account.',
+  },
+  plan_changes: {
+    section: 'data-collected',
+    holds: "Each change to a merchant's plan: the account, the plan, the price in effect and its dates. Server-only.",
+  },
+  legacy_orphan_profiles: {
+    section: 'data-collected',
+    holds: 'Profiles imported at feature 023 that had no login account (R7). Kept, readable by nobody.',
   },
 };
 
@@ -92,40 +100,35 @@ export const NOT_PERSONAL: Record<string, string> = {
   places: 'Curated catalog content about destinations, with no person attached.',
   events: 'Catalog content about events, with no person attached.',
   deals: 'A business promotion. Content a merchant chose to publish, not a person’s data.',
-  businessTypes: 'An admin-managed vocabulary of business categories.',
+  business_types: 'An admin-managed vocabulary of business categories.',
   moods: 'An admin-managed vocabulary of moods.',
-  additionalServices: 'An admin-managed vocabulary of services a business can declare.',
-  subscriptionPlans: 'The plan catalog: names, prices and limits. Identical for every account.',
-  launchCampaign: 'A single campaign window configuration. Not tied to anyone.',
+  additional_services: 'An admin-managed vocabulary of services a business can declare.',
+  subscription_plans: 'The plan catalog: names, prices and limits. Identical for every account.',
+  launch_campaign: 'A single campaign window configuration. Not tied to anyone.',
 };
 
 /**
- * Every `match /<name>/{id}` in a rules file — roots and subcollections both, never the
- * `/{document=**}` catch-all, and never a match inside a comment.
+ * Every `create table [if not exists] public.<name>` in SQL migration text, never one inside a `--`
+ * comment. Feature 023 moved the data from Firestore (whose `match` blocks this used to read) to
+ * Postgres, so the guard reads the migrations now; reading the retired rules file would keep it
+ * green forever while new tables went undisclosed.
  *
- * A REGEX over rules text, not a parser, and that is a deliberate trade: rules have a small, stable
- * grammar, and a real parser would be a dependency for one test. The cost is that an unusual form —
- * a `match` split across lines, or built from a function — would be missed, which would make the
- * detector SILENT rather than wrong. The first test case in `legal.test.ts` guards that: it
- * requires the extractor to find at least twenty collections, so a parser that quietly returned
- * nothing cannot pass every other case vacuously.
+ * A regex, not a SQL parser, for the same trade the rules version made: a table created by an
+ * unusual form (a `do` block, a dynamic `execute`) would be missed, making the detector SILENT
+ * rather than wrong — which the ">= 20 tables" case in `legal.test.ts` guards against.
  */
-export function extractCollections(rules: string): string[] {
+export function extractCollections(sql: string): string[] {
   const out = new Set<string>();
-  const uncommented = rules
-    .replace(/\r/g, '')
+  const uncommented = sql
+    .split('\r').join('')
     .split('\n')
     .map((line) => {
-      const i = line.indexOf('//');
+      const i = line.indexOf('--');
       return i === -1 ? line : line.slice(0, i);
     })
     .join('\n');
-  const re = /match\s+\/([A-Za-z][A-Za-z0-9_]*)\/\{[^}]+\}/g;
+  const re = /create\s+table\s+(?:if\s+not\s+exists\s+)?public\.([a-z_][a-z0-9_]*)/gi;
   let m: RegExpExecArray | null;
-  while ((m = re.exec(uncommented)) !== null) out.add(m[1]);
-  // `match /databases/{database}/documents` is the ENVELOPE every rules file opens with, not a
-  // collection. The first version of this function returned it, and the gap detector's own test
-  // caught that on its first run — reporting `databases` as an unmapped collection.
-  out.delete('databases');
+  while ((m = re.exec(uncommented)) !== null) out.add(m[1].toLowerCase());
   return [...out];
 }
