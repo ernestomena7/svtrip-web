@@ -85,6 +85,7 @@ export const privacyEs: LegalDocument = {
         'Los mapas se cargan desde OpenFreeMap, que recibe tu dirección IP y la zona aproximada que estás viendo cada vez que se muestra un mapa.',
         'Si un negocio busca una dirección para ubicarse, el texto de esa búsqueda se envía a MapTiler a través de nuestro servidor.',
         'Cuando tocás "Cómo llegar", las coordenadas del destino se abren en Google Maps. Cuando tocás para contactar a un negocio por WhatsApp, se abre WhatsApp con el número de ese negocio. En ambos casos salís de SVTrip por una acción tuya.',
+        'Si usás SVTrip desde un asistente de inteligencia artificial (por ejemplo ChatGPT o Claude), lo que le pedís a ese asistente y lo que SVTrip le responde pasan por la empresa que lo ofrece, bajo sus propios términos. SVTrip no recibe la conversación: solo la búsqueda que el asistente le hace. Si le contás al asistente de dónde sos o con quién viajás, SVTrip guarda solo totales por día (por ejemplo, cuántas búsquedas fueron de familias con niños), nunca asociados a una persona.',
         'No vendemos tus datos ni los usamos para publicidad.',
       ],
     },

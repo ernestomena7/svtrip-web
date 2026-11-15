@@ -917,4 +917,15 @@ export interface Reservation {
   updatedAt: number;
   /** Set when `recorded` leaves `pending`. */
   decidedAt?: number;
+  /**
+   * Feature 024: where the request was made. Absent on rows read before the column existed; the
+   * database default is `'app'`. Written only by the BFF. Shown to the traveler ("vía asistente"),
+   * never to the merchant — the request is the same request (FR-012).
+   */
+  origin?: 'app' | 'assistant';
+  /**
+   * Feature 024: the nonce of the confirmation token that created this row (unique), so a retried
+   * submit returns the first reservation instead of a second one (FR-014). Never the token itself.
+   */
+  assistantRequestKey?: string;
 }

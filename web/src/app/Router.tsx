@@ -19,7 +19,7 @@ import { AI_GUIDE_ENABLED } from '@svtrip/shared';
 //   3. **Only the active persona's routes are mounted**, matching the mobile
 //      app: a stale URL for the other mode falls through to that persona's index
 //      rather than rendering a screen the nav never links to.
-import { lazy, Suspense } from 'react';
+import { lazy, Suspense, useEffect } from 'react';
 import { BrowserRouter, Navigate, Route, Routes, useLocation } from 'react-router-dom';
 import { isProfileComplete, predatesProfileFields } from '@svtrip/shared';
 import { useAuth } from '@svtrip/core/auth/AuthProvider';
@@ -27,6 +27,9 @@ import { useUiStore } from '@svtrip/core/uiStore';
 import { Spinner } from '../components/ui';
 import { DesktopLayout } from '../shell/DesktopLayout';
 import { PreviewScreen } from '../public/PreviewScreen';
+import { PublicPlaceScreen } from '../public/PublicPlaceScreen';
+import { postJson } from '@svtrip/core/apiClient';
+import { captureAssistantArrival, reportAssistantArrival } from './assistantSignup';
 import { SignInScreen } from '../auth/SignInScreen';
 import { RegisterScreen } from '../auth/RegisterScreen';
 import { ForgotPasswordScreen } from '../auth/ForgotPasswordScreen';
@@ -136,6 +139,10 @@ function SignedOutRoutes() {
       {/* The public preview — the one signed-out surface with real content. */}
       <Route path="/" element={<PreviewScreen />} />
       <Route path="/discover" element={<PreviewScreen />} />
+      {/* Feature 024 (FR-009): where an AI assistant's link lands. Public — a link that bounced a
+          visitor to sign-in would make every suggestion a dead end. It ALSO exists in the signed-in
+          tree (that one has its own catch-all), where the full profile renders. */}
+      <Route path="/place/:id" element={<PublicPlaceScreen />} />
       {/* Anything else is gated: say so, and remember where they were going. */}
       <Route path="*" element={<Navigate to={`/sign-in?next=${next}`} replace />} />
     </Routes>
@@ -200,6 +207,12 @@ function SignedInRoutes() {
 
 function AppRoutes() {
   const { user, profile, loading } = useAuth();
+
+  // Feature 024 (T020): note an arrival from an assistant's link, and report it once signed in.
+  useEffect(() => captureAssistantArrival(window.location.search), []);
+  useEffect(() => {
+    if (user) void reportAssistantArrival(postJson);
+  }, [user]);
 
   // FR-013: wait for the SDK to restore the session. Rendering the signed-out
   // tree here would flash the preview screen on every reload for a signed-in

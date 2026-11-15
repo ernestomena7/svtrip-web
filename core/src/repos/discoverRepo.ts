@@ -3,7 +3,7 @@
 // catalog is small (curated seed + provider listings), so a single collection
 // read avoids needing Firestore composite indexes for this MVP.
 import type { Listing, Place, SvEvent } from '@svtrip/shared';
-import { travelerVisible } from '@svtrip/shared';
+import { byBoostThenRating, byRatingDesc, travelerVisible } from '@svtrip/shared';
 import { supabase } from '../supabase';
 import { rowsOf } from '../db/live';
 import { fromRow } from '@svtrip/shared';
@@ -121,32 +121,8 @@ export async function fetchEvents(): Promise<SvEvent[]> {
   return eventsCache;
 }
 
-/**
- * Best-rated first, by what travelers actually said.
- *
- * `rating` is the EDITORIAL score — `types.ts` says so beside the field, and
- * "never render it in an average's slot". Ordering by it did something close
- * to that: a curated 5 outranked a place with thirty real reviews averaging
- * 4.8, which is the opposite of what "best rated" tells a traveler.
- *
- * Both fields are optional, so the old expression could also be
- * `undefined - undefined` — NaN, which makes the sort order undefined rather
- * than merely wrong.
- */
-function byRatingDesc(a: Place, b: Place): number {
-  const score = (p: Place) => p.ratingAvg ?? p.rating ?? 0;
-  return score(b) - score(a);
-}
-
-/**
- * Ranking comparator (T094, FR-027): sponsored (boosted) providers surface
- * first, then by rating. Boost only reorders — it never injects places the
- * filter didn't already select.
- */
-function byBoostThenRating(a: Place, b: Place): number {
-  if (a.boosted !== b.boosted) return a.boosted ? -1 : 1;
-  return byRatingDesc(a, b);
-}
+// `byRatingDesc` and `byBoostThenRating` moved to shared/src/placeOrder.ts at feature 024, so the
+// MCP connector orders exactly as Discover does.
 
 /** "For You": places whose moods intersect the user's selected vibes (FR-006). */
 export function forYou(places: Place[], vibes: string[]): Place[] {

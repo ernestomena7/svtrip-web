@@ -105,6 +105,8 @@ export const NOT_PERSONAL: Record<string, string> = {
   additional_services: 'An admin-managed vocabulary of services a business can declare.',
   subscription_plans: 'The plan catalog: names, prices and limits. Identical for every account.',
   launch_campaign: 'A single campaign window configuration. Not tied to anyone.',
+  assistant_usage_daily:
+    'Feature 024: daily totals of AI-assistant usage per tool and per stated context value — (day, metric, value, count) has no column for a person, an IP or a query (FR-026).',
 };
 
 /**
@@ -120,7 +122,8 @@ export const NOT_PERSONAL: Record<string, string> = {
 export function extractCollections(sql: string): string[] {
   const out = new Set<string>();
   const uncommented = sql
-    .split('\r').join('')
+    .split('\r').join('')
+
     .split('\n')
     .map((line) => {
       const i = line.indexOf('--');

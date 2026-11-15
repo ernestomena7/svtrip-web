@@ -68,3 +68,4 @@ export * from './version.js';
 // Feature 023: row ⇄ app-value conversion, shared by core/ and server/.
 export * from './db/rows.js';
 export * from './db/time.js';
+export * from './placeOrder.js';

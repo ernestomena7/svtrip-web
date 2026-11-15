@@ -844,7 +844,14 @@
     "dealsNotAttributable": "Todavía no hay datos por promoción. Empiezan a contarse desde ahora."
   },
   "place": {
-    "unavailableNow": "Este lugar no está disponible ahora. Volvé a intentar más tarde."
+    "unavailableNow": "Este lugar no está disponible ahora. Volvé a intentar más tarde.",
+    "public": {
+      "notAvailableTitle": "Este lugar no está disponible por ahora",
+      "notAvailableBody": "Puede que el negocio lo haya pausado. Mirá otros lugares en SVTrip.",
+      "explore": "Explorar SVTrip",
+      "signInTitle": "Iniciá sesión para guardarlo, sumarlo a un Trip o reseñarlo",
+      "signInReserveTitle": "Iniciá sesión para reservar, guardarlo o reseñarlo"
+    }
   },
   "reservations": {
     "title": "Reservas",

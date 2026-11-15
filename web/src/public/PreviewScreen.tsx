@@ -10,12 +10,12 @@
 // silent redirect would technically satisfy "gated" and fail the requirement.
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Link } from 'react-router-dom';
 import { resolveLocalized, type LocalizedText, type ScoreSignal } from '@svtrip/shared';
 import { useUiStore } from '@svtrip/core/uiStore';
 import { ActivityCard } from '../components/ActivityCard';
 import { Button, ButtonLink, Card, ErrorState, Spinner } from '../components/ui';
 import { API_BASE_URL } from '../config';
+import { PublicHeader } from './PublicHeader';
 
 interface FeaturedPlace {
   placeId: string;
@@ -26,8 +26,6 @@ interface FeaturedPlace {
   moods: string[];
   score: ScoreSignal;
 }
-
-const WORDMARK = '/svtrip-wordmark.png';
 
 export function PreviewScreen() {
   const { t } = useTranslation();
@@ -51,19 +49,7 @@ export function PreviewScreen() {
 
   return (
     <div className="flex min-h-[100dvh] flex-col bg-bg">
-      <header className="border-b border-border bg-surface/80 backdrop-blur-md">
-        <div className="mx-auto flex h-[68px] max-w-7xl items-center px-5 md:px-10">
-          <img src={WORDMARK} alt="SVTrip" className="h-9 w-auto" />
-          <div className="ml-auto flex items-center gap-2">
-            <Link to="/register">
-              <Button variant="secondary">{t('web.preview.register')}</Button>
-            </Link>
-            <Link to="/sign-in">
-              <Button>{t('web.preview.cta')}</Button>
-            </Link>
-          </div>
-        </div>
-      </header>
+      <PublicHeader />
 
       <main className="mx-auto w-full max-w-7xl flex-1 px-5 py-10 md:px-10 md:py-14">
         <p className="eyebrow">{t('web.preview.eyebrow')}</p>
