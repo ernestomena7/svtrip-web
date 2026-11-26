@@ -74,8 +74,12 @@ describe('publication rules', () => {
     expect(isPublishable(saved)).toBe(false);
   });
 
+  // FR-011 NOTE (feature 025, research R16): the first assertion was `nameI18n: { es: 'Solo español', en: '' }`
+  // → NOT publishable. One language is now enough; the missing one is a recommendation. The case still
+  // pins "incomplete is never ready" — with a name in NO language, which is what incomplete means now.
   it('never reports an incomplete entry as ready', () => {
-    expect(isPublishable(modern({ nameI18n: { es: 'Solo español', en: '' } }))).toBe(false);
+    expect(isPublishable(modern({ nameI18n: { es: '', en: '' } }))).toBe(false);
+    expect(isPublishable(modern({ nameI18n: { es: 'Solo español', en: '' } }))).toBe(true);
     expect(isPublishable(modern({ businessType: undefined }))).toBe(false);
   });
 });
@@ -96,5 +100,18 @@ describe('PublicationChecklist', () => {
   it('tells a legacy entry that the minimums arrive on its next save', () => {
     render(<PublicationChecklist entry={legacy()} />);
     expect(screen.getByText(/anterior a los mínimos|predates the current minimums/i)).toBeDefined();
+  });
+});
+
+describe('PublicationChecklist — a missing translation is a recommendation (025 FR-017a)', () => {
+  it('a one-language entry is READY, and the English description is recommended, not missing', () => {
+    render(<PublicationChecklist entry={modern({ descriptionI18n: { es: 'Descripción', en: '' } })} />);
+    expect(screen.getByText(/cumple todo|meets everything/i)).toBeDefined();
+    expect(screen.getByTestId('publication-recommended').textContent).toMatch(/descripción en inglés|description in English/i);
+  });
+
+  it('both languages: nothing recommended (the allow beside the deny)', () => {
+    render(<PublicationChecklist entry={modern()} />);
+    expect(screen.queryByTestId('publication-recommended')).toBeNull();
   });
 });

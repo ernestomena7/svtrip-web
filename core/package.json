@@ -24,6 +24,8 @@
     "./push/pushRegistration": "./src/push/pushRegistration.ts",
     "./i18n": "./src/i18n.ts",
     "./moodIcons": "./src/moodIcons.ts",
+    "./repos/businessSignupRepo": "./src/repos/businessSignupRepo.ts",
+    "./repos/planNames": "./src/repos/planNames.ts",
     "./repos/claimsRepo": "./src/repos/claimsRepo.ts",
     "./repos/conversationRepo": "./src/repos/conversationRepo.ts",
     "./repos/dealsRepo": "./src/repos/dealsRepo.ts",

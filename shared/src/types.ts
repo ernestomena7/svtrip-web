@@ -84,6 +84,12 @@ export interface UserProfile {
   phone?: string;
   /** Absent = the account predates feature 011 = grandfathered, never gated. */
   profileVersion?: number;
+  /** Feature 025 (R12): the Terms version the account accepted (the document's `updatedAt`). */
+  termsVersion?: string;
+  /** Feature 025 (R12): the Privacy Policy version the account accepted. */
+  privacyVersion?: string;
+  /** Feature 025: when — set by a database trigger to the server's clock, never by a client (U6). */
+  termsAcceptedAt?: number;
   createdAt: number;
   updatedAt: number;
 }
@@ -326,6 +332,12 @@ export interface Place {
    */
   covered?: boolean;
   /**
+   * When the team took the place off the catalog (feature 025, FR-026). Server-only; present = hidden.
+   * Must survive BOTH `listingToPlace` mappers (core and server) — `featuredPlaces` filters Places,
+   * not listings (feature 014's lesson: a field dropped by a mapper fails silently).
+   */
+  takenDownAt?: number;
+  /**
    * Owning provider, present only when `source === 'listing'`. Curated catalog
    * destinations have no owner, which is why the profile hides owner-only
    * affordances for them (feature 005).
@@ -433,6 +445,18 @@ export interface Listing {
    * Written only by the BFF's subscription service (FR-026/FR-027).
    */
   covered?: boolean;
+  /**
+   * When the team took the place off the catalog (feature 025, FR-026). Server-only; present = hidden.
+   * Must survive BOTH `listingToPlace` mappers (core and server) — `featuredPlaces` filters Places,
+   * not listings (feature 014's lesson: a field dropped by a mapper fails silently).
+   */
+  takenDownAt?: number;
+  /** Feature 025: from the address search when it provides one (research R10). Optional. */
+  municipality?: string;
+  /** Feature 025: optional, `http(s)://`, at most 200 characters (the database checks it). */
+  website?: string;
+  /** Feature 025: optional, at most 5 URLs. */
+  socialLinks?: string[];
   /**
    * Whether this owner may publish promotions to Ofertas (feature 018).
    *
@@ -825,6 +849,11 @@ export interface LaunchCampaignConfig {
   launchAt?: number;
   enrollmentWindowMonths: number;
   discountDays: number;
+  /**
+   * Feature 025: when set, the campaign lasts this many CALENDAR months (El Salvador calendar) and
+   * `discountDays` is ignored. Unset keeps feature 018's day count.
+   */
+  discountMonths?: number;
   updatedBy?: string;
   updatedAt?: number;
 }

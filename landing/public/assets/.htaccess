@@ -1,0 +1,7 @@
+# Everything Vite writes to `assets/` carries a content hash in its name
+# (index-DkPyoQ6C.js): a new build is a new URL, so the old one can be cached
+# forever. Copied from `public/assets/` into `dist/assets/` at build time, and it
+# overrides the parent folder's one-day rule for this folder only.
+<IfModule mod_headers.c>
+  Header set Cache-Control "public, max-age=31536000, immutable"
+</IfModule>

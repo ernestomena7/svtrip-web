@@ -22,11 +22,17 @@
   RewriteRule . index.html [L]
 </IfModule>
 
-# Fingerprinted assets are immutable; the HTML must never be cached, or a
-# visitor keeps the old app after a deploy and cannot be told otherwise.
+# Caching. The HTML must never be cached, or a visitor keeps the old app after a
+# deploy and cannot be told otherwise.
+#
+# Only FINGERPRINTED files may be immutable, and those live in `assets/` — that
+# folder has its own .htaccess with the one-year rule. Files at this level
+# (svtrip-wordmark.png, brand/*) keep the same name when their content changes,
+# so a year of `immutable` here meant a new logo would not reach a returning
+# visitor for a year. They get a day instead.
 <IfModule mod_headers.c>
-  <FilesMatch "\.(js|css|woff2|png|jpg|svg)$">
-    Header set Cache-Control "public, max-age=31536000, immutable"
+  <FilesMatch "\.(js|css|woff2|png|jpg|jpeg|webp|svg|ico)$">
+    Header set Cache-Control "public, max-age=86400"
   </FilesMatch>
   <FilesMatch "\.html$">
     Header set Cache-Control "no-cache"

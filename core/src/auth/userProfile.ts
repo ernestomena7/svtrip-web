@@ -81,6 +81,20 @@ export async function completeOnboarding(uid: string, vibes: string[]): Promise<
  * being grandfathered once it has been completed. Partial saves are supported (FR-020): undefined
  * fields are omitted rather than written as null.
  */
+/**
+ * Record which Terms and Privacy versions the account accepted (feature 025, research R12).
+ *
+ * Deliberately NOT through `saveProfileFields`: that stamps `profile_version`, and feature 020 measured
+ * that doing so to a grandfathered, incomplete account ejects it into the mandatory profile form. The
+ * acceptance time is set by a database trigger to the server's clock (U6), so it is not written here.
+ */
+export async function recordTermsAcceptance(
+  uid: string,
+  versions: { termsVersion: string; privacyVersion: string },
+): Promise<void> {
+  await patchProfile(uid, { termsVersion: versions.termsVersion, privacyVersion: versions.privacyVersion });
+}
+
 export async function saveProfileFields(
   uid: string,
   fields: Partial<Pick<UserProfile, 'firstName' | 'lastName' | 'gender' | 'age' | 'countryCode' | 'maritalStatus'>>,

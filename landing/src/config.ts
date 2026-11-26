@@ -39,5 +39,11 @@ export const APP_SIGN_IN_URL: string = envVar(
 /** Where a visitor who already has a session should land. */
 export const APP_URL: string = envVar('VITE_APP_URL', 'http://localhost:5175');
 
+/**
+ * Who a merchant writes to from the business page (feature 025, FR-002 section 6). The address the
+ * Privacy Policy already publishes (feature 022), so the product names one contact, not two.
+ */
+export const BUSINESS_CONTACT_EMAIL: string = envVar('VITE_BUSINESS_CONTACT_EMAIL', 'comercios@svtrip.com');
+
 /** The BFF, for the public featured endpoint. Nothing else is called from here. */
 export const API_BASE_URL: string = envVar('VITE_BFF_BASE_URL', 'http://localhost:8787/api');

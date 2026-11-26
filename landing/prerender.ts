@@ -13,12 +13,13 @@
 //
 // The showcase is deliberately absent from the prerendered markup: it depends on
 // a network call, so it hydrates client-side and its absence is a non-event.
-import { readFileSync, writeFileSync } from 'node:fs';
-import { resolve } from 'node:path';
+import { mkdirSync, readFileSync, writeFileSync } from 'node:fs';
+import { dirname, resolve } from 'node:path';
 import { renderToString } from 'react-dom/server';
 import { createElement } from 'react';
 import i18n from '@svtrip/core/i18n';
 import { App } from './src/App';
+import { BusinessPage } from './src/business/BusinessPage';
 
 // Resolved from the workspace root, not from this file: Vite compiles this
 // script into `dist-ssr/` (see the note in package.json's build script), so
@@ -89,6 +90,28 @@ async function main(): Promise<void> {
       throw new Error(`prerender produced an empty root for ${file} — the page would ship blank`);
     }
 
+    writeFileSync(resolve(dist, file), html, 'utf8');
+    console.log(`prerendered ${file} (${code}) — ${(html.length / 1024).toFixed(1)} kB`);
+  }
+
+  // Feature 025: the merchant page, one document per language at a clean address (.htaccess maps
+  // /negocios and /en/business to these files). Rendered with NO offer: the promotion and the prices
+  // are fetched at view time, so the shipped HTML can never promise a window that has closed (FR-007).
+  const BUSINESS = [
+    { code: 'es', file: 'negocios.html', path: '/negocios' },
+    { code: 'en', file: 'en/business.html', path: '/en/business' },
+  ] as const;
+  for (const { code, file, path } of BUSINESS) {
+    await i18n.changeLanguage(code);
+    const body = renderToString(createElement(BusinessPage));
+    const title = i18n.t('landing.business.meta.title');
+    const description = i18n.t('landing.business.meta.description');
+    const html = template
+      .replace('<html lang="es">', `<html lang="${code}">`)
+      .replace(/<title>[\s\S]*?<\/title>\s*<meta name="description"[^>]*\/>/, head(code, title, description, `${SITE_URL}${path}`))
+      .replace('<div id="root"></div>', `<div id="root">${body}</div>`);
+    if (html.includes('<div id="root"></div>')) throw new Error(`prerender produced an empty root for ${file}`);
+    mkdirSync(dirname(resolve(dist, file)), { recursive: true });
     writeFileSync(resolve(dist, file), html, 'utf8');
     console.log(`prerendered ${file} (${code}) — ${(html.length / 1024).toFixed(1)} kB`);
   }

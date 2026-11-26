@@ -41,7 +41,8 @@ interface TableSpec {
 }
 
 export const TABLES: Record<string, TableSpec> = {
-  listings: { idField: 'listingId', times: ['created_at', 'updated_at'] },
+  listings: { idField: 'listingId', times: ['created_at', 'updated_at', 'taken_down_at'] },
+  business_registrations: { idField: 'registrationId', times: ['enrolled_at', 'free_until', 'welcome_sent_at'] },
   places: { idField: 'placeId', times: [] },
   events: { idField: 'eventId', times: ['start_at', 'end_at'] },
   deals: { idField: 'dealId', times: ['active_from', 'active_to', 'updated_at'] },
@@ -123,6 +124,9 @@ export function profileFromRow(r: Row): UserProfile {
     maritalStatus: opt(r.marital_status),
     phone: opt(r.phone),
     profileVersion: opt(r.profile_version),
+    termsVersion: opt(r.terms_version),
+    privacyVersion: opt(r.privacy_version),
+    termsAcceptedAt: ms(r.terms_accepted_at as string),
     createdAt: ms(r.created_at as string) ?? 0,
     updatedAt: ms(r.updated_at as string) ?? 0,
   };
@@ -134,6 +138,9 @@ const PROFILE_COLUMNS: Record<string, string> = {
   onboardingComplete: 'onboarding_complete', preferences: 'preferences', firstName: 'first_name',
   lastName: 'last_name', gender: 'gender', age: 'age', countryCode: 'country_code',
   maritalStatus: 'marital_status', phone: 'phone', profileVersion: 'profile_version',
+  // Feature 025. `termsAcceptedAt` is deliberately ABSENT: the database trigger sets it, and a client
+  // write of it alone is refused — so a patch naming it throws here, before it ever reaches the server.
+  termsVersion: 'terms_version', privacyVersion: 'privacy_version',
 };
 
 export function profilePatch(patch: Partial<UserProfile> & { updatedAt?: number }): Row {

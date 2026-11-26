@@ -38,6 +38,14 @@ export function Hero() {
             never a functional problem. */}
         <img
           src="/hero-beach.jpg"
+          // object-cover crops to the box's HEIGHT on a phone: a 350x418 box needs ~750 CSS px of
+          // image width, ~1500 real pixels at 2x — measured, which is why there is no 768/1280
+          // version (they would look soft). 1600 serves phones and tablets (212 KB vs 291 KB);
+          // only wide or high-density desktops take the 1920 original.
+          srcSet="/hero-beach-1600.jpg 1600w, /hero-beach.jpg 1920w"
+          sizes="(max-width: 767px) 750px, 100vw"
+          width={1920}
+          height={1072}
           alt=""
           fetchPriority="high"
           loading="eager"

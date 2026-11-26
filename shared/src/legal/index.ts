@@ -16,6 +16,15 @@ export type { LegalDocument, LegalSection, LegalDocumentId, LegalLanguage } from
 
 export const LEGAL_DOCUMENTS: readonly LegalDocument[] = [privacyEs, privacyEn, termsEs, termsEn];
 
+/**
+ * The versions a merchant accepts at registration (feature 025, R12): each document's `updatedAt`.
+ * The Spanish and English texts share it (enforced by `compareDocuments`), so either language answers.
+ */
+export function currentLegalVersions(): { terms: string; privacy: string } {
+  const of = (id: LegalDocumentId) => LEGAL_DOCUMENTS.find((d) => d.id === id)!.updatedAt;
+  return { terms: of('terms'), privacy: of('privacy') };
+}
+
 export function getLegalDocument(
   id: LegalDocumentId,
   language: LegalLanguage,

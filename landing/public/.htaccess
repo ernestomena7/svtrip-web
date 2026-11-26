@@ -1,0 +1,24 @@
+# Feature 025: clean addresses for the merchant page. The invitation email links to
+# svtrip.com/negocios (EN /en/business); the prerender writes negocios.html and en/business.html.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteRule ^negocios/?$ negocios.html [L]
+  RewriteRule ^en/business/?$ en/business.html [L]
+</IfModule>
+
+# Caching for the landing (svtrip.com). The HTML must never be cached, or a visitor
+# keeps the old page after a deploy.
+#
+# Only FINGERPRINTED files may be immutable, and those live in `assets/`, which has
+# its own .htaccess with the one-year rule. Files at this level (svtrip-wordmark.png,
+# hero-beach*.jpg, og-image.png, brand/*) keep their name when their content
+# changes, so a year of `immutable` here meant a new logo or hero would not reach a
+# returning visitor for a year. They get a day instead.
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js|css|woff2|png|jpg|jpeg|webp|svg|ico)$">
+    Header set Cache-Control "public, max-age=86400"
+  </FilesMatch>
+  <FilesMatch "\.html$">
+    Header set Cache-Control "no-cache"
+  </FilesMatch>
+</IfModule>

@@ -35,6 +35,7 @@ export function listingToPlace(l: Listing): Place {
     source: 'listing',
     boosted: l.boosted === true,
     covered: l.covered,
+    takenDownAt: l.takenDownAt,
     // Carried through so the profile can show owner-only affordances and the
     // real review aggregate rather than the legacy `rating` field (feature 005).
     ownerUid: l.ownerUid,

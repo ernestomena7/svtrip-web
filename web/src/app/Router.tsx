@@ -30,6 +30,7 @@ import { PreviewScreen } from '../public/PreviewScreen';
 import { PublicPlaceScreen } from '../public/PublicPlaceScreen';
 import { postJson } from '@svtrip/core/apiClient';
 import { captureAssistantArrival, reportAssistantArrival } from './assistantSignup';
+import { isSignupPath } from '../signup/signupContext';
 import { SignInScreen } from '../auth/SignInScreen';
 import { RegisterScreen } from '../auth/RegisterScreen';
 import { ForgotPasswordScreen } from '../auth/ForgotPasswordScreen';
@@ -81,6 +82,11 @@ const ProfileScreen = lazy(() =>
 // and a traveler who never switches personas must not download a map library.
 const DashboardScreen = lazy(() =>
   import('../business/DashboardScreen').then((m) => ({ default: m.DashboardScreen })),
+);
+// Feature 025: the merchant enrolment. Lazy like every heavy screen — it carries the map and the hours
+// editor, and `check:web-weight` holds the first download to a budget.
+const BusinessSignupScreen = lazy(() =>
+  import('../signup/BusinessSignupScreen').then((m) => ({ default: m.BusinessSignupScreen })),
 );
 const MyBusinessesScreen = lazy(() =>
   import('../business/MyBusinessesScreen').then((m) => ({ default: m.MyBusinessesScreen })),
@@ -207,12 +213,27 @@ function SignedInRoutes() {
 
 function AppRoutes() {
   const { user, profile, loading } = useAuth();
+  const { pathname } = useLocation();
+  const persona = useUiStore((s) => s.persona);
 
   // Feature 024 (T020): note an arrival from an assistant's link, and report it once signed in.
   useEffect(() => captureAssistantArrival(window.location.search), []);
   useEffect(() => {
     if (user) void reportAssistantArrival(postJson);
   }, [user]);
+
+  // Feature 025 (research R1a): the merchant enrolment runs ABOVE everything below — the loading
+  // branch, the signed-out tree and both first-run gates. The account exists the instant Step 1 calls
+  // sign-up (production auto-confirms, R2), so without this a new merchant is sent to complete a
+  // traveler profile and then to choose traveler moods before ever reaching Step 2. The screen owns its
+  // own loading state and collects the profile fields itself.
+  if (isSignupPath(pathname)) {
+    return (
+      <Suspense fallback={<Loading />}>
+        <BusinessSignupScreen />
+      </Suspense>
+    );
+  }
 
   // FR-013: wait for the SDK to restore the session. Rendering the signed-out
   // tree here would flash the preview screen on every reload for a signed-in
@@ -248,7 +269,12 @@ function AppRoutes() {
   // exactly one is not `true` — the one created while testing this flow. Adding
   // a grandfathering condition here would instead permanently exempt the only
   // accounts that genuinely never chose.
-  if (profile && !profile.onboardingComplete) {
+  //
+  // Feature 025 (R1a.2): NOT in merchant mode. A merchant who just enrolled and taps "Ir a mi negocio"
+  // must reach the business, not be asked for TRAVELER moods. The same account opening the traveler
+  // side is asked then — which is the right moment. Persona is per device (UI state), so this changes
+  // no data and `onboardingComplete` is still written only by the onboarding flow (feature 009).
+  if (profile && !profile.onboardingComplete && persona !== 'provider') {
     return (
       <Suspense fallback={<Loading />}>
         <ChooseMoodsScreen />

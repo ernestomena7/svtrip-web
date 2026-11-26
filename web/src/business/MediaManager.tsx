@@ -106,7 +106,7 @@ export function MediaManager({
       <div className="flex flex-wrap gap-3">
         {urls.map((url, i) => (
           <div key={url} className={cx('group relative overflow-hidden rounded-md', BOX[aspect])}>
-            <img src={url} alt="" className="h-full w-full object-cover" />
+            <img src={url} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />
 
             <button
               type="button"

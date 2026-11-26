@@ -9,6 +9,14 @@
     <meta name="description" content="Descubrí qué hacer en El Salvador: playas, volcanes, pueblos y la mejor comida." />
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Linked here, in parallel with the page (it was an @import inside the bundled CSS). Only the
+         weights the landing renders: Poppins 500/700/800 (headings with no weight class resolve to
+         500, as today), Nunito 400/500/700/800 (one font-medium). Outside the title..description
+         block on purpose: prerender.ts replaces that block wholesale. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&family=Nunito:wght@400;500;700;800&display=swap"
+    />
     <!-- Same icon the mobile app declares, so all three surfaces show one
          brand mark. Downscaled to 180px (34 KB) rather than reusing the
          1024px original (812 KB): a browser requests this on every page load

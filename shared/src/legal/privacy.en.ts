@@ -17,7 +17,7 @@ export const privacyEn: LegalDocument = {
   id: 'privacy',
   language: 'en',
   title: 'Privacy policy',
-  updatedAt: '2026-11-14',
+  updatedAt: '2026-11-25',
   sections: [
     {
       id: 'data-collected',
@@ -27,6 +27,7 @@ export const privacyEn: LegalDocument = {
         'From your account: your email address, your first and last name, your age (not your date of birth), your gender, your country of residence and, if you choose, your marital status. If you sign in with Google, also your profile picture. If you make a reservation and leave a phone number, we save it on your profile for next time.',
         'From what you do: the places you save as favorites; the Trips you build, with their dates and the places you plan to visit; your mood preferences; and a record of which places the guide has shown you, which exists so it does not repeat itself.',
         'If you run a business: your business and subscription details (the plan, its dates and whether payment is up to date), and the requests you make to manage a business, which include your name and an optional message you write.',
+        'When you register a business from the businesses page, we also keep: the address and municipality, the website and social links if you add them, the moods and type of business, the date and time of registration, whether you received the free period and when it ends, the language you used, the link you came from (for example, the one in an invitation email), and which version of the terms and of this policy you accepted and when. We send you a welcome email and keep when it was sent.',
         'When someone reports a review, we keep who reported it and the reason if they wrote one. Only the SVTrip team can see that record, and no screen in the app shows it.',
         'If you turn on notifications on your phone, we keep, with your account, the identifier Google uses to deliver notifications to that phone. We use it only to tell you about your reservations. It is deleted when you sign out on that phone, and also when it stops working. If you do not turn notifications on, we keep nothing.',
         'Your account data, favorites, Trips and conversations are stored under your account and can only be read from it.',
@@ -68,6 +69,7 @@ export const privacyEn: LegalDocument = {
         'Our server runs on Google Cloud, also in the United States: the requests the app makes to it (for example, when you request a reservation or post a review) pass through it. If you sign in with your Google account, Google confirms who you are and gives us your name and email.',
         'If you turn on notifications, each reservation notification is delivered through Firebase Cloud Messaging, Google’s notification service for Android. Google receives your phone’s identifier and the text of the notification: for example, the business name, the date of your reservation and, if the business wrote you a message when declining it, that message.',
         'The app’s typefaces are loaded from Google Fonts. That means your IP address reaches Google every time a page loads, before anything is drawn, including on the public page where no account exists yet. We state it because it is not something you can choose.',
+        'The welcome email sent to businesses goes out from comercios@svtrip.com through Hostinger, our domain and email provider, which receives your email address and the content of the message in order to deliver it.',
         'Maps are loaded from OpenFreeMap, which receives your IP address and the approximate area you are viewing each time a map is shown.',
         'If a business searches for an address to place itself, the text of that search is sent to MapTiler through our server.',
         'When you tap "Directions", the destination’s coordinates open in Google Maps. When you tap to contact a business on WhatsApp, WhatsApp opens with that business’s number. In both cases you leave SVTrip through an action of your own.',
@@ -97,7 +99,7 @@ export const privacyEn: LegalDocument = {
       heading: 'Your choices and how to ask us to delete your data',
       body: [
         'You can edit your profile, favorites, Trips and moods from the app at any time.',
-        'To ask us to delete your account and your data, write to ernesto@svtrip.com. A person handles it by hand: there is not yet a button in the app to do it.',
+        'To ask us to delete your account and your data, write to comercios@svtrip.com. A person handles it by hand: there is not yet a button in the app to do it.',
         'We do not set a response time because there is no process behind it that we could measure. We would rather tell you that than promise a number we cannot keep.',
         'We do not yet offer a way to download a copy of your data.',
       ],
@@ -106,7 +108,7 @@ export const privacyEn: LegalDocument = {
       id: 'contact',
       heading: 'Contact',
       body: [
-        'For any question about this policy or about your data, write to ernesto@svtrip.com.',
+        'For any question about this policy or about your data, write to comercios@svtrip.com.',
         'SVTrip is intended for people aged 13 or over.',
       ],
     },

@@ -15,6 +15,7 @@
 // subscription reaches `active` in production, which is why US5 is P2.
 import { useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePlanName } from '@svtrip/core/repos/planNames';
 import { COMMERCIAL_PLANS, type PlanCode, type SubscriptionState } from '@svtrip/shared';
 import { getJson, patchJson, putJson } from '@svtrip/core/apiClient';
 import { Button, Card, Field, Spinner, TextInput, cx } from '../components/ui';
@@ -245,6 +246,7 @@ function PriceRow({
   onSave: (code: PlanCode, price: number) => Promise<void>;
 }) {
   const { t } = useTranslation();
+  const planName = usePlanName();
   const [value, setValue] = useState(String(plan.monthlyPriceUsd));
   const parsed = Number(value);
   // Refused in the UI as well as in the service: Decision 1 of the source
@@ -253,7 +255,7 @@ function PriceRow({
 
   return (
     <div className="flex items-end gap-3">
-      <Field label={t(`subscription.plans.${plan.code}`)}>
+      <Field label={planName(plan.code)}>
         <TextInput inputMode="decimal" value={value} onChange={(e) => setValue(e.target.value)} />
       </Field>
       <Button

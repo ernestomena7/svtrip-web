@@ -60,7 +60,7 @@ export function WebNav({
           className="shrink-0"
           aria-label="SVTrip"
         >
-          <img src={WORDMARK} alt="SVTrip" className="h-9 w-auto" />
+          <img src={WORDMARK} alt="SVTrip" width={323} height={160} className="h-9 w-auto" />
         </button>
 
         {/* Hidden on narrow screens: the same destinations live in the drawer

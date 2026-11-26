@@ -10,6 +10,7 @@
 // bottom still says so out loud rather than letting the screen imply otherwise.
 import { useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
+import { usePlanName } from '@svtrip/core/repos/planNames';
 import {
   COMMERCIAL_PLANS,
   PLAN_ENTITLEMENTS,
@@ -74,6 +75,7 @@ const STATE_STYLE: Record<SubscriptionState, { tone: BadgeTone; icon: IconName }
 
 export function SubscriptionScreen() {
   const { t, i18n } = useTranslation();
+  const planName = usePlanName();
   const { planCode, state, subscription, loading, managedPlaceIds, coveredPlaceIds } =
     useEntitlements();
   const [catalog, setCatalog] = useState<PlanCatalog | null>(null);
@@ -149,7 +151,7 @@ export function SubscriptionScreen() {
       {error && error !== 'load' && (
         <p className="mt-6 rounded-md bg-surface-2 px-3.5 py-2.5 text-sm font-bold text-primary">
           {error === 'chooseCoveredPlace'
-            ? t('subscription.chooseCoveredPlace')
+            ? t('subscription.chooseCoveredPlace', { plan: planName('basico') })
             : t('common.somethingWrong')}
         </p>
       )}
@@ -159,7 +161,7 @@ export function SubscriptionScreen() {
         <Card className="mt-6 flex flex-col gap-2 p-6 md:flex-row md:items-center md:justify-between">
           <div className="flex items-center gap-3">
             <h2 className="font-display text-lg font-extrabold text-text">
-              {t(`subscription.plans.${subscription.planCode}`)}
+              {planName(subscription.planCode)}
             </h2>
             <Badge tone={STATE_STYLE[state].tone} icon={STATE_STYLE[state].icon}>
               {t(`subscription.states.${state}`)}
@@ -224,7 +226,7 @@ export function SubscriptionScreen() {
                   )}
 
                   <div>
-                    <p className="eyebrow">{t(`subscription.plans.${code}`)}</p>
+                    <p className="eyebrow">{planName(code)}</p>
                     <p className="mt-2 font-display text-3xl font-extrabold tabular-nums text-text">
                       ${campaign.toFixed(2)}
                       <span className="text-sm font-bold text-muted">
@@ -274,7 +276,7 @@ export function SubscriptionScreen() {
                       ? t('subscription.current')
                       : saving === code
                         ? t('common.loading')
-                        : t('subscription.choose', { plan: t(`subscription.plans.${code}`) })}
+                        : t('subscription.choose', { plan: planName(code) })}
                   </Button>
                 </Card>
               );
@@ -289,7 +291,7 @@ export function SubscriptionScreen() {
         {choosing && (
           <Card className="space-y-3 p-5">
             <h2 className="font-display text-base font-extrabold text-text">
-              {t('subscription.coveredPlaceTitle')}
+              {t('subscription.coveredPlaceTitle', { plan: planName('basico') })}
             </h2>
             <p className="text-sm text-muted">{t('subscription.coveredPlaceHint')}</p>
             <div className="space-y-2">

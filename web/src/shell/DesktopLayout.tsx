@@ -37,7 +37,7 @@ export function DesktopLayout({
       </main>
       <footer className="bg-dusk">
         <div className="mx-auto flex max-w-7xl flex-col gap-4 px-5 py-8 md:flex-row md:items-center md:justify-between md:px-10">
-          <img src={WORDMARK} alt="SVTrip" className="h-9 w-auto self-start" />
+          <img src={WORDMARK} alt="SVTrip" width={323} height={160} className="h-9 w-auto self-start" />
           <span className="text-[13px] font-bold text-white/70">{t('web.footer.tagline')}</span>
         </div>
       </footer>

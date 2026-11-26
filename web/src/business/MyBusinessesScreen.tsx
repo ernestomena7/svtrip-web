@@ -113,7 +113,7 @@ export function MyBusinessesScreen() {
               <Card key={listing.listingId} className="overflow-hidden">
                 <div className="flex flex-col gap-4 p-5 md:flex-row md:items-start">
                   <div className="h-24 w-32 shrink-0 overflow-hidden rounded-md bg-sunset">
-                    {cover && <img src={cover} alt="" className="h-full w-full object-cover" />}
+                    {cover && <img src={cover} alt="" loading="lazy" decoding="async" className="h-full w-full object-cover" />}
                   </div>
 
                   <div className="min-w-0 flex-1">

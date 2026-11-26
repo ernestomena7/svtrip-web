@@ -17,7 +17,7 @@
 //    a bilingual editor exists. Baking it in would make US2 enforce a rule it was
 //    declared not to have, and would gate publication on an editor that does not
 //    exist yet (Constitution IV — independent slices).
-import { isLocalizedComplete, type LocalizedText } from './i18nContent.js';
+import { hasAnyLanguage, type LocalizedText } from './i18nContent.js';
 import type { BusinessType } from './businessTypes.js';
 
 /**
@@ -52,23 +52,15 @@ export interface PublishableEntry {
    * the whole safety of denormalizing it.
    */
   covered?: boolean;
+  /**
+   * When the team took the place off the catalog (feature 025, FR-026). Server-only — the listing
+   * guard refuses an owner who sets or clears it. Present = hidden, whatever else is true.
+   */
+  takenDownAt?: number;
 }
 
 export type MissingRequirement = 'photo' | 'businessType' | 'name' | 'description';
 
-export interface PublicationOptions {
-  /**
-   * Defaults to **on** since US3 shipped the bilingual editor (T043a).
-   *
-   * It stayed off through US2 so that story could not accidentally enforce a
-   * rule it was declared not to have, and so publication was never gated on an
-   * editor that did not exist yet. It remains a parameter rather than becoming
-   * a hardcoded clause because the tests need to pin both behaviors — and
-   * because the day this has to be turned off again, it should be one argument
-   * and not a rewrite.
-   */
-  requireBothLanguages?: boolean;
-}
 
 /** An entry authored before feature 006. Exempt from the minimums until saved. */
 export function isLegacy(entry: PublishableEntry): boolean {
@@ -86,25 +78,39 @@ function photoCount(entry: PublishableEntry): number {
  * manager what is missing, and revealing one item at a time turns finishing a
  * profile into a guessing game.
  */
-export function missingRequirements(
-  entry: PublishableEntry,
-  { requireBothLanguages = true }: PublicationOptions = {},
-): MissingRequirement[] {
+export function missingRequirements(entry: PublishableEntry): MissingRequirement[] {
   if (isLegacy(entry)) return [];
 
   const missing: MissingRequirement[] = [];
   if (photoCount(entry) < 1) missing.push('photo');
   if (!entry.businessType) missing.push('businessType');
-  if (requireBothLanguages) {
-    if (!isLocalizedComplete(entry.nameI18n)) missing.push('name');
-    if (!isLocalizedComplete(entry.descriptionI18n)) missing.push('description');
-  }
+  // ONE language is enough (feature 025, research R16 — the product owner's decision of 2026-11-24).
+  // It used to require BOTH, behind a `requireBothLanguages` option defaulting to on; a business
+  // registered through 025's one-language form would then never be visible. The missing language is
+  // now a recommendation (`recommendedTranslations`), never a reason to hide.
+  if (!hasAnyLanguage(entry.nameI18n)) missing.push('name');
+  if (!hasAnyLanguage(entry.descriptionI18n)) missing.push('description');
   return missing;
 }
 
+export interface RecommendedTranslations {
+  name: Array<'es' | 'en'>;
+  description: Array<'es' | 'en'>;
+}
+
+/**
+ * The languages missing from name and description (feature 025, FR-017a) — shown to the merchant as a
+ * recommendation, never as a reason the place is hidden.
+ */
+export function recommendedTranslations(entry: PublishableEntry): RecommendedTranslations {
+  const missingOf = (value: LocalizedText | undefined): Array<'es' | 'en'> =>
+    (['es', 'en'] as const).filter((lang) => !value?.[lang]?.trim());
+  return { name: missingOf(entry.nameI18n), description: missingOf(entry.descriptionI18n) };
+}
+
 /** Whether the entry meets the content floor. Says nothing about the owner's intent. */
-export function isPublishable(entry: PublishableEntry, options: PublicationOptions = {}): boolean {
-  return missingRequirements(entry, options).length === 0;
+export function isPublishable(entry: PublishableEntry): boolean {
+  return missingRequirements(entry).length === 0;
 }
 
 /**
@@ -115,11 +121,8 @@ export function isPublishable(entry: PublishableEntry, options: PublicationOptio
  * unpublished-by-choice business and an unfinished one look identical to a
  * traveler and must not look identical to their manager.
  */
-export function publicVisibility(
-  entry: PublishableEntry,
-  options: PublicationOptions = {},
-): boolean {
-  return entry.active !== false && isPublishable(entry, options);
+export function publicVisibility(entry: PublishableEntry): boolean {
+  return entry.active !== false && isPublishable(entry);
 }
 
 /**
@@ -144,11 +147,8 @@ export function publicVisibility(
  * exists for the same reason: a field this product adds must not retroactively
  * condemn every record written before it.
  */
-export function travelerVisible(
-  entry: PublishableEntry,
-  options: PublicationOptions = {},
-): boolean {
-  return entry.covered !== false && publicVisibility(entry, options);
+export function travelerVisible(entry: PublishableEntry): boolean {
+  return entry.covered !== false && entry.takenDownAt === undefined && publicVisibility(entry);
 }
 
 /**
@@ -186,10 +186,9 @@ export function travelerVisible(
 export function offerVisible(
   deal: { inOfertas?: boolean },
   listing: (PublishableEntry & { offersEligible?: boolean }) | undefined,
-  options: PublicationOptions = {},
 ): boolean {
   if (!listing) return false;
   if (deal.inOfertas === false) return false;
   if (listing.offersEligible === false) return false;
-  return travelerVisible(listing, options);
+  return travelerVisible(listing);
 }

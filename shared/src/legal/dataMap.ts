@@ -94,6 +94,11 @@ export const DATA_MAP: Record<string, DataMapEntry> = {
     section: 'data-collected',
     holds: 'Profiles imported at feature 023 that had no login account (R7). Kept, readable by nobody.',
   },
+  business_registrations: {
+    section: 'data-collected',
+    holds:
+      'Feature 025: one record per merchant enrolment — the account, the business, its type and mood, when it enrolled, the link it came from, the language, whether the launch promotion applied and when it ends. Read by its owner; written by the server.',
+  },
 };
 
 export const NOT_PERSONAL: Record<string, string> = {
@@ -107,6 +112,8 @@ export const NOT_PERSONAL: Record<string, string> = {
   launch_campaign: 'A single campaign window configuration. Not tied to anyone.',
   assistant_usage_daily:
     'Feature 024: daily totals of AI-assistant usage per tool and per stated context value — (day, metric, value, count) has no column for a person, an IP or a query (FR-026).',
+  business_signup_daily:
+    'Feature 025: daily totals of the merchant sign-up page per step and per link origin — (day, origin, step, count) has no column for a person, an IP or an address (SC-009).',
 };
 
 /**

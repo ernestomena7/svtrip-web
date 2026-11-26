@@ -22,7 +22,7 @@ export const termsEs: LegalDocument = {
   id: 'terms',
   language: 'es',
   title: 'Términos de servicio',
-  updatedAt: '2026-10-19',
+  updatedAt: '2026-11-25',
   sections: [
     {
       id: 'what-svtrip-is',
@@ -56,6 +56,21 @@ export const termsEs: LegalDocument = {
         'Nos reservamos el derecho de ocultar o quitar contenido que sea falso, engañoso, ofensivo o que no le corresponda a quien lo publicó. Hoy no hay un proceso automático de revisión: lo hace una persona del equipo cuando se entera.',
         'Las reseñas las escriben los viajeros. Un negocio puede responderlas, pero no modificarlas ni borrarlas.',
         'La visibilidad de un negocio puede depender del estado de su suscripción.',
+      ],
+    },
+    {
+      id: 'merchant-membership',
+      heading: 'Membresía de los negocios',
+      source:
+        'specs/025-business-signup/spec.md (FR-006, FR-006a, FR-008, FR-009, FR-012, FR-029); specs/018-merchant-subscription-plans (estados y visibilidad); shared/src/subscriptions.ts (precios por defecto).',
+      body: [
+        'Un negocio puede registrarse en SVTrip desde la página para comercios. Al registrarse, el negocio se publica sin revisión previa del equipo, y quien lo registra declara que tiene derecho a hacerlo.',
+        'El plan Standard cuesta $30 al mes y el plan Premium $50 al mes. Los precios vigentes se muestran siempre en la página para comercios y en la aplicación; si cambian, los vas a ver antes de elegir un plan.',
+        'Durante un período de lanzamiento, los negocios que se registran reciben una membresía Premium sin costo por un tiempo determinado, contado desde la fecha de su inscripción. Las fechas y la duración de ese período se muestran en la página para comercios mientras esté vigente. Esa membresía gratis incluye todo lo del plan Premium excepto el lugar destacado en el catálogo, que empieza cuando elegís pagar.',
+        'No hay cobro automático: SVTrip no guarda medios de pago ni cobra por su cuenta. En tu panel vas a ver cuántos días te quedan del período gratis.',
+        'Cuando el período gratis termina y el negocio no tiene un plan pagado, después de un breve período de gracia deja de mostrarse a los viajeros. No se borra nada: tus datos y tu perfil siguen guardados, y el negocio vuelve a mostrarse cuando un plan lo cubre.',
+        'Quien se registra después de que termina el período de lanzamiento no recibe la membresía gratis, y su negocio se muestra a los viajeros solo cuando un plan lo cubre.',
+        'Para registrar un negocio tenés que aceptar estos términos y la política de privacidad. Guardamos qué versión aceptaste y cuándo.',
       ],
     },
     {

@@ -39,7 +39,9 @@ export async function postJson<T>(path: string, body: unknown): Promise<T> {
   });
   if (!res.ok) {
     const err = await res.json().catch(() => ({ error: res.statusText, code: 'error' }));
-    throw Object.assign(new Error(err.error ?? 'Request failed'), { code: err.code, status: res.status });
+    // `details` keeps the whole error body (feature 025): the sign-up form needs `issues` to mark fields
+    // and `listingId` to open the business an earlier attempt already created.
+    throw Object.assign(new Error(err.error ?? 'Request failed'), { code: err.code, status: res.status, details: err });
   }
   return res.json() as Promise<T>;
 }

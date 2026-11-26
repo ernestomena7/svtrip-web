@@ -12,20 +12,30 @@ export function AuthShell({
   subtitle,
   children,
   footer,
+  eyebrow,
+  width = 'md',
 }: {
   title: string;
   subtitle?: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** Small tracked kicker above the title — e.g. "Paso 1 de 2" (feature 025). */
+  eyebrow?: string;
+  /**
+   * `xl` for a form that carries a map and an hours table (feature 025's business step). Same frame,
+   * wider column — extended here rather than copied, so the product keeps ONE auth frame.
+   */
+  width?: 'md' | 'xl';
 }) {
   return (
     <div className="relative flex min-h-[100dvh] items-center justify-center overflow-hidden bg-dusk px-5 py-12">
       <div className="pointer-events-none absolute -right-24 -top-24 h-72 w-72 rounded-full bg-sunset opacity-30 blur-2xl" />
       <div className="pointer-events-none absolute -bottom-28 -left-16 h-64 w-64 rounded-full bg-gold-gradient opacity-20 blur-2xl" />
 
-      <div className="relative w-full max-w-md">
-        <img src={WORDMARK} alt="SVTrip" className="mx-auto h-12 w-auto" />
+      <div className={width === 'xl' ? 'relative w-full max-w-2xl' : 'relative w-full max-w-md'}>
+        <img src={WORDMARK} alt="SVTrip" width={323} height={160} className="mx-auto h-12 w-auto" />
         <div className="mt-8 rounded-xl bg-surface p-7 shadow-lg md:p-9">
+          {eyebrow && <p className="eyebrow mb-2 text-primary">{eyebrow}</p>}
           <h1 className="font-display text-2xl font-extrabold tracking-[-0.02em] text-text">
             {title}
           </h1>

@@ -6,7 +6,8 @@
 // publish it, see nothing on the Deals hub, and have no idea why. So the refusal
 // says exactly that instead of failing quietly.
 import { useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import { usePlanName } from '@svtrip/core/repos/planNames';
 import { useEntitlements } from '@svtrip/core/repos/useEntitlements';
 import { Icon } from '@svtrip/core/Icon';
 import type { Deal } from '@svtrip/shared';
@@ -30,6 +31,7 @@ export function DealForm({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const planName = usePlanName();
   // FR-013. The ENTITLEMENT is the rule; the checkbox is only the
   // merchant's preference within it.
   const { entitlements } = useEntitlements();
@@ -173,7 +175,7 @@ export function DealForm({
             </span>
             <div className="min-w-0">
               <p className="text-sm font-bold text-text">{t('subscription.offersLocked')}</p>
-              <p className="mt-0.5 text-xs text-muted">{t('subscription.offersLockedHint')}</p>
+              <p className="mt-0.5 text-xs text-muted">{t('subscription.offersLockedHint', { plan: planName('basico') })}</p>
             </div>
           </div>
         </div>

@@ -6,7 +6,10 @@ import { useTranslation } from 'react-i18next';
 import type { OpeningHour } from '@svtrip/shared';
 import { Button, cx } from '../components/ui';
 
-const DAY_KEYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+// The locale files key the days `sun`..`sat` (the profile screens read them that way). This list used to say
+// 'sunday'..'saturday', so every lookup missed and the literal English word was painted in BOTH languages —
+// a Spanish merchant saw "sunday" in the hours editor (found by feature 025's T033, 2026-11-25).
+const DAY_KEYS = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'];
 
 export function defaultOpeningHours(): OpeningHour[] {
   return DAY_KEYS.map((_, day) => ({ day, open: '09:00', close: '17:00', closed: false }));

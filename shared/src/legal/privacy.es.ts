@@ -21,7 +21,7 @@ export const privacyEs: LegalDocument = {
   id: 'privacy',
   language: 'es',
   title: 'Política de privacidad',
-  updatedAt: '2026-11-14',
+  updatedAt: '2026-11-25',
   sections: [
     {
       id: 'data-collected',
@@ -33,6 +33,7 @@ export const privacyEs: LegalDocument = {
         'De tu cuenta: tu correo electrónico, tu nombre y apellido, tu edad (no tu fecha de nacimiento), tu género, tu país de residencia y, si querés, tu estado civil. Si entrás con Google, también la foto de tu perfil. Si hacés una reserva y dejás un teléfono, lo guardamos en tu perfil para la próxima vez.',
         'De lo que hacés: los lugares que guardás como favoritos; los Trips que armás, con sus fechas y los lugares que pensás visitar; tus preferencias de moods; y un registro de qué lugares te mostró el guía, que sirve para que no te repita lo mismo.',
         'Si tenés un negocio: los datos de tu negocio y de tu suscripción (el plan, sus fechas y si el pago está al día), y las solicitudes que hacés para administrar un negocio, que incluyen tu nombre y un mensaje opcional que escribas.',
+        'Cuando registrás un negocio desde la página para comercios, además guardamos: la dirección y el municipio, el sitio web y las redes sociales si los agregás, los moods y el tipo de negocio, la fecha y hora de la inscripción, si recibiste el período gratis y cuándo termina, el idioma que usaste, el enlace por el que llegaste (por ejemplo, el de un correo de invitación), y qué versión de los términos y de esta política aceptaste y cuándo. Te enviamos un correo de bienvenida y guardamos cuándo se envió.',
         'Cuando alguien denuncia una reseña, guardamos quién la denunció y el motivo si lo escribió. Ese registro lo ve únicamente el equipo de SVTrip y ninguna pantalla de la aplicación lo muestra.',
         'Si activás los avisos en el teléfono, guardamos junto a tu cuenta el identificador que Google usa para entregarle notificaciones a ese teléfono. Lo usamos solo para avisarte de tus reservas. Se borra cuando cerrás sesión en ese teléfono, y también cuando deja de funcionar. Si no activás los avisos, no guardamos nada.',
         'Tus datos de cuenta, favoritos, Trips y conversaciones están guardados bajo tu cuenta y solo se pueden leer desde ella.',
@@ -82,6 +83,7 @@ export const privacyEs: LegalDocument = {
         'Nuestro servidor funciona en Google Cloud, también en Estados Unidos: las solicitudes que la aplicación le hace (por ejemplo, al pedir una reserva o publicar una reseña) pasan por ahí. Si entrás con tu cuenta de Google, Google confirma tu identidad y nos entrega tu nombre y tu correo.',
         'Si activás los avisos, cada notificación de una reserva se entrega a través de Firebase Cloud Messaging, el servicio de Google para notificaciones en Android. Google recibe el identificador de tu teléfono y el texto del aviso: por ejemplo, el nombre del negocio, la fecha de tu reserva y, si el negocio te escribió un mensaje al rechazarla, ese mensaje.',
         'Las fuentes tipográficas de la aplicación se cargan desde Google Fonts. Eso significa que tu dirección IP llega a Google cada vez que se carga una página, antes de que se dibuje nada, y también en la página pública donde todavía no existe una cuenta. Lo declaramos porque no es algo que puedas elegir.',
+        'El correo de bienvenida de los negocios sale desde comercios@svtrip.com a través de Hostinger, nuestro proveedor de dominio y correo, que recibe tu dirección de correo y el contenido del mensaje para entregarlo.',
         'Los mapas se cargan desde OpenFreeMap, que recibe tu dirección IP y la zona aproximada que estás viendo cada vez que se muestra un mapa.',
         'Si un negocio busca una dirección para ubicarse, el texto de esa búsqueda se envía a MapTiler a través de nuestro servidor.',
         'Cuando tocás "Cómo llegar", las coordenadas del destino se abren en Google Maps. Cuando tocás para contactar a un negocio por WhatsApp, se abre WhatsApp con el número de ese negocio. En ambos casos salís de SVTrip por una acción tuya.',
@@ -108,6 +110,7 @@ export const privacyEs: LegalDocument = {
       body: [
         'Los negocios ven cuántas personas miraron su perfil, lo guardaron como favorito o tocaron "Cómo llegar".',
         'Esas estadísticas son anónimas: registran qué negocio y qué tipo de interacción, y no guardan quién fue. Un negocio sabe que alguien lo vio, nunca quién.',
+        'Para saber cuántos negocios se inscriben desde cada enlace, la página para comercios cuenta, por día y por origen del enlace, cuántas veces se abrió y cuántas personas empezaron o terminaron el primer paso del registro. Son totales: no guardan quién fue, ni su dirección IP, ni su correo.',
       ],
     },
     {
@@ -117,7 +120,7 @@ export const privacyEs: LegalDocument = {
         'Decisión del dueño del producto, 2026-10-19 (feature 022, T014). Medido ese día: no existe ningún camino de borrado en client/, web/, core/ ni server/.',
       body: [
         'Podés editar tu perfil, tus favoritos, tus Trips y tus moods desde la aplicación en cualquier momento.',
-        'Para pedir que borremos tu cuenta y tus datos, escribí a ernesto@svtrip.com. Una persona lo atiende a mano: no existe todavía un botón para hacerlo desde la aplicación.',
+        'Para pedir que borremos tu cuenta y tus datos, escribí a comercios@svtrip.com. Una persona lo atiende a mano: no existe todavía un botón para hacerlo desde la aplicación.',
         'No fijamos un plazo de respuesta porque no hay un proceso detrás que podamos medir. Preferimos decírtelo así antes que prometerte un número que no podemos cumplir.',
         'No ofrecemos todavía una forma de descargar una copia de tus datos.',
       ],
@@ -127,7 +130,7 @@ export const privacyEs: LegalDocument = {
       heading: 'Contacto',
       source: 'Decisión del dueño del producto, 2026-10-19 (feature 022, T014).',
       body: [
-        'Para cualquier consulta sobre esta política o sobre tus datos, escribí a ernesto@svtrip.com.',
+        'Para cualquier consulta sobre esta política o sobre tus datos, escribí a comercios@svtrip.com.',
         'SVTrip está pensado para personas de 13 años o más.',
       ],
     },

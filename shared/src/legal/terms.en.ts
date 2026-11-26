@@ -14,7 +14,7 @@ export const termsEn: LegalDocument = {
   id: 'terms',
   language: 'en',
   title: 'Terms of service',
-  updatedAt: '2026-10-19',
+  updatedAt: '2026-11-25',
   sections: [
     {
       id: 'what-svtrip-is',
@@ -43,6 +43,21 @@ export const termsEn: LegalDocument = {
         'We reserve the right to hide or remove content that is false, misleading, offensive or that does not belong to the person who published it. There is no automatic review today: a person on the team does it when they find out.',
         'Reviews are written by travelers. A business can reply to them, but cannot edit or delete them.',
         'A business’s visibility can depend on the state of its subscription.',
+      ],
+    },
+    {
+      id: 'merchant-membership',
+      heading: 'Business membership',
+      source:
+        'specs/025-business-signup/spec.md (FR-006, FR-006a, FR-008, FR-009, FR-012, FR-029); specs/018-merchant-subscription-plans (states and visibility); shared/src/subscriptions.ts (default prices).',
+      body: [
+        'A business can register on SVTrip from the businesses page. When it registers, the business is published without prior review by the team, and whoever registers it declares that they have the right to do so.',
+        'The Standard plan costs $30 a month and the Premium plan $50 a month. Current prices are always shown on the businesses page and in the app; if they change, you will see them before choosing a plan.',
+        'During a launch period, businesses that register receive a Premium membership at no cost for a set time, counted from their registration date. The dates and length of that period are shown on the businesses page while it is in effect. That free membership includes everything in the Premium plan except featured placement in the catalog, which starts once you choose to pay.',
+        'There is no automatic charge: SVTrip does not store payment methods and does not charge on its own. Your dashboard shows how many days of the free period you have left.',
+        'When the free period ends and the business has no paid plan, after a short grace period it stops being shown to travelers. Nothing is deleted: your data and profile stay saved, and the business is shown again when a plan covers it.',
+        'Whoever registers after the launch period ends does not receive the free membership, and their business is shown to travelers only when a plan covers it.',
+        'To register a business you have to accept these terms and the privacy policy. We keep which version you accepted and when.',
       ],
     },
     {

@@ -259,7 +259,18 @@
     "ready": "Tu negocio cumple todo lo necesario para ser público.",
     "live": "Público",
     "notLive": "No público",
-    "legacyNotice": "Esta entrada es anterior a los mínimos actuales. Se te pedirán al guardar."
+    "legacyNotice": "Esta entrada es anterior a los mínimos actuales. Se te pedirán al guardar.",
+    "recommended": {
+      "title": "Recomendado",
+      "name": {
+        "es": "Agregá el nombre en español.",
+        "en": "Agregá el nombre en inglés."
+      },
+      "description": {
+        "es": "Agregá la descripción en español.",
+        "en": "Agregá la descripción en inglés: así la leen los turistas."
+      }
+    }
   },
   "claims": {
     "title": "Gestionar mi negocio",
@@ -490,13 +501,13 @@
     "payingNow": "Hoy pagás ${{amount}} por mes",
     "thenFrom": "Desde el {{date}} pasás a ${{amount}} por mes",
     "coversCount": "Cubre {{covered}} de {{total}} lugares",
-    "chooseCoveredPlace": "Básico cubre un solo lugar. Decinos cuál querés mantener visible.",
+    "chooseCoveredPlace": "{{plan}} cubre un solo lugar. Decinos cuál querés mantener visible.",
     "noChargeYet": "Todavía no estamos cobrando. Elegir un plan no mueve dinero.",
     "gateTitle": "Elegí tu plan para administrar tu negocio",
     "gateHint": "Todavía no elegiste plan, así que tu lugar no se está mostrando. Elegí uno y volvés a tener todo el control de tu perfil.",
     "gateAction": "Ver los planes",
     "offersLocked": "Publicar en Ofertas es parte del Premium",
-    "offersLockedHint": "Con Básico tu promoción se ve en tu propio perfil. Con Premium además aparece en Ofertas, donde la buscan los viajeros.",
+    "offersLockedHint": "Con {{plan}} tu promoción se ve en tu propio perfil. Con Premium además aparece en Ofertas, donde la buscan los viajeros.",
     "metricsLocked": "Las métricas ampliadas son parte del Premium",
     "metricsLockedHint": "De dónde vienen tus visitas, cómo te va contra tu categoría, y cómo rindió cada promoción.",
     "upgradeAction": "Pasar a Premium",
@@ -512,12 +523,12 @@
     "hiddenTitle": "Por qué tu lugar no se está mostrando",
     "hiddenNoPlan": "No hay un plan activo que lo cubra.",
     "hiddenUnfinished": "Al perfil le falta contenido para publicarse.",
-    "secondPlaceNeedsPremium": "Básico cubre un solo lugar. Pasá a Premium para agregar otro.",
+    "secondPlaceNeedsPremium": "{{plan}} cubre un solo lugar. Pasá a Premium para agregar otro.",
     "cancelPlan": "Cancelar mi plan",
     "cancelConfirm": "Tu lugar se deja de mostrar al final del periodo que ya pagaste. No se borra nada.",
     "cancelAction": "Sí, cancelar",
     "keepPlan": "Mejor no",
-    "coveredPlaceTitle": "¿Cuál lugar cubre tu Básico?",
+    "coveredPlaceTitle": "¿Cuál lugar cubre tu {{plan}}?",
     "coveredPlaceHint": "Los otros dejan de mostrarse, pero no se borra nada y vuelven si subís a Premium."
   },
   "common": {
@@ -637,6 +648,74 @@
       "name3": "Sofía T.",
       "role3": "Turista, Guatemala",
       "disclaimer": "Testimonios ilustrativos mientras crece la comunidad de SVTrip."
+    },
+    "business": {
+      "meta": {
+        "title": "Registrá tu negocio en SVTrip",
+        "description": "Llevá tu negocio a turistas y locales que buscan qué hacer en El Salvador. Registralo en minutos."
+      },
+      "cta": "Registrá tu negocio",
+      "hero": {
+        "eyebrow": "Estamos afiliando comercios",
+        "title": "Que te encuentren quienes buscan qué hacer en El Salvador",
+        "body": "SVTrip muestra lugares reales a turistas y a locales según lo que tienen ganas de hacer. Registrá tu negocio y aparecé donde te buscan."
+      },
+      "about": {
+        "eyebrow": "Sobre SVTrip",
+        "title": "Estamos sumando comercios antes del lanzamiento",
+        "body": "La app ya está lista y llega pronto a App Store y Google Play. Ahora estamos afiliando a los primeros negocios para que estén desde el primer día."
+      },
+      "benefits": {
+        "title": "Qué ganás con SVTrip",
+        "reach": {
+          "title": "Llegás a turistas y a locales",
+          "body": "Te encuentran quienes buscan qué hacer, de afuera y de acá."
+        },
+        "control": {
+          "title": "Tu información, en tus manos",
+          "body": "Editás horarios, fotos y servicios cuando quieras."
+        },
+        "promotions": {
+          "title": "Publicás promociones",
+          "body": "Contale a los viajeros lo que tenés de especial."
+        },
+        "metrics": {
+          "title": "Ves cuántos te ven",
+          "body": "Métricas de visibilidad de tu negocio."
+        },
+        "contact": {
+          "title": "Te escriben o te llaman",
+          "body": "Botones de WhatsApp y llamada en tu perfil."
+        },
+        "directions": {
+          "title": "Llegan hasta tu puerta",
+          "body": "Con un toque abren tu dirección en Google Maps."
+        }
+      },
+      "contact": {
+        "title": "¿Tenés dudas?",
+        "body": "Escribinos y te ayudamos a registrar tu negocio."
+      },
+      "promotion": {
+        "eyebrow": "Promoción de lanzamiento",
+        "title": "{{months}} meses de Premium gratis",
+        "body": "Inscribite antes del {{date}} y recibís {{months}} meses de membresía Premium sin costo, contados desde el día que te inscribís. El destacado en el catálogo se activa cuando elegís pagar."
+      },
+      "plans": {
+        "title": "Planes",
+        "price": "${{price}} al mes",
+        "note": "Sin cobro automático.",
+        "noteWithPromotion": "Sin cobro automático: en tu panel vas a ver cuántos días te quedan de tu período gratis.",
+        "includes": {
+          "catalogVisible": "Tu negocio visible en el catálogo",
+          "selfService": "Editás tu perfil vos mismo",
+          "ownProfilePromotions": "Promociones en tu perfil",
+          "basicMetrics": "Métricas de visibilidad",
+          "expandedMetrics": "Métricas ampliadas",
+          "rankBoost": "Destacado en el catálogo",
+          "offersPublishing": "Tus promociones también en Ofertas"
+        }
+      }
     }
   },
   "search": {
@@ -960,5 +1039,64 @@
     "back": "Volver",
     "updated": "Última actualización",
     "loadFailed": "No pudimos mostrar este documento."
+  },
+  "signup": {
+    "title": "Registrá tu negocio",
+    "stepOf": "Paso {{step}} de {{total}}",
+    "optional": "(opcional)",
+    "step1": {
+      "title": "Creá tu cuenta",
+      "completeTitle": "Completá tus datos",
+      "subtitle": "Tu cuenta de comercio en SVTrip. Después registrás tu negocio.",
+      "continue": "Continuar",
+      "haveAccount": "¿Ya tenés una cuenta?",
+      "signIn": "Iniciá sesión"
+    },
+    "terms": {
+      "accept": "Acepto los",
+      "and": "y la"
+    },
+    "step2": {
+      "title": "Tu negocio",
+      "subtitle": "Así lo van a encontrar los viajeros en SVTrip.",
+      "existingMerchant": "Este negocio se suma a tu cuenta y queda cubierto según tu plan.",
+      "name": "Nombre del negocio",
+      "mood": "Mood",
+      "moodHint": "Elegí uno o más moods que describan la experiencia. Podés cambiarlos después.",
+      "address": "Dirección",
+      "hours": "Horarios",
+      "description": "Descripción corta",
+      "photos": "Fotos",
+      "photosHint": "Al menos una foto real de tu negocio.",
+      "website": "Sitio web",
+      "social": "Redes sociales",
+      "remove": "Quitar",
+      "addSocial": "Agregar red social",
+      "submit": "Registrar mi negocio",
+      "pinHint": "Mové el pin a la ubicación de tu negocio, o buscá la dirección."
+    },
+    "errors": {
+      "name": "Escribí el nombre de tu negocio.",
+      "businessType": "Elegí el tipo de negocio.",
+      "location": "Buscá la dirección o marcá el lugar en el mapa.",
+      "hours": "Completá los horarios de los siete días.",
+      "contact": "Agregá un WhatsApp o un teléfono válido.",
+      "description": "Escribí una descripción de hasta 300 caracteres.",
+      "photos": "Subí al menos una foto.",
+      "website": "El sitio web tiene que empezar con https://",
+      "socialLinks": "Cada red social tiene que empezar con https://",
+      "fix": "Revisá los campos marcados.",
+      "tooMany": "Demasiados intentos. Probá de nuevo en un rato.",
+      "moods": "Elegí al menos un mood."
+    },
+    "done": {
+      "title": "Tu negocio ya está en SVTrip",
+      "promotion": "Tu membresía Premium gratis termina el {{date}}. Sin cobro automático: en tu panel vas a ver cuántos días te quedan.",
+      "visible": "Los viajeros ya lo pueden encontrar en la app y en la web.",
+      "hidden": "Tu negocio quedó guardado. Para que los viajeros lo vean, elegí un plan.",
+      "registered": "Tu negocio ya está registrado en SVTrip.",
+      "choosePlan": "Elegir un plan",
+      "goToBusiness": "Ir a mi negocio"
+    }
   }
 }

@@ -9,6 +9,8 @@ import { hydrateRoot } from 'react-dom/client';
 import '@svtrip/core/i18n';
 import './styles/index.css';
 import { App } from './App';
+import { BusinessPage } from './business/BusinessPage';
+import { isBusinessPath } from './business/paths';
 
 const root = document.getElementById('root');
 if (!root) throw new Error('#root missing from index.html');
@@ -16,6 +18,8 @@ if (!root) throw new Error('#root missing from index.html');
 hydrateRoot(
   root,
   <StrictMode>
-    <App />
+    {/* The same document per path the prerender wrote (feature 025): the business page hydrates
+        the business page, or React would replace the prerendered HTML with the landing. */}
+    {isBusinessPath(window.location.pathname) ? <BusinessPage /> : <App />}
   </StrictMode>,
 );

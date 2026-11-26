@@ -7,6 +7,7 @@ import { supabase } from '../supabase';
 import { rowsOf, subscribeLive, userTopic } from '../db/live';
 import { fromRow, toRow } from '@svtrip/shared';
 import { clearDiscoverCache } from './discoverRepo';
+import { postJson } from '../apiClient';
 
 
 export interface ListingInput {
@@ -49,10 +50,18 @@ export async function createListing(ownerUid: string, input: ListingInput): Prom
   const now = Date.now();
   const { data, error } = await supabase
     .from('listings')
-    .insert(toRow('listings', { ...input, ownerUid, rating: 0, contentVersion: CONTENT_VERSION, createdAt: now, updatedAt: now }))
+    // `covered: false` (feature 025, research R5): a new place starts INVISIBLE and becomes visible
+    // only through the subscription's coverage sync below. Before 025 it was inserted with no
+    // `covered` — which reads as visible — and nothing recalculated it, so a merchant with no plan got
+    // a place travelers could see. The database guard allows `false` on insert and refuses `true`.
+    .insert(toRow('listings', { ...input, ownerUid, rating: 0, contentVersion: CONTENT_VERSION, createdAt: now, updatedAt: now, covered: false }))
     .select('id')
     .single();
   if (error) throw error;
+  // Ask the server to apply the account's subscription to the new place. Not a privilege: it can only
+  // grant what the plan covers. A failure is not the creation's failure — the place stays invisible
+  // until the next sync (any plan change runs one), which is the safe direction.
+  await postJson('/subscriptions/sync', {}).catch(() => undefined);
   clearDiscoverCache();
   return data.id as string;
 }

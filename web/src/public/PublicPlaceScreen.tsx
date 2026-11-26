@@ -11,7 +11,7 @@
 // Account actions are not disabled controls that explain nothing: they are ONE invitation, with the
 // way back to this page (`next`). Nothing here records engagement — a public endpoint that writes
 // metrics is an amplifier (contracts/public-place.md).
-import { useEffect, useMemo, useState } from 'react';
+import { lazy, Suspense, useEffect, useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { useParams } from 'react-router-dom';
 import { displayHours, resolveLocalized, DEFAULT_BUSINESS_TYPE, type OpeningHour, type LocalizedText, type ScoreSignal } from '@svtrip/shared';
@@ -21,8 +21,16 @@ import { ScoreBadge } from '../components/ScoreBadge';
 import { ButtonLink, Card, EmptyState, ErrorState, Spinner, Button } from '../components/ui';
 import { API_BASE_URL } from '../config';
 import { GalleryViewer } from '../traveler/GalleryViewer';
-import { LocationPreviewMap } from '../traveler/LocationPreviewMap';
 import { PublicHeader } from './PublicHeader';
+
+// The map is loaded on demand, not with the page. This screen is imported eagerly by the router
+// (an assistant's link must open without a spinner), so a static import here put MapLibre — ~1 MB
+// of JS — into the first download of EVERY visitor, including the ones who never open a place.
+// The fallback is the map's own box (h-44, same surface), so the rail does not shift when it lands.
+const LocationPreviewMap = lazy(() =>
+  import('../traveler/LocationPreviewMap').then((m) => ({ default: m.LocationPreviewMap })),
+);
+const MAP_PLACEHOLDER = <div className="h-44 w-full rounded-md bg-surface-2" aria-hidden />;
 
 export interface PublicPlace {
   id: string;
@@ -201,7 +209,9 @@ export function PublicPlaceScreen() {
 
           <aside className="lg:sticky lg:top-24 lg:self-start">
             <Card className="space-y-4 p-6">
-              <LocationPreviewMap lat={place.lat} lng={place.lng} />
+              <Suspense fallback={MAP_PLACEHOLDER}>
+                <LocationPreviewMap lat={place.lat} lng={place.lng} />
+              </Suspense>
               <ButtonLink
                 fullWidth
                 variant="secondary"

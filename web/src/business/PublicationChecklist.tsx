@@ -17,7 +17,7 @@
 //
 // This component only *reports*. It never blocks a save on its own.
 import { useTranslation } from 'react-i18next';
-import { isLegacy, isPublishable, missingRequirements, type PublishableEntry } from '@svtrip/shared';
+import { isLegacy, isPublishable, missingRequirements, recommendedTranslations, type PublishableEntry } from '@svtrip/shared';
 import { Icon } from '@svtrip/core/Icon';
 import { Card } from '../components/ui';
 
@@ -27,6 +27,13 @@ export function PublicationChecklist({ entry }: { entry: PublishableEntry }) {
   const legacy = isLegacy(entry);
   const missing = missingRequirements(entry);
   const ready = isPublishable(entry);
+  // Feature 025 (FR-017a): one language is enough to be visible; the other is RECOMMENDED — shown apart
+  // from what is missing, so it never reads as a reason the place is hidden.
+  const recs = recommendedTranslations(entry);
+  const recommended = [
+    ...recs.name.map((lang) => `name.${lang}`),
+    ...recs.description.map((lang) => `description.${lang}`),
+  ];
 
   return (
     <Card className="space-y-3 p-5">
@@ -52,6 +59,19 @@ export function PublicationChecklist({ entry }: { entry: PublishableEntry }) {
             </li>
           ))}
         </ul>
+      )}
+
+      {!legacy && recommended.length > 0 && (
+        <div className="space-y-1.5 border-t border-border pt-3" data-testid="publication-recommended">
+          <p className="text-sm font-bold text-text">{t('publication.recommended.title')}</p>
+          <ul className="space-y-1">
+            {recommended.map((key) => (
+              <li key={key} className="text-sm text-muted">
+                {t(`publication.recommended.${key}`)}
+              </li>
+            ))}
+          </ul>
+        </div>
       )}
 
       {legacy && <p className="text-xs text-muted">{t('publication.legacyNotice')}</p>}

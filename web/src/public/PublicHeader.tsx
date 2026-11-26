@@ -15,7 +15,7 @@ export function PublicHeader({ next }: { next?: string }) {
   return (
     <header className="border-b border-border bg-surface/80 backdrop-blur-md">
       <div className="mx-auto flex h-[68px] max-w-7xl items-center px-5 md:px-10">
-        <img src={WORDMARK} alt="SVTrip" className="h-9 w-auto" />
+        <img src={WORDMARK} alt="SVTrip" width={323} height={160} className="h-9 w-auto" />
         <div className="ml-auto flex items-center gap-2">
           <Link to={`/register${q}`}>
             <Button variant="secondary">{t('web.preview.register')}</Button>

@@ -18,7 +18,8 @@
 // editable. Blocking it would trap its manager away from the only screen that
 // can fix what is missing.
 import { useEffect, useState } from 'react';
-import { useTranslation } from 'react-i18next';
+import { useTranslation } from 'react-i18next';
+import { usePlanName } from '@svtrip/core/repos/planNames';
 import {
   CONTENT_VERSION,
   MOODS,
@@ -58,6 +59,7 @@ export function ListingForm({
   onClose: () => void;
 }) {
   const { t } = useTranslation();
+  const planName = usePlanName();
   const { user } = useAuth();
 
   const legacyName = existing?.name ?? '';
@@ -407,7 +409,7 @@ export function ListingForm({
               (Firestore cannot count), so this is the only place it is visible. */}
           {premiumRequired && (
             <p className="rounded-md bg-surface-2 p-3.5 text-sm font-bold text-primary">
-              {t('subscription.secondPlaceNeedsPremium')}
+              {t('subscription.secondPlaceNeedsPremium', { plan: planName('basico') })}
             </p>
           )}
 

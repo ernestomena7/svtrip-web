@@ -6,6 +6,14 @@
     <title>SVTrip</title>
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <!-- Linked here so the browser fetches it in parallel with the app (it used to be an @import
+         inside the bundled CSS). Only the weights the web renders: Poppins 500 (headings with no
+         weight class inherit 400, which resolves to 500 — the face they render in today), 700, 800;
+         Nunito 400, 700, 800. No font-medium / font-semibold class exists in web/ or core/. -->
+    <link
+      rel="stylesheet"
+      href="https://fonts.googleapis.com/css2?family=Poppins:wght@500;700;800&family=Nunito:wght@400;700;800&display=swap"
+    />
     <!-- Same icon the mobile app and the landing declare, downscaled to 180px.
          %BASE_URL% is Vite's build-time placeholder for the configured base, so
          one file serves a root deployment (app.svtrip.com) and a subdirectory

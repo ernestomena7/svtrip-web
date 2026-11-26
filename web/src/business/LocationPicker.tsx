@@ -31,7 +31,7 @@ import { Button, Field, TextInput } from '../components/ui';
 setWorkerUrl(maplibreWorkerUrl);
 
 /** Where the map opens before a business has a location of its own. */
-const DEFAULT_CENTER = { lat: 13.6962, lng: -89.2015 };
+export const DEFAULT_CENTER = { lat: 13.6962, lng: -89.2015 };
 
 const STYLE_URL =
   (import.meta as ImportMeta & { env?: Record<string, string | undefined> }).env

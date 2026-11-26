@@ -21,7 +21,7 @@ export function TopBar() {
     <header className="sticky top-0 z-40 border-b border-border bg-surface/80 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center gap-4 px-5 py-3 md:px-10">
         <a href="#top" className="flex items-center">
-          <img src={WORDMARK} alt="SVTrip" className="h-9 w-auto" />
+          <img src={WORDMARK} alt="SVTrip" width={323} height={160} className="h-9 w-auto" />
         </a>
         <div className="ml-auto flex items-center gap-2 md:gap-3">
           <LanguageSwitch />

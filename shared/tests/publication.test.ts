@@ -14,6 +14,7 @@ import {
   publicVisibility,
   travelerVisible,
   offerVisible,
+  recommendedTranslations,
   type PublishableEntry,
 } from '../src/publication.js';
 
@@ -79,31 +80,54 @@ describe('the photo and business-type floor (US2)', () => {
   });
 });
 
-describe('the language rule (on by default since US3 — T043a)', () => {
+// FR-011 NOTE (feature 025, research R16 — the product owner's decision of 2026-11-24): this block
+// used to assert that a half-translated entry is NOT publishable ("refuses a half-translated entry by
+// default"), with an option to turn the rule off. The rule changed: ONE language is enough to be
+// visible, and the missing one is a RECOMMENDATION (`recommendedTranslations`), not a reason to hide.
+// Without the change, every business registered through 025's one-language form stays hidden.
+// The option was removed rather than left dead. Cases below were inverted, not deleted.
+describe('the language rule — one language suffices, the other is recommended (025 R16)', () => {
   const halfTranslated = modern({ nameI18n: { es: 'Comedor', en: '' } });
 
-  it('refuses a half-translated entry by default', () => {
-    expect(missingRequirements(halfTranslated)).toEqual(['name']);
+  it('publishes a half-translated entry (was: refused — FR-011 note above)', () => {
+    expect(missingRequirements(halfTranslated)).toEqual([]);
+    expect(isPublishable(halfTranslated)).toBe(true);
   });
 
-  it('can still be turned off explicitly', () => {
-    // The parameter survives so the US2 behavior stays expressible and pinned:
-    // the day this has to be disabled it should be one argument, not a rewrite.
-    expect(isPublishable(halfTranslated, { requireBothLanguages: false })).toBe(true);
+  it('a one-language entry is visible to travelers when covered and active', () => {
+    const oneLanguage = modern({ nameI18n: { es: 'Comedor', en: '' }, descriptionI18n: { es: 'Rico', en: '' } });
+    expect(travelerVisible({ ...oneLanguage, covered: true })).toBe(true);
+  });
+
+  it('still requires SOME language: an entry with none is not publishable', () => {
+    const entry = modern({ nameI18n: { es: '', en: '' }, descriptionI18n: { es: ' ', en: '' } });
+    expect(missingRequirements(entry)).toEqual(['name', 'description']);
   });
 
   it('still exempts legacy entries', () => {
-    // Grandfathering survives US3 — otherwise turning the rule on unpublishes
-    // every business that has not been translated yet (FR-015a).
     expect(isPublishable({ photos: [], active: true })).toBe(true);
   });
 
-  it('names both text fields when both are half-written', () => {
+  it('recommends the missing language, per field', () => {
     const entry = modern({
       nameI18n: { es: 'Comedor', en: '' },
       descriptionI18n: { es: '', en: 'Tasty' },
     });
-    expect(missingRequirements(entry)).toEqual(['name', 'description']);
+    expect(recommendedTranslations(entry)).toEqual({ name: ['en'], description: ['es'] });
+  });
+
+  it('recommends nothing when both languages exist', () => {
+    expect(recommendedTranslations(modern())).toEqual({ name: [], description: [] });
+  });
+});
+
+describe('a take-down hides a place whatever else is true (025 FR-026)', () => {
+  it('a covered, active, complete entry with takenDownAt is NOT visible', () => {
+    expect(travelerVisible({ ...modern(), covered: true, takenDownAt: Date.parse('2026-12-02T00:00:00Z') })).toBe(false);
+  });
+
+  it('the same entry without it IS visible (the allow beside the deny)', () => {
+    expect(travelerVisible({ ...modern(), covered: true })).toBe(true);
   });
 });
 
