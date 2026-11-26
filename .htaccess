@@ -44,6 +44,15 @@
   # DirectoryIndex ambiguity never comes into play.
   RewriteRule ^$ landing/dist/index.html [L]
 
+  # Feature 025: clean addresses for the prerendered pages. They MUST be here: landing/dist/.htaccess
+  # is never what decides a path (this file rewrites everything into landing/dist/ first), so the same
+  # rules placed there did nothing — measured 2026-11-26: /negocios 404 while /negocios.html was 200.
+  # The invitation email links to svtrip.com/negocios (EN /en/business). The output lands in
+  # landing/dist/, which the first rule above lets through without a second pass.
+  RewriteRule ^negocios/?$ landing/dist/negocios.html [L]
+  RewriteRule ^en/business/?$ landing/dist/en/business.html [L]
+  RewriteRule ^en/?$ landing/dist/en.html [L]
+
   # Anything that really exists inside landing/dist/ (en.html, /assets/*, the
   # hero photo, …) is served from there. The -f test is a second, independent
   # brake on the loop: on a reprocessed pass it would be checking for
