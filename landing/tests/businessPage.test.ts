@@ -27,6 +27,12 @@ describe('the merchant page, as shipped', () => {
     }
   });
 
+  it('also ships a directory index per page, so /negocios works where the .htaccess rewrite does not', () => {
+    // Measured on Hostinger 2026-11-26: the rewrite was not applied (/negocios 404, /negocios.html 200).
+    expect(built('negocios/index.html')).toBe(built('negocios.html'));
+    expect(built('en/business/index.html')).toBe(built('en/business.html'));
+  });
+
   it('says "Estamos afiliando comercios" and links the CTA to the web app form with the language', () => {
     const es = built('negocios.html');
     expect(es).toContain('Estamos afiliando comercios');

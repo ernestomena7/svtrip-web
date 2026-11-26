@@ -111,9 +111,15 @@ async function main(): Promise<void> {
       .replace(/<title>[\s\S]*?<\/title>\s*<meta name="description"[^>]*\/>/, head(code, title, description, `${SITE_URL}${path}`))
       .replace('<div id="root"></div>', `<div id="root">${body}</div>`);
     if (html.includes('<div id="root"></div>')) throw new Error(`prerender produced an empty root for ${file}`);
-    mkdirSync(dirname(resolve(dist, file)), { recursive: true });
-    writeFileSync(resolve(dist, file), html, 'utf8');
-    console.log(`prerendered ${file} (${code}) — ${(html.length / 1024).toFixed(1)} kB`);
+    // Two copies of the same document: the flat file (what an .htaccess rewrite serves) AND a directory
+    // index. Hostinger did not apply the rewrite (measured 2026-11-26: /negocios 404, /negocios.html 200),
+    // and a directory index is what every static host serves for /negocios/ with no configuration at all.
+    const twin = file.replace(/\.html$/, '/index.html');
+    for (const out of [file, twin]) {
+      mkdirSync(dirname(resolve(dist, out)), { recursive: true });
+      writeFileSync(resolve(dist, out), html, 'utf8');
+      console.log(`prerendered ${out} (${code}) — ${(html.length / 1024).toFixed(1)} kB`);
+    }
   }
 }
 

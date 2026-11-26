@@ -2,6 +2,12 @@
 # (index-DkPyoQ6C.js): a new build is a new URL, so the old one can be cached
 # forever. Copied from `public/assets/` into `dist/assets/` at build time, and it
 # overrides the parent folder's one-day rule for this folder only.
+#
+# It must be a <FilesMatch> too: a bare `Header set` here LOSES to the parent's <FilesMatch> (Apache
+# applies file-scoped sections after directory-scoped ones), and measured on the live site the
+# fingerprinted bundles came back with the parent's one day instead of a year.
 <IfModule mod_headers.c>
-  Header set Cache-Control "public, max-age=31536000, immutable"
+  <FilesMatch ".*">
+    Header set Cache-Control "public, max-age=31536000, immutable"
+  </FilesMatch>
 </IfModule>
