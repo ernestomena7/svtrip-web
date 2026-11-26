@@ -63,7 +63,6 @@
     "@capgo/capacitor-social-login": "8.5.12",
     "@supabase/supabase-js": "2.117.3",
     "@svtrip/shared": "*",
-    "firebase": "^12.18.0",
     "i18next": "^23.16.4",
     "react": "^18.3.1",
     "react-i18next": "^15.1.0",

@@ -14,7 +14,6 @@
   "dependencies": {
     "@svtrip/core": "*",
     "@svtrip/shared": "*",
-    "firebase": "^12.18.0",
     "framer-motion": "^11.11.9",
     "i18next": "^23.16.4",
     "maplibre-gl": "^6.4.1",
